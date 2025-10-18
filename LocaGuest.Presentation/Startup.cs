@@ -1,8 +1,13 @@
 ﻿using Asp.Versioning.ApiExplorer;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using System.Text;
 using LocaGuest.Presentation.Extensions;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System;
 
 namespace LocaGuest.Presentation
 {
@@ -17,84 +22,97 @@ namespace LocaGuest.Presentation
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            // === Controllers & API versioning ===
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                });
+
             services.AddApiVersioning(o =>
             {
                 o.ReportApiVersions = true;
                 o.AssumeDefaultVersionWhenUnspecified = true;
                 o.DefaultApiVersion = new ApiVersion(1, 0);
-            }).AddApiExplorer(o =>
+            })
+            .AddApiExplorer(o =>
             {
                 o.GroupNameFormat = "'v'VVV";
                 o.SubstituteApiVersionInUrl = true;
             });
 
             services.AddEndpointsApiExplorer();
+            services.AddSwaggerDocumentation();
 
-
-
+            // === CORS ===
             services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy", builder => builder
-                .WithOrigins("http://localhost:4200")
-                .SetIsOriginAllowedToAllowWildcardSubdomains()
-                .WithOrigins()
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials());
+                options.AddPolicy("CorsPolicy", builder =>
+                    builder
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
             });
 
-            services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                //options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-                //options.JsonSerializerOptions.Converters.Add(new DateTimeConverter()); // no native solution with System.Text.Json.Serialization;
-            });
+            var key = Encoding.UTF8.GetBytes(Configuration["Jwt:SecretKey"] ?? "DefaultDevSecretKey!");
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = true;
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+                });
+
+            services.AddAuthorization();
             services.AddSignalR();
-            services.AddSwaggerDocumentation();
-            //services.AddAuthorization(options =>
-            //{
-            //    options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
-            //});
 
-            //services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-
+            // === Application & Infrastructure (Clean Arch) ===
+            //services.AddApplication();
+            //services.AddInfrastructure(Configuration);
         }
 
         public void Configure(IApplicationBuilder app, IHostEnvironment env, IApiVersionDescriptionProvider provider)
         {
-
             app.UseCors("CorsPolicy");
 
-            // #if DEBUG
-            app.UseDeveloperExceptionPage();
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
+            // === Swagger ===
             app.UseSwagger();
-
-            //A common endpoint that contains both versions
             app.UseSwaggerUI(c =>
             {
                 c.RoutePrefix = "swagger";
                 foreach (var description in provider.ApiVersionDescriptions)
-                {
-                    c.SwaggerEndpoint($"{description.GroupName}/swagger.yaml", $"LocaGuest Service API {description.GroupName}");
-                }
+                    c.SwaggerEndpoint($"{description.GroupName}/swagger.yaml", $"LocaGuest API {description.GroupName}");
             });
 
             app.UseHttpsRedirection();
 
-            app.UseRouting();
+            app.UseSerilogRequestLogging(); // log de toutes les requêtes HTTP
 
-            //app.UseAuthentication();
-            // app.UseAuthorization();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-
+               // endpoints.MapHub<SessionHub>("/hubs/sessions");
             });
-            // #endif
         }
     }
 }

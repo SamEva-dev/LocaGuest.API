@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using System.Diagnostics;
 using LocaGuest.Presentation;
+using LocaGuest;
 
 var configurationBuilder = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
@@ -84,8 +85,6 @@ var host = Host.CreateDefaultBuilder(args)
             .UseSerilog()
             .Build();
 
-//MigrationManager.ApplyMigrations(host);
-
-//FastApiWorkerManager.StartAndMonitor(configuration, host);
+host.ApplyMigrations();
 
 host.Run();
