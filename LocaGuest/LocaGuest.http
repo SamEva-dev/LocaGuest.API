@@ -1,6 +1,0 @@
-@LocaGuest_HostAddress = http://localhost:5071
-
-GET {{LocaGuest_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
