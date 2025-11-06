@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LocaGuest.Api.Controllers;
 
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class DashboardController : ControllerBase
