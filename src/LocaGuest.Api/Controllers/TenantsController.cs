@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Api.Controllers;
 
-//[Authorize]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class TenantsController : ControllerBase
