@@ -1,0 +1,54 @@
+namespace LocaGuest.Application.DTOs.Tenants;
+
+public class TenantDto
+{
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string Status { get; set; } = "Active";
+    public int ActiveContracts { get; set; }
+    public DateTime? MoveInDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class TenantDetailDto : TenantDto
+{
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public string? Nationality { get; set; }
+    public string? IdNumber { get; set; }
+    public string? EmergencyContact { get; set; }
+    public string? EmergencyPhone { get; set; }
+    public string? Occupation { get; set; }
+    public decimal? MonthlyIncome { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CreateTenantDto
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public string? Nationality { get; set; }
+    public string? IdNumber { get; set; }
+    public string? EmergencyContact { get; set; }
+    public string? EmergencyPhone { get; set; }
+    public string? Occupation { get; set; }
+    public decimal? MonthlyIncome { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class UpdateTenantDto : CreateTenantDto
+{
+    public Guid Id { get; set; }
+}

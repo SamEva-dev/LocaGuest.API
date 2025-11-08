@@ -2,12 +2,13 @@ using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Common;
+using LocaGuest.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
-public class LocaGuestDbContext : DbContext
+public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService? _currentUserService;

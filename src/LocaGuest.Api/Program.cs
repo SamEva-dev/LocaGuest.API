@@ -1,6 +1,8 @@
 using LocaGuest.Api;
 using LocaGuest.Api.Middleware;
 using LocaGuest.Api.Services;
+using LocaGuest.Application;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -56,8 +58,11 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<LocaGuestDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-// MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+// Register ILocaGuestDbContext
+builder.Services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
+
+// Application Layer (includes MediatR)
+builder.Services.AddApplication();
 
 // JWT Authentication with AuthGate (RSA via JWKS)
 var jwtSettings = builder.Configuration.GetSection("Jwt");

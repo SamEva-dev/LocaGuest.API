@@ -1,0 +1,65 @@
+namespace LocaGuest.Application.DTOs.Properties;
+
+public class PropertyDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public decimal Surface { get; set; }
+    public int? Bedrooms { get; set; }
+    public int? Bathrooms { get; set; }
+    public int? Floor { get; set; }
+    public bool HasElevator { get; set; }
+    public bool HasParking { get; set; }
+    public bool HasBalcony { get; set; }
+    public decimal Rent { get; set; }
+    public decimal? Charges { get; set; }
+    public string Status { get; set; } = "Vacant";
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class PropertyDetailDto : PropertyDto
+{
+    public string? Description { get; set; }
+    public DateTime? PurchaseDate { get; set; }
+    public decimal? PurchasePrice { get; set; }
+    public string? EnergyClass { get; set; }
+    public int? ConstructionYear { get; set; }
+    public List<string> Features { get; set; } = new();
+    public int ActiveContractsCount { get; set; }
+    public decimal TotalRevenue { get; set; }
+}
+
+public class CreatePropertyDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string? City { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Country { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public decimal Surface { get; set; }
+    public int? Bedrooms { get; set; }
+    public int? Bathrooms { get; set; }
+    public int? Floor { get; set; }
+    public bool HasElevator { get; set; }
+    public bool HasParking { get; set; }
+    public bool HasBalcony { get; set; }
+    public decimal Rent { get; set; }
+    public decimal? Charges { get; set; }
+    public string? Description { get; set; }
+    public DateTime? PurchaseDate { get; set; }
+    public decimal? PurchasePrice { get; set; }
+    public string? EnergyClass { get; set; }
+    public int? ConstructionYear { get; set; }
+}
+
+public class UpdatePropertyDto : CreatePropertyDto
+{
+    public Guid Id { get; set; }
+}

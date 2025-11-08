@@ -25,6 +25,7 @@ public class Property : AuditableEntity
     public decimal? Deposit { get; private set; }
     public string? Notes { get; private set; }
     public List<string> ImageUrls { get; private set; } = new();
+    public DateTime? UpdatedAt { get; set; }
 
     private Property() { } // EF
 
