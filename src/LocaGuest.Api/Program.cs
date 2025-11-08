@@ -63,6 +63,10 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var authGateUrl = builder.Configuration["AuthGate:Url"] ?? "https://localhost:8081";
 
+// Cache pour les clés JWKS (éviter de recharger à chaque requête)
+var jwksCache = new Dictionary<string, (List<SecurityKey> Keys, DateTime Expiry)>();
+var jwksCacheLock = new object();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -89,8 +93,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnMessageReceived = context =>
             {
-                // Charger les clés RSA lors de la première requête
-                if (context.Options.TokenValidationParameters.IssuerSigningKey == null)
+                // Charger les clés RSA avec cache (5 minutes)
+                List<SecurityKey>? signingKeys = null;
+                
+                lock (jwksCacheLock)
+                {
+                    if (jwksCache.TryGetValue("keys", out var cached) && cached.Expiry > DateTime.UtcNow)
+                    {
+                        signingKeys = cached.Keys;
+                        Log.Debug("Using cached JWKS keys ({Count} keys)", signingKeys.Count);
+                    }
+                }
+                
+                if (signingKeys == null)
                 {
                     try
                     {
@@ -104,6 +119,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         var jwksDoc = System.Text.Json.JsonDocument.Parse(jwksJson);
                         var keys = jwksDoc.RootElement.GetProperty("keys").EnumerateArray();
                         
+                        // Charger toutes les clés disponibles
+                        signingKeys = new List<SecurityKey>();
                         foreach (var key in keys)
                         {
                             var n = key.GetProperty("n").GetString();
@@ -122,10 +139,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                                     Exponent = eBytes
                                 });
                                 
-                                context.Options.TokenValidationParameters.IssuerSigningKey = new RsaSecurityKey(rsa) { KeyId = kid };
-                                Log.Information("RSA key loaded successfully (kid: {KeyId})", kid);
-                                break;
+                                signingKeys.Add(new RsaSecurityKey(rsa) { KeyId = kid });
+                                Log.Debug("RSA key loaded (kid: {KeyId})", kid);
                             }
+                        }
+                        
+                        if (signingKeys.Any())
+                        {
+                            // Mettre en cache pour 5 minutes
+                            lock (jwksCacheLock)
+                            {
+                                jwksCache["keys"] = (signingKeys, DateTime.UtcNow.AddMinutes(5));
+                            }
+                            Log.Information("Loaded {Count} RSA key(s) from AuthGate JWKS", signingKeys.Count);
                         }
                     }
                     catch (Exception ex)
@@ -133,6 +159,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         Log.Error(ex, "Failed to load RSA keys from AuthGate JWKS");
                     }
                 }
+                
+                if (signingKeys != null && signingKeys.Any())
+                {
+                    context.Options.TokenValidationParameters.IssuerSigningKeys = signingKeys;
+                }
+                
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
