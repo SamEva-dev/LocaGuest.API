@@ -1,4 +1,7 @@
+using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
+using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 using LocaGuest.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +15,49 @@ public class ContractsController : ControllerBase
 {
     private readonly LocaGuestDbContext _context;
     private readonly ILogger<ContractsController> _logger;
+    private readonly IMediator _mediator;
 
-    public ContractsController(LocaGuestDbContext context, ILogger<ContractsController> logger)
+    public ContractsController(
+        LocaGuestDbContext context, 
+        ILogger<ContractsController> logger,
+        IMediator mediator)
     {
         _context = context;
         _logger = logger;
+        _mediator = mediator;
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetContractStats()
+    {
+        var query = new GetContractStatsQuery();
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllContracts(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? type = null)
+    {
+        var query = new GetAllContractsQuery
+        {
+            SearchTerm = searchTerm,
+            Status = status,
+            Type = type
+        };
+        
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
     }
 
     [HttpGet]

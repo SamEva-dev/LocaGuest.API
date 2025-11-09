@@ -1,0 +1,61 @@
+using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Domain.Aggregates.ContractAggregate;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
+
+public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuery, Result<ContractStatsDto>>
+{
+    private readonly ILocaGuestDbContext _context;
+    private readonly ILogger<GetContractStatsQueryHandler> _logger;
+
+    public GetContractStatsQueryHandler(
+        ILocaGuestDbContext context,
+        ILogger<GetContractStatsQueryHandler> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<Result<ContractStatsDto>> Handle(GetContractStatsQuery request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var now = DateTime.UtcNow;
+            var threeMonthsFromNow = now.AddMonths(3);
+
+            var activeContracts = await _context.Contracts
+                .Where(c => c.Status == ContractStatus.Active)
+                .ToListAsync(cancellationToken);
+
+            var expiringContracts = activeContracts
+                .Count(c => c.EndDate <= threeMonthsFromNow && c.EndDate > now);
+
+            var monthlyRevenue = activeContracts.Sum(c => c.Rent);
+
+            var totalTenants = await _context.Contracts
+                .Where(c => c.Status == ContractStatus.Active)
+                .Select(c => c.TenantId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            var stats = new ContractStatsDto
+            {
+                ActiveContracts = activeContracts.Count,
+                ExpiringIn3Months = expiringContracts,
+                MonthlyRevenue = monthlyRevenue,
+                TotalTenants = totalTenants
+            };
+
+            return Result.Success(stats);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving contract stats");
+            return Result.Failure<ContractStatsDto>("Error retrieving contract stats");
+        }
+    }
+}
