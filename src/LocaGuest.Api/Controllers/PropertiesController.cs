@@ -1,6 +1,11 @@
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Features.Properties.Queries.GetProperty;
+using LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts;
+using LocaGuest.Application.Features.Properties.Queries.GetPropertyPayments;
+using LocaGuest.Application.Features.Properties.Queries.GetFinancialSummary;
+using LocaGuest.Application.Features.Tenants.Queries.GetAvailableTenants;
+using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,26 +65,64 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpGet("{id}/payments")]
-    public IActionResult GetPropertyPayments(string id)
+    public async Task<IActionResult> GetPropertyPayments(string id)
     {
-        // TODO: Implement GetPropertyPaymentsQuery
-        // For now, return empty list
-        return Ok(new object[0]);
+        var query = new GetPropertyPaymentsQuery { PropertyId = id };
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
     }
 
     [HttpGet("{id}/contracts")]
-    public IActionResult GetPropertyContracts(string id)
+    public async Task<IActionResult> GetPropertyContracts(string id)
     {
-        // TODO: Implement GetPropertyContractsQuery
-        // For now, return empty list
-        return Ok(new object[0]);
+        var query = new GetPropertyContractsQuery { PropertyId = id };
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
     }
 
     [HttpGet("{id}/financial-summary")]
-    public IActionResult GetFinancialSummary(string id)
+    public async Task<IActionResult> GetFinancialSummary(string id)
     {
-        // TODO: Implement GetFinancialSummaryQuery
-        // For now, return empty object
-        return Ok(new { });
+        var query = new GetFinancialSummaryQuery { PropertyId = id };
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("{id}/available-tenants")]
+    public async Task<IActionResult> GetAvailableTenants(string id)
+    {
+        var query = new GetAvailableTenantsQuery { PropertyId = id };
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpPost("{id}/assign-tenant")]
+    public async Task<IActionResult> AssignTenant(string id, [FromBody] CreateContractCommand command)
+    {
+        if (id != command.PropertyId.ToString())
+            return BadRequest(new { message = "Property ID mismatch" });
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
     }
 }
