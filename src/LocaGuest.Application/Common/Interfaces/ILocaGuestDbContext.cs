@@ -14,6 +14,8 @@ public interface ILocaGuestDbContext
     DbSet<Contract> Contracts { get; }
     DbSet<UserSettings> UserSettings { get; }
     DbSet<RentabilityScenario> RentabilityScenarios { get; }
+    DbSet<ScenarioVersion> ScenarioVersions { get; }
+    DbSet<ScenarioShare> ScenarioShares { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
