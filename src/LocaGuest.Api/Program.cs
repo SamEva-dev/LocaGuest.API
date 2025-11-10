@@ -3,6 +3,7 @@ using LocaGuest.Api.Middleware;
 using LocaGuest.Api.Services;
 using LocaGuest.Application;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;

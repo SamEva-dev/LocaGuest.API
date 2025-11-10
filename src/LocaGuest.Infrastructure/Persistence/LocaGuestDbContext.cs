@@ -1,10 +1,12 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using LocaGuest.Application.Services;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
@@ -27,6 +29,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<UserSettings> UserSettings => Set<UserSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -90,6 +93,20 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
             entity.Ignore(p => p.DomainEvents);
         });
+
+        // UserSettings
+        modelBuilder.Entity<UserSettings>(entity =>
+        {
+            entity.ToTable("user_settings");
+            entity.HasKey(us => us.Id);
+            entity.HasIndex(us => us.UserId).IsUnique();
+            entity.Property(us => us.Language).IsRequired().HasMaxLength(10);
+            entity.Property(us => us.Timezone).IsRequired().HasMaxLength(100);
+            entity.Property(us => us.DateFormat).IsRequired().HasMaxLength(20);
+            entity.Property(us => us.Currency).IsRequired().HasMaxLength(10);
+            entity.Property(us => us.PhotoUrl).HasMaxLength(500);
+            entity.Ignore(us => us.DomainEvents);
+        });
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -142,7 +159,3 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     }
 }
 
-public interface ICurrentUserService
-{
-    string UserId { get; }
-}

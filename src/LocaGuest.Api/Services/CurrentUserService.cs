@@ -1,3 +1,4 @@
+using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence;
 using System.Security.Claims;
 
