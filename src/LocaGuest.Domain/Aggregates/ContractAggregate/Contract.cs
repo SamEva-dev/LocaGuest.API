@@ -42,8 +42,8 @@ public class Contract : AuditableEntity
             PropertyId = propertyId,
             TenantId = tenantId,
             Type = type,
-            StartDate = startDate,
-            EndDate = endDate,
+            StartDate = startDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) : startDate.ToUniversalTime(),
+            EndDate = endDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) : endDate.ToUniversalTime(),
             Rent = rent,
             Deposit = deposit,
             Status = ContractStatus.Active
@@ -58,8 +58,8 @@ public class Contract : AuditableEntity
         if (newEndDate <= EndDate)
             throw new ValidationException("CONTRACT_INVALID_RENEWAL", "New end date must be after current end date");
 
-        EndDate = newEndDate;
-        AddDomainEvent(new ContractRenewed(Id, PropertyId, TenantId, newEndDate));
+        EndDate = newEndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(newEndDate, DateTimeKind.Utc) : newEndDate.ToUniversalTime();
+        AddDomainEvent(new ContractRenewed(Id, PropertyId, TenantId, EndDate));
     }
 
     public void Terminate(DateTime terminationDate)
@@ -131,7 +131,7 @@ public class Payment : Entity
             Id = Guid.NewGuid(),
             ContractId = contractId,
             Amount = amount,
-            PaymentDate = paymentDate,
+            PaymentDate = paymentDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(paymentDate, DateTimeKind.Utc) : paymentDate.ToUniversalTime(),
             Method = method,
             Status = PaymentStatus.Completed
         };
