@@ -3,6 +3,7 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251110224054_AddRentabilityScenarios")]
+    partial class AddRentabilityScenarios
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -220,9 +223,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<bool>("CrlApplicable")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("CurrentVersion")
-                        .HasColumnType("integer");
-
                     b.Property<int>("DeferredMonths")
                         .HasColumnType("integer");
 
@@ -422,94 +422,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.ToTable("rentability_scenarios", (string)null);
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioShare", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Permission")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("ScenarioId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SharedWithUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScenarioId");
-
-                    b.HasIndex("SharedWithUserId");
-
-                    b.HasIndex("ScenarioId", "SharedWithUserId");
-
-                    b.ToTable("scenario_shares", (string)null);
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioVersion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ChangeDescription")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ScenarioId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SnapshotJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("VersionNumber")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScenarioId");
-
-                    b.ToTable("scenario_versions", (string)null);
-                });
-
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.TenantAggregate.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -647,34 +559,9 @@ namespace LocaGuest.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioShare", b =>
-                {
-                    b.HasOne("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", null)
-                        .WithMany("Shares")
-                        .HasForeignKey("ScenarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioVersion", b =>
-                {
-                    b.HasOne("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", null)
-                        .WithMany("Versions")
-                        .HasForeignKey("ScenarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
                 {
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", b =>
-                {
-                    b.Navigation("Shares");
-
-                    b.Navigation("Versions");
                 });
 #pragma warning restore 612, 618
         }

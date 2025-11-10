@@ -1,8 +1,9 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
-using Microsoft.EntityFrameworkCore;
 using LocaGuest.Domain.Aggregates.UserAggregate;
+using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Application.Common.Interfaces;
 
@@ -12,7 +13,7 @@ public interface ILocaGuestDbContext
     DbSet<Tenant> Tenants { get; }
     DbSet<Contract> Contracts { get; }
     DbSet<UserSettings> UserSettings { get; }
-
+    DbSet<RentabilityScenario> RentabilityScenarios { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
