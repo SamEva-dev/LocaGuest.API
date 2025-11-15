@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Analytics;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Analytics.Queries.GetRevenueEvolution;
 
 public class GetRevenueEvolutionQueryHandler : IRequestHandler<GetRevenueEvolutionQuery, Result<List<RevenueEvolutionDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetRevenueEvolutionQueryHandler> _logger;
 
     public GetRevenueEvolutionQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetRevenueEvolutionQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -39,7 +39,7 @@ public class GetRevenueEvolutionQueryHandler : IRequestHandler<GetRevenueEvoluti
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 // Contrats actifs ce mois-là
-                var monthContracts = await _context.Contracts
+                var monthContracts = await _unitOfWork.Contracts.Query()
                     .Where(c => c.StartDate <= monthEnd && c.EndDate >= monthStart)
                     .ToListAsync(cancellationToken);
 

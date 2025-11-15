@@ -1,23 +1,21 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
-using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetProperty;
 
 public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<PropertyDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertyQueryHandler> _logger;
 
     public GetPropertyQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetPropertyQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,8 +23,12 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
     {
         try
         {
-            var property = await _context.Properties
-                .FirstOrDefaultAsync(p => p.Id.ToString() == request.Id, cancellationToken);
+            if (!Guid.TryParse(request.Id, out var propertyId))
+            {
+                return Result.Failure<PropertyDto>($"Invalid property ID format: {request.Id}");
+            }
+
+            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
 
             if (property == null)
             {

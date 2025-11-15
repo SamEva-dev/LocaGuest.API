@@ -53,13 +53,22 @@ public class CurrentUserService : ICurrentUserService, ITenantContext
     {
         get
         {
+            // Return null if no HTTP context (e.g., during seeding, background jobs)
+            if (_httpContextAccessor.HttpContext == null)
+                return null;
+            
+            // Return null if user is not authenticated
+            if (!IsAuthenticated)
+                return null;
+            
             var tenantIdStr = _httpContextAccessor.HttpContext?.User?.FindFirstValue("tenant_id")
                            ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("tenantId");
             
+            // Return null if claim not found (will be caught by services that require it)
             if (string.IsNullOrEmpty(tenantIdStr))
-                throw new UnauthorizedAccessException("TenantId not found in JWT token");
+                return null;
             
-            return Guid.TryParse(tenantIdStr, out var tenantId) ? tenantId : throw new UnauthorizedAccessException("Invalid TenantId format");
+            return Guid.TryParse(tenantIdStr, out var tenantId) ? tenantId : null;
         }
     }
 

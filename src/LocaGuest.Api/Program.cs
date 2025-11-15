@@ -82,6 +82,9 @@ builder.Services.AddScoped<LocaGuest.Application.Services.IStripeService, LocaGu
 // Audit Service
 builder.Services.AddScoped<LocaGuest.Application.Services.IAuditService, LocaGuest.Infrastructure.Services.AuditService>();
 
+// Tracking Service (Analytics)
+builder.Services.AddScoped<LocaGuest.Application.Services.ITrackingService, LocaGuest.Infrastructure.Services.TrackingService>();
+
 // Application Layer (includes MediatR)
 builder.Services.AddApplication();
 
@@ -277,6 +280,9 @@ app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Tracking middleware (Analytics) - after authentication to get user context
+app.UseTracking();
 
 app.MapControllers();
 app.MapHealthChecks("/health");

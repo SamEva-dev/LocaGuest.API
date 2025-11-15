@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,15 +9,15 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts
 
 public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContractsQuery, Result<List<ContractDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertyContractsQueryHandler> _logger;
 
     public GetPropertyContractsQueryHandler(
-        ILocaGuestDbContext context,
-        ILogger<GetPropertyContractsQueryHandler> _logger)
+        IUnitOfWork unitOfWork,
+        ILogger<GetPropertyContractsQueryHandler> logger)
     {
-        _context = context;
-        this._logger = _logger;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<Result<List<ContractDto>>> Handle(GetPropertyContractsQuery request, CancellationToken cancellationToken)
@@ -26,7 +26,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var contracts = await _context.Contracts
+            var contracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId)
                 .OrderByDescending(c => c.StartDate)
                 .Select(c => new ContractDto
@@ -47,7 +47,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
 
             // Charger les noms des locataires
             var tenantIds = contracts.Select(c => c.TenantId).Distinct().ToList();
-            var tenants = await _context.Tenants
+            var tenants = await _unitOfWork.Tenants.Query()
                 .Where(t => tenantIds.Contains(t.Id))
                 .Select(t => new { t.Id, t.FullName })
                 .ToListAsync(cancellationToken);

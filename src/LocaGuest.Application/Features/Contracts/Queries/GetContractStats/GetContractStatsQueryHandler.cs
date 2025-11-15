@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,14 +9,14 @@ namespace LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 
 public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuery, Result<ContractStatsDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetContractStatsQueryHandler> _logger;
 
     public GetContractStatsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetContractStatsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuer
             var now = DateTime.UtcNow;
             var threeMonthsFromNow = now.AddMonths(3);
 
-            var activeContracts = await _context.Contracts
+            var activeContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active)
                 .ToListAsync(cancellationToken);
 
@@ -36,7 +36,7 @@ public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuer
 
             var monthlyRevenue = activeContracts.Sum(c => c.Rent);
 
-            var totalTenants = await _context.Contracts
+            var totalTenants = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active)
                 .Select(c => c.TenantId)
                 .Distinct()

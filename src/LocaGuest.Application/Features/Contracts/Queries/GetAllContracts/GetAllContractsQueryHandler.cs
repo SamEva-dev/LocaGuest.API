@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 
 public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery, Result<List<ContractDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetAllContractsQueryHandler> _logger;
 
     public GetAllContractsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetAllContractsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
     {
         try
         {
-            var query = _context.Contracts.AsQueryable();
+            var query = _unitOfWork.Contracts.Query();
 
             // Filtrer par statut
             if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<ContractStatus>(request.Status, out var status))
@@ -47,11 +47,11 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
             var propertyIds = contracts.Select(c => c.PropertyId).Distinct().ToList();
             var tenantIds = contracts.Select(c => c.RenterTenantId).Distinct().ToList();
 
-            var properties = await _context.Properties
+            var properties = await _unitOfWork.Properties.Query()
                 .Where(p => propertyIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
 
-            var tenants = await _context.Tenants
+            var tenants = await _unitOfWork.Tenants.Query()
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 

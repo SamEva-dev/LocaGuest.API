@@ -1,8 +1,8 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Common.Models;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,14 +11,14 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetProperties;
 
 public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Result<PagedResult<PropertyDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertiesQueryHandler> _logger;
 
     public GetPropertiesQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetPropertiesQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -26,7 +26,7 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
     {
         try
         {
-            var query = _context.Properties.AsQueryable();
+            var query = _unitOfWork.Properties.Query();
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))

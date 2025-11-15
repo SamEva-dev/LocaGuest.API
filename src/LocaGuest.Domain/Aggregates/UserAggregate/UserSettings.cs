@@ -26,6 +26,10 @@ public class UserSettings : AuditableEntity
     // Interface
     public bool SidebarNavigation { get; private set; } = true;
     public bool HeaderNavigation { get; private set; } = false;
+    
+    // Privacy & GDPR
+    public bool AllowTracking { get; private set; } = true; // Opt-out tracking analytics
+    
     public DateTime UpdatedAt { get; private set; }
 
     private UserSettings() { }
@@ -83,6 +87,12 @@ public class UserSettings : AuditableEntity
     {
         SidebarNavigation = sidebarNavigation;
         HeaderNavigation = headerNavigation;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdatePrivacy(bool allowTracking)
+    {
+        AllowTracking = allowTracking;
         UpdatedAt = DateTime.UtcNow;
     }
 }

@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,14 +9,14 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetPropertyPayments;
 
 public class GetPropertyPaymentsQueryHandler : IRequestHandler<GetPropertyPaymentsQuery, Result<List<PaymentDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertyPaymentsQueryHandler> _logger;
 
     public GetPropertyPaymentsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetPropertyPaymentsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -26,7 +26,7 @@ public class GetPropertyPaymentsQueryHandler : IRequestHandler<GetPropertyPaymen
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var payments = await _context.Contracts
+            var payments = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId)
                 .SelectMany(c => c.Payments.Select(p => new PaymentDto
                 {

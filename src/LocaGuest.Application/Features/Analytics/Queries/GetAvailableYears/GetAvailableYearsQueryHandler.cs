@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,14 +8,14 @@ namespace LocaGuest.Application.Features.Analytics.Queries.GetAvailableYears;
 
 public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQuery, Result<List<int>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetAvailableYearsQueryHandler> _logger;
 
     public GetAvailableYearsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetAvailableYearsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -23,7 +23,7 @@ public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQu
     {
         try
         {
-            var contracts = await _context.Contracts.ToListAsync(cancellationToken);
+            var contracts = await _unitOfWork.Contracts.Query().ToListAsync(cancellationToken);
             
             if (!contracts.Any())
             {

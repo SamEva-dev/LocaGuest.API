@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Analytics;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Analytics.Queries.GetProfitabilityStats
 
 public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilityStatsQuery, Result<ProfitabilityStatsDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetProfitabilityStatsQueryHandler> _logger;
 
     public GetProfitabilityStatsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetProfitabilityStatsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -31,14 +31,14 @@ public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilit
             var lastMonthEnd = currentMonthStart.AddDays(-1);
 
             // Revenus du mois en cours (loyers des contrats actifs)
-            var activeContracts = await _context.Contracts
+            var activeContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active)
                 .ToListAsync(cancellationToken);
 
             var monthlyRevenue = activeContracts.Sum(c => c.Rent);
 
             // Revenus du mois précédent
-            var lastMonthContracts = await _context.Contracts
+            var lastMonthContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.StartDate <= lastMonthEnd && c.EndDate >= lastMonthStart)
                 .ToListAsync(cancellationToken);
 
@@ -66,7 +66,7 @@ public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilit
 
             // Taux de rentabilité (ROI annuel estimé)
             // Estimation: valeur du bien = loyer annuel x 20
-            var properties = await _context.Properties.ToListAsync(cancellationToken);
+            var properties = await _unitOfWork.Properties.Query().ToListAsync(cancellationToken);
             var totalPropertyValue = properties.Sum(p => p.Rent * 12 * 20);
 
             var profitabilityRate = totalPropertyValue > 0 

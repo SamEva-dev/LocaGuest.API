@@ -1,8 +1,8 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Common.Models;
 using LocaGuest.Application.DTOs.Tenants;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,14 +11,14 @@ namespace LocaGuest.Application.Features.Tenants.Queries.GetTenants;
 
 public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<PagedResult<TenantDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetTenantsQueryHandler> _logger;
 
     public GetTenantsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetTenantsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -26,7 +26,7 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<Pa
     {
         try
         {
-            var query = _context.Tenants.AsQueryable();
+            var query = _unitOfWork.Tenants.Query();
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))

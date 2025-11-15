@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Tenants;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Tenants.Queries.GetAvailableTenants;
 
 public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenantsQuery, Result<List<TenantDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetAvailableTenantsQueryHandler> _logger;
 
     public GetAvailableTenantsQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetAvailableTenantsQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -28,14 +28,14 @@ public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenan
             var propertyId = Guid.Parse(request.PropertyId);
 
             // Récupérer les IDs des locataires déjà associés à ce logement via un contrat actif
-            var assignedTenantIds = await _context.Contracts
+            var assignedTenantIds = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId && c.Status == ContractStatus.Active)
                 .Select(c => c.RenterTenantId)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
             // Récupérer tous les locataires sauf ceux déjà assignés
-            var availableTenants = await _context.Tenants
+            var availableTenants = await _unitOfWork.Tenants.Query()
                 .Where(t => !assignedTenantIds.Contains(t.Id))
                 .Select(t => new TenantDto
                 {

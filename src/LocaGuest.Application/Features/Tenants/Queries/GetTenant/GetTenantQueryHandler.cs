@@ -1,23 +1,21 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Tenants;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Tenants.Queries.GetTenant;
 
 public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<TenantDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetTenantQueryHandler> _logger;
 
     public GetTenantQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetTenantQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,8 +23,12 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
     {
         try
         {
-            var tenant = await _context.Tenants
-                .FirstOrDefaultAsync(t => t.Id.ToString() == request.Id, cancellationToken);
+            if (!Guid.TryParse(request.Id, out var tenantId))
+            {
+                return Result.Failure<TenantDto>($"Invalid tenant ID format: {request.Id}");
+            }
+
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
 
             if (tenant == null)
             {

@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetFinancialSummary;
 
 public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSummaryQuery, Result<FinancialSummaryDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetFinancialSummaryQueryHandler> _logger;
 
     public GetFinancialSummaryQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetFinancialSummaryQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var contracts = await _context.Contracts
+            var contracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId)
                 .Include(c => c.Payments)
                 .ToListAsync(cancellationToken);

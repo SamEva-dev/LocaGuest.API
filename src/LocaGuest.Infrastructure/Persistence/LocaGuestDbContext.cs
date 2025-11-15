@@ -1,9 +1,10 @@
+using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
-using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
-using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
+using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Analytics;
 using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
 using MediatR;
@@ -45,6 +46,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
     public DbSet<UsageAggregate> UsageAggregates => Set<UsageAggregate>();
+    
+    // Analytics & Tracking
+    public DbSet<TrackingEvent> TrackingEvents => Set<TrackingEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -271,6 +275,35 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasIndex(ua => new { ua.TenantId, ua.UserId, ua.Dimension, ua.PeriodYear, ua.PeriodMonth }).IsUnique();
             entity.Ignore(ua => ua.DomainEvents);
         });
+        
+        // TrackingEvent (Analytics)
+        modelBuilder.Entity<TrackingEvent>(entity =>
+        {
+            entity.ToTable("tracking_events");
+            entity.HasKey(te => te.Id);
+            
+            entity.Property(te => te.TenantId).IsRequired();
+            entity.Property(te => te.UserId).IsRequired();
+            entity.Property(te => te.EventType).IsRequired().HasMaxLength(100);
+            entity.Property(te => te.PageName).HasMaxLength(200);
+            entity.Property(te => te.Url).HasMaxLength(500);
+            entity.Property(te => te.UserAgent).IsRequired().HasMaxLength(500);
+            entity.Property(te => te.IpAddress).IsRequired().HasMaxLength(45);
+            entity.Property(te => te.SessionId).HasMaxLength(100);
+            entity.Property(te => te.CorrelationId).HasMaxLength(100);
+            
+            // Metadata as JSONB for PostgreSQL
+            entity.Property(te => te.Metadata).HasColumnType("jsonb");
+            
+            // Indexes for performance
+            entity.HasIndex(te => te.TenantId);
+            entity.HasIndex(te => te.UserId);
+            entity.HasIndex(te => te.EventType);
+            entity.HasIndex(te => te.Timestamp);
+            entity.HasIndex(te => new { te.TenantId, te.Timestamp });
+            entity.HasIndex(te => new { te.TenantId, te.UserId, te.Timestamp });
+            entity.HasIndex(te => new { te.EventType, te.Timestamp });
+        });
     }
     
     /// <summary>
@@ -333,14 +366,18 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                     {
                         entry.Entity.TenantId = _tenantContext.TenantId.Value.ToString();
                     }
-                    else
+                    else if (_tenantContext?.IsAuthenticated == true)
                     {
+                        // User is authenticated but no TenantId in JWT
                         throw new UnauthorizedAccessException("Cannot create entity without a valid TenantId");
                     }
+                    // else: Not authenticated (seeding, background jobs) - allow creation without TenantId
                 }
                 
-                // Vérification que le TenantId correspond au tenant courant
-                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId.ToString())
+                // Vérification que le TenantId correspond au tenant courant (only if authenticated)
+                if (_tenantContext?.IsAuthenticated == true && 
+                    !string.IsNullOrEmpty(entry.Entity.TenantId) &&
+                    entry.Entity.TenantId != _tenantContext.TenantId.ToString())
                 {
                     throw new UnauthorizedAccessException($"Cannot create entity for another tenant. Expected: {_tenantContext.TenantId}, Got: {entry.Entity.TenantId}");
                 }
@@ -360,8 +397,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                     throw new InvalidOperationException("TenantId cannot be modified after entity creation");
                 }
                 
-                // Vérification que l'entité appartient au tenant courant
-                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId.ToString())
+                // Vérification que l'entité appartient au tenant courant (only if authenticated)
+                if (_tenantContext?.IsAuthenticated == true && 
+                    !string.IsNullOrEmpty(entry.Entity.TenantId) &&
+                    entry.Entity.TenantId != _tenantContext.TenantId.ToString())
                 {
                     throw new UnauthorizedAccessException($"Cannot modify entity from another tenant");
                 }

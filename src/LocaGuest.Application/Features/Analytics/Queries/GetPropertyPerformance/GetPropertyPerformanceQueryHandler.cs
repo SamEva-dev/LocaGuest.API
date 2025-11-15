@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Analytics;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Analytics.Queries.GetPropertyPerformanc
 
 public class GetPropertyPerformanceQueryHandler : IRequestHandler<GetPropertyPerformanceQuery, Result<List<PropertyPerformanceDto>>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertyPerformanceQueryHandler> _logger;
 
     public GetPropertyPerformanceQueryHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
         ILogger<GetPropertyPerformanceQueryHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,13 +25,13 @@ public class GetPropertyPerformanceQueryHandler : IRequestHandler<GetPropertyPer
     {
         try
         {
-            var properties = await _context.Properties.ToListAsync(cancellationToken);
+            var properties = await _unitOfWork.Properties.Query().ToListAsync(cancellationToken);
             var result = new List<PropertyPerformanceDto>();
 
             foreach (var property in properties)
             {
                 // Contrats actifs pour cette propriété
-                var activeContracts = await _context.Contracts
+                var activeContracts = await _unitOfWork.Contracts.Query()
                     .Where(c => c.PropertyId == property.Id && 
                                c.Status == ContractStatus.Active &&
                                c.EndDate >= DateTime.UtcNow &&
