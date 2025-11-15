@@ -2,6 +2,8 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Rentability;
 using LocaGuest.Application.Services;
+using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,15 +13,18 @@ namespace LocaGuest.Application.Features.Rentability.Commands.RestoreVersion;
 
 public class RestoreScenarioVersionCommandHandler : IRequestHandler<RestoreScenarioVersionCommand, Result<RentabilityScenarioDto>>
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<RestoreScenarioVersionCommandHandler> _logger;
 
     public RestoreScenarioVersionCommandHandler(
+        IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
         ILogger<RestoreScenarioVersionCommandHandler> logger)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -62,7 +67,7 @@ public class RestoreScenarioVersionCommandHandler : IRequestHandler<RestoreScena
             // Restore data
             RestoreFromSnapshot(scenario, snapshot);
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             var dto = MapToDto(scenario);
             return Result.Success(dto);

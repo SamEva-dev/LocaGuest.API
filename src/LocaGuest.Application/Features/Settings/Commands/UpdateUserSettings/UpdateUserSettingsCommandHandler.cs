@@ -2,6 +2,8 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Settings;
 using LocaGuest.Application.Services;
+using LocaGuest.Domain.Aggregates.UserAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,15 +12,18 @@ namespace LocaGuest.Application.Features.Settings.Commands.UpdateUserSettings;
 
 public class UpdateUserSettingsCommandHandler : IRequestHandler<UpdateUserSettingsCommand, Result<UserSettingsDto>>
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateUserSettingsCommandHandler> _logger;
 
     public UpdateUserSettingsCommandHandler(
+        IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
         ILogger<UpdateUserSettingsCommandHandler> logger)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -76,7 +81,7 @@ public class UpdateUserSettingsCommandHandler : IRequestHandler<UpdateUserSettin
                 );
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("User settings updated for user {UserId}", userId);
             

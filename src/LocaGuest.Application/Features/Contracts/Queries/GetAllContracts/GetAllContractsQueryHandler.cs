@@ -45,7 +45,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
 
             // Charger les propriétés et locataires
             var propertyIds = contracts.Select(c => c.PropertyId).Distinct().ToList();
-            var tenantIds = contracts.Select(c => c.TenantId).Distinct().ToList();
+            var tenantIds = contracts.Select(c => c.RenterTenantId).Distinct().ToList();
 
             var properties = await _context.Properties
                 .Where(p => propertyIds.Contains(p.Id))
@@ -59,9 +59,9 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
             {
                 Id = c.Id,
                 PropertyId = c.PropertyId,
-                TenantId = c.TenantId,
+                TenantId = c.RenterTenantId,
                 PropertyName = properties.GetValueOrDefault(c.PropertyId),
-                TenantName = tenants.GetValueOrDefault(c.TenantId),
+                TenantName = tenants.GetValueOrDefault(c.RenterTenantId),
                 Type = c.Type.ToString(),
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,

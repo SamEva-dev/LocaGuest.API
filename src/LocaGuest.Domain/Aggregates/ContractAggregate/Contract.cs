@@ -7,7 +7,12 @@ namespace LocaGuest.Domain.Aggregates.ContractAggregate;
 public class Contract : AuditableEntity
 {
     public Guid PropertyId { get; private set; }
-    public Guid TenantId { get; private set; }
+    
+    /// <summary>
+    /// ID du locataire (Tenant entity) - ne pas confondre avec TenantId multi-tenant hérité de AuditableEntity
+    /// </summary>
+    public Guid RenterTenantId { get; private set; }
+    
     public ContractType Type { get; private set; }
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
@@ -23,7 +28,7 @@ public class Contract : AuditableEntity
 
     public static Contract Create(
         Guid propertyId,
-        Guid tenantId,
+        Guid renterTenantId,
         ContractType type,
         DateTime startDate,
         DateTime endDate,
@@ -40,7 +45,7 @@ public class Contract : AuditableEntity
         {
             Id = Guid.NewGuid(),
             PropertyId = propertyId,
-            TenantId = tenantId,
+            RenterTenantId = renterTenantId,
             Type = type,
             StartDate = startDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) : startDate.ToUniversalTime(),
             EndDate = endDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) : endDate.ToUniversalTime(),
@@ -49,7 +54,7 @@ public class Contract : AuditableEntity
             Status = ContractStatus.Active
         };
 
-        contract.AddDomainEvent(new ContractCreated(contract.Id, propertyId, tenantId, startDate, endDate, rent));
+        contract.AddDomainEvent(new ContractCreated(contract.Id, propertyId, renterTenantId, startDate, endDate, rent));
         return contract;
     }
 
@@ -59,7 +64,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_RENEWAL", "New end date must be after current end date");
 
         EndDate = newEndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(newEndDate, DateTimeKind.Utc) : newEndDate.ToUniversalTime();
-        AddDomainEvent(new ContractRenewed(Id, PropertyId, TenantId, EndDate));
+        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterTenantId, EndDate));
     }
 
     public void Terminate(DateTime terminationDate)
@@ -67,7 +72,7 @@ public class Contract : AuditableEntity
         if (Status == ContractStatus.Terminated) return;
 
         Status = ContractStatus.Terminated;
-        AddDomainEvent(new ContractTerminated(Id, PropertyId, TenantId, terminationDate));
+        AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
     }
 
     public void MarkAsExpiring()
@@ -86,7 +91,7 @@ public class Contract : AuditableEntity
         var payment = Payment.Create(Id, amount, paymentDate, method);
         _payments.Add(payment);
 
-        AddDomainEvent(new PaymentRecorded(payment.Id, Id, PropertyId, TenantId, amount, paymentDate));
+        AddDomainEvent(new PaymentRecorded(payment.Id, Id, PropertyId, RenterTenantId, amount, paymentDate));
         return payment;
     }
 
@@ -97,7 +102,7 @@ public class Contract : AuditableEntity
             throw new NotFoundException("PAYMENT_NOT_FOUND", "Payment not found");
 
         payment.MarkAsLate();
-        AddDomainEvent(new PaymentLateDetected(paymentId, Id, PropertyId, TenantId));
+        AddDomainEvent(new PaymentLateDetected(paymentId, Id, PropertyId, RenterTenantId));
     }
 }
 

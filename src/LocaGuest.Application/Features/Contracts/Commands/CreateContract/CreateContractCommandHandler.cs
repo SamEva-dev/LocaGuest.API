@@ -2,22 +2,25 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 
 public class CreateContractCommandHandler : IRequestHandler<CreateContractCommand, Result<ContractDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateContractCommandHandler> _logger;
 
     public CreateContractCommandHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<CreateContractCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -25,16 +28,18 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
     {
         try
         {
+            // Validate tenant authentication
+            if (!_tenantContext.IsAuthenticated)
+                return Result.Failure<ContractDto>("User not authenticated");
+
             // Vérifier que la propriété existe
-            var property = await _context.Properties
-                .FirstOrDefaultAsync(p => p.Id == request.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
             
             if (property == null)
                 return Result.Failure<ContractDto>("Property not found");
 
             // Vérifier que le locataire existe
-            var tenant = await _context.Tenants
-                .FirstOrDefaultAsync(t => t.Id == request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
             
             if (tenant == null)
                 return Result.Failure<ContractDto>("Tenant not found");
@@ -54,14 +59,14 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 request.Deposit
             );
 
-            _context.Contracts.Add(contract);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Contracts.AddAsync(contract, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             var contractDto = new ContractDto
             {
                 Id = contract.Id,
                 PropertyId = contract.PropertyId,
-                TenantId = contract.TenantId,
+                TenantId = contract.RenterTenantId,
                 PropertyName = property.Name,
                 TenantName = tenant.FullName,
                 Type = contract.Type.ToString(),

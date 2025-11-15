@@ -74,6 +74,17 @@ public class Subscription : AuditableEntity
     
     public void SetStripeInfo(string customerId, string subscriptionId)
     {
+        // Protection contre la modification des identifiants Stripe immuables
+        if (!string.IsNullOrEmpty(StripeCustomerId) && StripeCustomerId != customerId)
+        {
+            throw new InvalidOperationException("StripeCustomerId cannot be modified once set");
+        }
+        
+        if (!string.IsNullOrEmpty(StripeSubscriptionId) && StripeSubscriptionId != subscriptionId)
+        {
+            throw new InvalidOperationException("StripeSubscriptionId cannot be modified once set");
+        }
+        
         StripeCustomerId = customerId;
         StripeSubscriptionId = subscriptionId;
         LastModifiedAt = DateTime.UtcNow;

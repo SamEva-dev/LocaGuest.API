@@ -33,7 +33,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                 {
                     Id = c.Id,
                     PropertyId = c.PropertyId,
-                    TenantId = c.TenantId,
+                    TenantId = c.RenterTenantId,
                     Type = c.Type.ToString(),
                     StartDate = c.StartDate,
                     EndDate = c.EndDate,

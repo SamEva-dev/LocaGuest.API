@@ -3,6 +3,7 @@ using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Rentability;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,15 +13,18 @@ namespace LocaGuest.Application.Features.Rentability.Commands.CloneScenario;
 
 public class CloneRentabilityScenarioCommandHandler : IRequestHandler<CloneRentabilityScenarioCommand, Result<RentabilityScenarioDto>>
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CloneRentabilityScenarioCommandHandler> _logger;
 
     public CloneRentabilityScenarioCommandHandler(
+        IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
         ILogger<CloneRentabilityScenarioCommandHandler> logger)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -84,7 +88,7 @@ public class CloneRentabilityScenarioCommandHandler : IRequestHandler<CloneRenta
             }
 
             _context.RentabilityScenarios.Add(clone);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             var dto = MapToDto(clone);
             return Result.Success(dto);

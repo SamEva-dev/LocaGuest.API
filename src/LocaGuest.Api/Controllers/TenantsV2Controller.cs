@@ -52,7 +52,7 @@ public class TenantsV2Controller : ControllerBase
                 t.Phone,
                 t.MoveInDate,
                 t.Status,
-                ActiveContracts = _context.Contracts.Count(c => c.TenantId == t.Id && c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active)
+                ActiveContracts = _context.Contracts.Count(c => c.RenterTenantId == t.Id && c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active)
             })
             .ToListAsync();
 
@@ -75,8 +75,8 @@ public class TenantsV2Controller : ControllerBase
                 t.Notes,
                 t.CreatedAt,
                 t.CreatedBy,
-                ActiveContracts = _context.Contracts.Count(c => c.TenantId == t.Id && c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active),
-                TotalContracts = _context.Contracts.Count(c => c.TenantId == t.Id)
+                ActiveContracts = _context.Contracts.Count(c => c.RenterTenantId == t.Id && c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active),
+                TotalContracts = _context.Contracts.Count(c => c.RenterTenantId == t.Id)
             })
             .FirstOrDefaultAsync();
 
@@ -97,7 +97,7 @@ public class TenantsV2Controller : ControllerBase
             return NotFound(new { message = "Tenant not found" });
 
         var query = _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.TenantId == id && c.Payments.Any(pay => pay.Id == p.Id)));
+            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)));
 
         if (from.HasValue)
             query = query.Where(p => p.PaymentDate >= from.Value);
@@ -136,7 +136,7 @@ public class TenantsV2Controller : ControllerBase
             return NotFound(new { message = "Tenant not found" });
 
         var contracts = await _context.Contracts
-            .Where(c => c.TenantId == id)
+            .Where(c => c.RenterTenantId == id)
             .OrderByDescending(c => c.StartDate)
             .Select(c => new
             {
@@ -164,20 +164,20 @@ public class TenantsV2Controller : ControllerBase
             return NotFound(new { message = "Tenant not found" });
 
         var totalPaid = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.TenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
+            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
             .SumAsync(p => p.Amount);
 
         var totalPayments = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.TenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
+            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
             .CountAsync();
 
         var latePayments = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.TenantId == id && c.Payments.Any(pay => pay.Id == p.Id))
+            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id))
                         && p.Status == Domain.Aggregates.ContractAggregate.PaymentStatus.Late)
             .CountAsync();
 
         var lastPayment = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.TenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
+            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
             .OrderByDescending(p => p.PaymentDate)
             .Select(p => new { p.Amount, p.PaymentDate, p.Status })
             .FirstOrDefaultAsync();

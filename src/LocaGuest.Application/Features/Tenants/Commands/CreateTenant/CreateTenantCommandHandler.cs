@@ -2,6 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Tenants;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,14 +10,17 @@ namespace LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
 
 public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, Result<TenantDetailDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<CreateTenantCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -24,6 +28,9 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
     {
         try
         {
+            if (!_tenantContext.IsAuthenticated)
+                return Result.Failure<TenantDetailDto>("User not authenticated");
+
             // Create full name
             var fullName = $"{request.FirstName} {request.LastName}".Trim();
 
@@ -31,8 +38,8 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             var tenant = Tenant.Create(fullName, request.Email, request.Phone);
 
             // Add to context
-            _context.Tenants.Add(tenant);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.Tenants.AddAsync(tenant, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Tenant created successfully: {TenantId} - {TenantName}", tenant.Id, tenant.FullName);
 

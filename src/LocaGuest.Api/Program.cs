@@ -62,6 +62,16 @@ builder.Services.AddDbContext<LocaGuestDbContext>(options =>
 // Register ILocaGuestDbContext
 builder.Services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
 
+// Repositories and UnitOfWork (DDD)
+builder.Services.AddScoped<LocaGuest.Domain.Repositories.IUnitOfWork, LocaGuest.Infrastructure.Repositories.UnitOfWork>();
+builder.Services.AddScoped<LocaGuest.Domain.Repositories.IPropertyRepository, LocaGuest.Infrastructure.Repositories.PropertyRepository>();
+builder.Services.AddScoped<LocaGuest.Domain.Repositories.IContractRepository, LocaGuest.Infrastructure.Repositories.ContractRepository>();
+builder.Services.AddScoped<LocaGuest.Domain.Repositories.ITenantRepository, LocaGuest.Infrastructure.Repositories.TenantRepository>();
+builder.Services.AddScoped<LocaGuest.Domain.Repositories.ISubscriptionRepository, LocaGuest.Infrastructure.Repositories.SubscriptionRepository>();
+
+// Stripe Service
+builder.Services.AddScoped<LocaGuest.Application.Services.IStripeService, LocaGuest.Infrastructure.Services.StripeService>();
+
 // Application Layer (includes MediatR)
 builder.Services.AddApplication();
 
@@ -219,7 +229,12 @@ builder.Services.AddSignalR();
 
 // Application Services
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+// CurrentUserService implémente à la fois ICurrentUserService et ITenantContext
+builder.Services.AddScoped<CurrentUserService>();
+builder.Services.AddScoped<ICurrentUserService>(sp => sp.GetRequiredService<CurrentUserService>());
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<CurrentUserService>());
+
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 // Health Checks

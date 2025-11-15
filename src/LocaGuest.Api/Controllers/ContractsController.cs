@@ -83,8 +83,8 @@ public class ContractsController : ControllerBase
                 c.Id,
                 c.PropertyId,
                 PropertyName = _context.Properties.Where(p => p.Id == c.PropertyId).Select(p => p.Name).FirstOrDefault(),
-                c.TenantId,
-                TenantName = _context.Tenants.Where(t => t.Id == c.TenantId).Select(t => t.FullName).FirstOrDefault(),
+                TenantId = c.RenterTenantId,
+                TenantName = _context.Tenants.Where(t => t.Id == c.RenterTenantId).Select(t => t.FullName).FirstOrDefault(),
                 c.Type,
                 c.StartDate,
                 c.EndDate,
@@ -108,8 +108,8 @@ public class ContractsController : ControllerBase
                 c.Id,
                 c.PropertyId,
                 PropertyName = _context.Properties.Where(p => p.Id == c.PropertyId).Select(p => p.Name).FirstOrDefault(),
-                c.TenantId,
-                TenantName = _context.Tenants.Where(t => t.Id == c.TenantId).Select(t => t.FullName).FirstOrDefault(),
+                TenantId = c.RenterTenantId,
+                TenantName = _context.Tenants.Where(t => t.Id == c.RenterTenantId).Select(t => t.FullName).FirstOrDefault(),
                 c.Type,
                 c.StartDate,
                 c.EndDate,
@@ -155,7 +155,7 @@ public class ContractsController : ControllerBase
         _context.Contracts.Add(contract);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetContract), new { id = contract.Id }, new { id = contract.Id, propertyId = contract.PropertyId, tenantId = contract.TenantId });
+        return CreatedAtAction(nameof(GetContract), new { id = contract.Id }, new { id = contract.Id, propertyId = contract.PropertyId, tenantId = contract.RenterTenantId });
     }
 
     [HttpPost("{id:guid}/payments")]

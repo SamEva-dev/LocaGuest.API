@@ -157,8 +157,8 @@ public class PropertiesV2Controller : ControllerBase
             .Select(c => new
             {
                 c.Id,
-                c.TenantId,
-                TenantName = _context.Tenants.Where(t => t.Id == c.TenantId).Select(t => t.FullName).FirstOrDefault(),
+                TenantId = c.RenterTenantId,
+                TenantName = _context.Tenants.Where(t => t.Id == c.RenterTenantId).Select(t => t.FullName).FirstOrDefault(),
                 c.Type,
                 c.StartDate,
                 c.EndDate,

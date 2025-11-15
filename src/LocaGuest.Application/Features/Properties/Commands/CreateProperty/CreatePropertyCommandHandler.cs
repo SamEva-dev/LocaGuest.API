@@ -2,6 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -9,14 +10,17 @@ namespace LocaGuest.Application.Features.Properties.Commands.CreateProperty;
 
 public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyCommand, Result<PropertyDetailDto>>
 {
-    private readonly ILocaGuestDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreatePropertyCommandHandler> _logger;
 
     public CreatePropertyCommandHandler(
-        ILocaGuestDbContext context,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<CreatePropertyCommandHandler> logger)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -24,6 +28,13 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
     {
         try
         {
+            // Validate tenant authentication
+            if (!_tenantContext.IsAuthenticated)
+            {
+                _logger.LogWarning("Unauthorized property creation attempt");
+                return Result.Failure<PropertyDetailDto>("User not authenticated");
+            }
+
             // Parse PropertyType from string
             if (!Enum.TryParse<PropertyType>(request.Type, ignoreCase: true, out var propertyType))
             {
@@ -40,11 +51,12 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 request.Bedrooms ?? 0,
                 request.Bathrooms ?? 0);
 
-            // Add to context
-            _context.Properties.Add(property);
-            await _context.SaveChangesAsync(cancellationToken);
+            // Add through repository
+            await _unitOfWork.Properties.AddAsync(property, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
-            _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName}", property.Id, property.Name);
+            _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {TenantId}", 
+                property.Id, property.Name, _tenantContext.TenantId);
 
             // Map to DTO
             var dto = new PropertyDetailDto

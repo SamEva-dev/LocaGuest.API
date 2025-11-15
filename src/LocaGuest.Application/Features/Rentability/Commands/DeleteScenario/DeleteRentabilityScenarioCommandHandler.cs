@@ -1,6 +1,9 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.DTOs.Rentability;
 using LocaGuest.Application.Services;
+using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,15 +12,18 @@ namespace LocaGuest.Application.Features.Rentability.Commands.DeleteScenario;
 
 public class DeleteRentabilityScenarioCommandHandler : IRequestHandler<DeleteRentabilityScenarioCommand, Result<bool>>
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DeleteRentabilityScenarioCommandHandler> _logger;
 
     public DeleteRentabilityScenarioCommandHandler(
+        IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
         ILogger<DeleteRentabilityScenarioCommandHandler> logger)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -38,7 +44,7 @@ public class DeleteRentabilityScenarioCommandHandler : IRequestHandler<DeleteRen
             }
 
             _context.RentabilityScenarios.Remove(scenario);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             return Result.Success(true);
         }

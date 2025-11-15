@@ -30,7 +30,7 @@ public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenan
             // Récupérer les IDs des locataires déjà associés à ce logement via un contrat actif
             var assignedTenantIds = await _context.Contracts
                 .Where(c => c.PropertyId == propertyId && c.Status == ContractStatus.Active)
-                .Select(c => c.TenantId)
+                .Select(c => c.RenterTenantId)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
