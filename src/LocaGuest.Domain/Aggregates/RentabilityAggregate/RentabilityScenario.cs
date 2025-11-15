@@ -78,6 +78,11 @@ public class RentabilityScenario : AuditableEntity
     // Results (stored as JSON)
     public string? ResultsJson { get; private set; }
     
+    // Organization and filtering
+    public string? Tags { get; private set; }
+    public string? Category { get; private set; }
+    public bool IsFavorite { get; private set; }
+    
     // Versioning & Sharing
     public int CurrentVersion { get; private set; } = 1;
     private readonly List<ScenarioVersion> _versions = new();
@@ -85,6 +90,10 @@ public class RentabilityScenario : AuditableEntity
     
     private readonly List<ScenarioShare> _shares = new();
     public IReadOnlyCollection<ScenarioShare> Shares => _shares.AsReadOnly();
+    
+    // Comments (not loaded by default, use explicit loading)
+    private readonly List<ScenarioComment> _comments = new();
+    public IReadOnlyCollection<ScenarioComment> Comments => _comments.AsReadOnly();
     
     private RentabilityScenario() { }
     
@@ -269,6 +278,48 @@ public class RentabilityScenario : AuditableEntity
         LastModifiedAt = DateTime.UtcNow;
     }
     
+    // Tags and categorization
+    public void AddTag(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag)) return;
+        
+        var tags = GetTags();
+        if (!tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            tags.Add(tag);
+            Tags = string.Join(",", tags);
+            LastModifiedAt = DateTime.UtcNow;
+        }
+    }
+    
+    public void RemoveTag(string tag)
+    {
+        var tags = GetTags();
+        tags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
+        Tags = string.Join(",", tags);
+        LastModifiedAt = DateTime.UtcNow;
+    }
+    
+    public List<string> GetTags()
+    {
+        if (string.IsNullOrWhiteSpace(Tags)) return new List<string>();
+        return Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                   .Select(t => t.Trim())
+                   .ToList();
+    }
+    
+    public void SetFavorite(bool isFavorite)
+    {
+        IsFavorite = isFavorite;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+    
+    public void SetCategory(string category)
+    {
+        Category = category;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+    
     public void CreateVersion(string changeDescription, string snapshotJson)
     {
         CurrentVersion++;
@@ -300,7 +351,45 @@ public class RentabilityScenario : AuditableEntity
         }
     }
     
-    public bool IsSharedWith(Guid userId) => _shares.Any(s => s.SharedWithUserId == userId && s.CanView());
+    public bool IsSharedWith(Guid userId)
+    {
+        return _shares.Any(s => s.SharedWithUserId == userId && s.CanView());
+    }
     
-    public bool CanUserEdit(Guid userId) => UserId == userId || _shares.Any(s => s.SharedWithUserId == userId && s.CanEdit());
+    public bool CanUserEdit(Guid userId)
+    {
+        if (UserId == userId) return true;
+        return _shares.Any(s => s.SharedWithUserId == userId && s.CanEdit());
+    }
+    
+    // Comments management
+    public void AddComment(Guid userId, string userName, string content, Guid? parentCommentId = null)
+    {
+        var comment = ScenarioComment.Create(Id, userId, userName, content, parentCommentId);
+        _comments.Add(comment);
+        LastModifiedAt = DateTime.UtcNow;
+    }
+    
+    public void UpdateComment(Guid commentId, string newContent)
+    {
+        var comment = _comments.FirstOrDefault(c => c.Id == commentId);
+        comment?.UpdateContent(newContent);
+        LastModifiedAt = DateTime.UtcNow;
+    }
+    
+    public void RemoveComment(Guid commentId)
+    {
+        var comment = _comments.FirstOrDefault(c => c.Id == commentId);
+        if (comment != null)
+        {
+            // Remove all replies too
+            var replies = _comments.Where(c => c.ParentCommentId == commentId).ToList();
+            foreach (var reply in replies)
+            {
+                _comments.Remove(reply);
+            }
+            _comments.Remove(comment);
+            LastModifiedAt = DateTime.UtcNow;
+        }
+    }
 }

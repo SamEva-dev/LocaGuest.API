@@ -220,6 +220,7 @@ builder.Services.AddSignalR();
 // Application Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 // Health Checks
 builder.Services.AddHealthChecks()

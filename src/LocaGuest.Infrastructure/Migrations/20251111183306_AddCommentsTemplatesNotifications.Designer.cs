@@ -3,6 +3,7 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111183306_AddCommentsTemplatesNotifications")]
+    partial class AddCommentsTemplatesNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -571,277 +574,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.ToTable("scenario_versions", (string)null);
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Plan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("AnnualPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("HasAdvancedComparison")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasApiAccess")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasApiReadWrite")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasDedicatedSupport")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasEmailNotifications")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasPrioritySupport")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasPrivateTemplates")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasSlackIntegration")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasSso")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasTeamTemplates")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasUnlimitedAi")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasUnlimitedExports")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasUnlimitedVersioning")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasWebhooks")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<int>("MaxAiSuggestionsPerMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxExportsPerMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxScenarios")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxShares")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxTeamMembers")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxVersionsPerScenario")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxWorkspaces")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("MonthlyPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("StripeAnnualPriceId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("StripeMonthlyPriceId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Plans");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Subscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CancelAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("CanceledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CurrentPeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CurrentPeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsAnnual")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("PlanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("StripeCustomerId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("StripeLatestInvoiceId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("StripeSubscriptionId")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("TrialEndsAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlanId");
-
-                    b.ToTable("Subscriptions");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.UsageAggregate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Dimension")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PeriodMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PeriodYear")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TotalValue")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UsageAggregates");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.UsageEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Dimension")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Metadata")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubscriptionId");
-
-                    b.ToTable("UsageEvents");
-                });
-
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.TenantAggregate.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1004,26 +736,6 @@ namespace LocaGuest.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Subscription", b =>
-                {
-                    b.HasOne("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Plan", "Plan")
-                        .WithMany()
-                        .HasForeignKey("PlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Plan");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.UsageEvent", b =>
-                {
-                    b.HasOne("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Subscription", null)
-                        .WithMany("UsageEvents")
-                        .HasForeignKey("SubscriptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
                 {
                     b.Navigation("Payments");
@@ -1036,11 +748,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Navigation("Shares");
 
                     b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Subscription", b =>
-                {
-                    b.Navigation("UsageEvents");
                 });
 #pragma warning restore 612, 618
         }

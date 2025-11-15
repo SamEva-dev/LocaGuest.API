@@ -1,6 +1,7 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Infrastructure.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Infrastructure.Persistence;
@@ -9,6 +10,10 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(LocaGuestDbContext context)
     {
+        // Seed Plans first (always, even if other data exists)
+        await PlanSeeder.SeedPlansAsync(context);
+        Console.WriteLine("Subscription plans seeded");
+        
         // Vérifier si déjà seedé
         if (await context.Properties.AnyAsync()) 
         {

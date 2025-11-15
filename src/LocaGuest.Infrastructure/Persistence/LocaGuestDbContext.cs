@@ -3,6 +3,7 @@ using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
 using MediatR;
@@ -34,6 +35,12 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<RentabilityScenario> RentabilityScenarios => Set<RentabilityScenario>();
     public DbSet<ScenarioVersion> ScenarioVersions => Set<ScenarioVersion>();
     public DbSet<ScenarioShare> ScenarioShares => Set<ScenarioShare>();
+    
+    // Subscription System
+    public DbSet<Plan> Plans => Set<Plan>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<UsageEvent> UsageEvents => Set<UsageEvent>();
+    public DbSet<UsageAggregate> UsageAggregates => Set<UsageAggregate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
