@@ -10,6 +10,9 @@ public static class DependencyInjection
         services.AddMediatR(cfg => 
         {
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
+            
+            // Add Audit Behavior (logs all commands)
+            cfg.AddOpenBehavior(typeof(Common.Behaviours.AuditBehavior<,>));
         });
 
         // FluentValidation (if needed later)

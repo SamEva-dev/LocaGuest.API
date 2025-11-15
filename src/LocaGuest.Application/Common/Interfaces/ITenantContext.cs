@@ -8,12 +8,12 @@ public interface ITenantContext
     /// <summary>
     /// Id du tenant courant (organisation/compte) extrait du token JWT
     /// </summary>
-    string TenantId { get; }
+    Guid? TenantId { get; }
     
     /// <summary>
     /// Id de l'utilisateur courant extrait du token JWT
     /// </summary>
-    string UserId { get; }
+    Guid? UserId { get; }
     
     /// <summary>
     /// Vérifie si l'utilisateur est authentifié et a un tenant

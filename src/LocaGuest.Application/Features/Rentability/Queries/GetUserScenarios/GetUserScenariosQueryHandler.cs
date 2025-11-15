@@ -29,7 +29,7 @@ public class GetUserScenariosQueryHandler : IRequestHandler<GetUserScenariosQuer
     {
         try
         {
-            var userId = Guid.Parse(_currentUserService.UserId);
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
             var scenarios = await _context.RentabilityScenarios
                 .Where(s => s.UserId == userId)

@@ -33,7 +33,7 @@ public class UpdateUserSettingsCommandHandler : IRequestHandler<UpdateUserSettin
     {
         try
         {
-            var userId = Guid.Parse(_currentUserService.UserId);
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
             
             // Get or create user settings
             var userSettings = await _context.UserSettings

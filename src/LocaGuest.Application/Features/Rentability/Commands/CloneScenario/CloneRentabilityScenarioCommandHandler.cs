@@ -34,7 +34,7 @@ public class CloneRentabilityScenarioCommandHandler : IRequestHandler<CloneRenta
     {
         try
         {
-            var userId = Guid.Parse(_currentUserService.UserId);
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
             var source = await _context.RentabilityScenarios
                 .FirstOrDefaultAsync(s => s.Id == request.SourceId && s.UserId == userId, cancellationToken);

@@ -34,7 +34,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
     {
         try
         {
-            var userId = Guid.Parse(_currentUserService.UserId);
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
             RentabilityScenario scenario;
 
             if (request.Id.HasValue)

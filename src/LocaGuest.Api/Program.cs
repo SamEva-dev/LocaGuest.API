@@ -59,8 +59,15 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<LocaGuestDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
+// Audit Database (dedicated)
+builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Audit")));
+
 // Register ILocaGuestDbContext
 builder.Services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
+
+// Audit Interceptor
+builder.Services.AddScoped<LocaGuest.Infrastructure.Persistence.Interceptors.AuditSaveChangesInterceptor>();
 
 // Repositories and UnitOfWork (DDD)
 builder.Services.AddScoped<LocaGuest.Domain.Repositories.IUnitOfWork, LocaGuest.Infrastructure.Repositories.UnitOfWork>();
@@ -71,6 +78,9 @@ builder.Services.AddScoped<LocaGuest.Domain.Repositories.ISubscriptionRepository
 
 // Stripe Service
 builder.Services.AddScoped<LocaGuest.Application.Services.IStripeService, LocaGuest.Infrastructure.Services.StripeService>();
+
+// Audit Service
+builder.Services.AddScoped<LocaGuest.Application.Services.IAuditService, LocaGuest.Infrastructure.Services.AuditService>();
 
 // Application Layer (includes MediatR)
 builder.Services.AddApplication();

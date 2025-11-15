@@ -28,7 +28,7 @@ public class GetScenarioVersionsQueryHandler : IRequestHandler<GetScenarioVersio
     {
         try
         {
-            var userId = Guid.Parse(_currentUserService.UserId);
+            var userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
             // Verify user owns the scenario
             var scenario = await _context.RentabilityScenarios

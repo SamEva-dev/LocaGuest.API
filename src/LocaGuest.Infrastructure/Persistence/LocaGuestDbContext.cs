@@ -297,7 +297,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         foreach (var entityType in tenantEntityTypes)
         {
             var method = typeof(LocaGuestDbContext)
-                .GetMethod(nameof(SetGlobalQueryFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                .GetMethod(nameof(ApplyTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
             method?.MakeGenericMethod(entityType).Invoke(this, new object[] { modelBuilder });
         }
@@ -306,12 +306,13 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     /// <summary>
     /// Applique un filtre global sur une entité pour filtrer par TenantId
     /// </summary>
-    private void SetGlobalQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
+    private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
     {
+        var tenantId = _tenantContext?.TenantId?.ToString();
         modelBuilder.Entity<TEntity>().HasQueryFilter(e => 
             _tenantContext == null || 
             !_tenantContext.IsAuthenticated || 
-            e.TenantId == _tenantContext.TenantId);
+            e.TenantId == tenantId);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -320,7 +321,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         var entries = ChangeTracker.Entries<AuditableEntity>();
         foreach (var entry in entries)
         {
-            var userId = _currentUserService?.UserId ?? "system";
+            var userId = _currentUserService?.UserId?.ToString() ?? "system";
             var now = DateTime.UtcNow;
 
             if (entry.State == EntityState.Added)
@@ -328,9 +329,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                 // Assignation automatique du TenantId
                 if (string.IsNullOrEmpty(entry.Entity.TenantId))
                 {
-                    if (_tenantContext?.IsAuthenticated == true)
+                    if (_tenantContext?.IsAuthenticated == true && _tenantContext.TenantId.HasValue)
                     {
-                        entry.Entity.TenantId = _tenantContext.TenantId;
+                        entry.Entity.TenantId = _tenantContext.TenantId.Value.ToString();
                     }
                     else
                     {
@@ -339,7 +340,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                 }
                 
                 // Vérification que le TenantId correspond au tenant courant
-                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId)
+                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId.ToString())
                 {
                     throw new UnauthorizedAccessException($"Cannot create entity for another tenant. Expected: {_tenantContext.TenantId}, Got: {entry.Entity.TenantId}");
                 }
@@ -360,7 +361,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                 }
                 
                 // Vérification que l'entité appartient au tenant courant
-                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId)
+                if (_tenantContext?.IsAuthenticated == true && entry.Entity.TenantId != _tenantContext.TenantId.ToString())
                 {
                     throw new UnauthorizedAccessException($"Cannot modify entity from another tenant");
                 }
