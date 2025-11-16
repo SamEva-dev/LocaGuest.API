@@ -269,13 +269,37 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Seed database in Development
-if (app.Environment.IsDevelopment())
+// Apply migrations and seed database in Development
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
-    await DbSeeder.SeedAsync(context);
-    Log.Information("Database seeded successfully");
+    
+    // Apply migrations automatically
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
+        var auditContext = scope.ServiceProvider.GetRequiredService<LocaGuest.Infrastructure.Persistence.AuditDbContext>();
+        
+        Log.Information("Applying LocaGuest database migrations...");
+        await context.Database.MigrateAsync();
+        Log.Information("LocaGuest database migrations applied successfully");
+        
+        Log.Information("Applying Audit database migrations...");
+        await auditContext.Database.MigrateAsync();
+        Log.Information("Audit database migrations applied successfully");
+        
+        // Seed data
+        if (app.Environment.IsDevelopment())
+        {
+            await DbSeeder.SeedAsync(context);
+            Log.Information("Database seeded successfully");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "An error occurred while applying migrations");
+        throw;
+    }
 }
 
 // Middleware

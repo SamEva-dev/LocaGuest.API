@@ -4,6 +4,8 @@ using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Aggregates.OrganizationAggregate;
+using LocaGuest.Domain.Entities;
 using LocaGuest.Domain.Analytics;
 using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
@@ -32,6 +34,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         _tenantContext = tenantContext;
     }
 
+    // Multi-tenant Organizations
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<TenantSequence> TenantSequences => Set<TenantSequence>();
+
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
@@ -56,6 +62,37 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 
         // Configuration Global Query Filters pour isolation multi-tenant
         ConfigureMultiTenantFilters(modelBuilder);
+
+        // Organization (Multi-tenant root entity)
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.ToTable("organizations");
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.Number).IsRequired().ValueGeneratedNever(); // Manually managed
+            entity.HasIndex(o => o.Number).IsUnique();
+            entity.Property(o => o.Code).IsRequired().HasMaxLength(20);
+            entity.HasIndex(o => o.Code).IsUnique();
+            entity.Property(o => o.Name).IsRequired().HasMaxLength(200);
+            entity.Property(o => o.Email).IsRequired().HasMaxLength(200);
+            entity.HasIndex(o => o.Email);
+            entity.Property(o => o.Phone).HasMaxLength(50);
+            entity.Property(o => o.Status).IsRequired();
+            entity.Property(o => o.SubscriptionPlan).HasMaxLength(50);
+            entity.Property(o => o.Notes).HasMaxLength(1000);
+            entity.Ignore(o => o.DomainEvents);
+        });
+
+        // TenantSequence (Numbering service per organization)
+        modelBuilder.Entity<TenantSequence>(entity =>
+        {
+            entity.ToTable("tenant_sequences");
+            entity.HasKey(ts => new { ts.TenantId, ts.EntityPrefix });
+            entity.Property(ts => ts.TenantId).IsRequired();
+            entity.Property(ts => ts.EntityPrefix).IsRequired().HasMaxLength(10);
+            entity.Property(ts => ts.LastNumber).IsRequired();
+            entity.Property(ts => ts.Description).HasMaxLength(200);
+            entity.HasIndex(ts => ts.TenantId);
+        });
 
         // Property
         modelBuilder.Entity<Property>(entity =>

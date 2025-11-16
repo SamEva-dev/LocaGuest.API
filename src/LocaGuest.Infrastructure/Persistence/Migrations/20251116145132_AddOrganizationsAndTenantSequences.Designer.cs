@@ -3,17 +3,20 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Migrations
+namespace LocaGuest.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251116145132_AddOrganizationsAndTenantSequences")]
+    partial class AddOrganizationsAndTenantSequences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

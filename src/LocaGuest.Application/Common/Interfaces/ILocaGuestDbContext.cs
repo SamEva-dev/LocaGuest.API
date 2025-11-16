@@ -4,7 +4,10 @@ using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
+using LocaGuest.Domain.Aggregates.OrganizationAggregate;
+using LocaGuest.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace LocaGuest.Application.Common.Interfaces;
 
@@ -23,6 +26,12 @@ public interface ILocaGuestDbContext
     DbSet<Subscription> Subscriptions { get; }
     DbSet<UsageEvent> UsageEvents { get; }
     DbSet<UsageAggregate> UsageAggregates { get; }
+    
+    // Multi-Tenant System
+    DbSet<Organization> Organizations { get; }
+    DbSet<TenantSequence> TenantSequences { get; }
+    
+    DatabaseFacade Database { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
