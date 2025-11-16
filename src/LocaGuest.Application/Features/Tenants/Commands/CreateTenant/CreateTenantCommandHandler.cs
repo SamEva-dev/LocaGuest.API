@@ -1,7 +1,9 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Tenants;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,15 +14,18 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        INumberSequenceService numberSequenceService,
         ILogger<CreateTenantCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
 
@@ -34,8 +39,19 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             // Create full name
             var fullName = $"{request.FirstName} {request.LastName}".Trim();
 
+            // ✅ QUICK WIN: Generate automatic code
+            var code = await _numberSequenceService.GenerateNextCodeAsync(
+                _tenantContext.TenantId!.Value,
+                EntityPrefixes.Tenant,
+                cancellationToken);
+
+            _logger.LogInformation("Generated code for new tenant: {Code}", code);
+
             // Create tenant entity using factory method
             var tenant = Tenant.Create(fullName, request.Email, request.Phone);
+
+            // ✅ Set the generated code
+            tenant.SetCode(code);
 
             // Add to context
             await _unitOfWork.Tenants.AddAsync(tenant, cancellationToken);
@@ -47,6 +63,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             var dto = new TenantDetailDto
             {
                 Id = tenant.Id,
+                Code = tenant.Code,  // ✅ Include generated code
                 FullName = tenant.FullName,
                 Email = tenant.Email,
                 Phone = tenant.Phone,

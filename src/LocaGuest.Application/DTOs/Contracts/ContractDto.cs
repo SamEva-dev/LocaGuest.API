@@ -3,6 +3,7 @@ namespace LocaGuest.Application.DTOs.Contracts;
 public class ContractDto
 {
     public Guid Id { get; set; }
+    public string Code { get; set; } = string.Empty;  // ✅ T0001-CTR0001
     public Guid PropertyId { get; set; }
     public Guid TenantId { get; set; }
     public string? PropertyName { get; set; }

@@ -6,6 +6,12 @@ namespace LocaGuest.Domain.Aggregates.ContractAggregate;
 
 public class Contract : AuditableEntity
 {
+    /// <summary>
+    /// Auto-generated unique code (e.g., T0001-CTR0001)
+    /// Format: {TenantCode}-CTR{Number}
+    /// </summary>
+    public string Code { get; private set; } = string.Empty;
+    
     public Guid PropertyId { get; private set; }
     
     /// <summary>
@@ -56,6 +62,21 @@ public class Contract : AuditableEntity
 
         contract.AddDomainEvent(new ContractCreated(contract.Id, propertyId, renterTenantId, startDate, endDate, rent));
         return contract;
+    }
+
+    /// <summary>
+    /// Set the auto-generated code (called once after creation)
+    /// Code is immutable after being set
+    /// </summary>
+    public void SetCode(string code)
+    {
+        if (!string.IsNullOrWhiteSpace(Code))
+            throw new InvalidOperationException("Code cannot be changed once set");
+        
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code cannot be empty", nameof(code));
+        
+        Code = code;
     }
 
     public void Renew(DateTime newEndDate)
@@ -121,6 +142,8 @@ public enum ContractStatus
 
 public class Payment : Entity
 {
+    public string Code { get; private set; } = string.Empty;  // T0001-PAY0001
+    
     public Guid ContractId { get; private set; }
     public decimal Amount { get; private set; }
     public DateTime PaymentDate { get; private set; }
@@ -140,6 +163,13 @@ public class Payment : Entity
             Method = method,
             Status = PaymentStatus.Completed
         };
+    }
+
+    public void SetCode(string code)
+    {
+        if (!string.IsNullOrWhiteSpace(Code))
+            throw new InvalidOperationException("Code cannot be changed once set");
+        Code = code;
     }
 
     internal void MarkAsLate()

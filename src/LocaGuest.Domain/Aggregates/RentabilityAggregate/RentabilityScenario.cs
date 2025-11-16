@@ -4,6 +4,12 @@ namespace LocaGuest.Domain.Aggregates.RentabilityAggregate;
 
 public class RentabilityScenario : AuditableEntity
 {
+    /// <summary>
+    /// Auto-generated unique code (e.g., T0001-SCN0001)
+    /// Format: {TenantCode}-SCN{Number}
+    /// </summary>
+    public string Code { get; private set; } = string.Empty;
+    
     public Guid UserId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public bool IsBase { get; private set; }
@@ -112,6 +118,21 @@ public class RentabilityScenario : AuditableEntity
             CreatedAt = now,
             LastModifiedAt = now
         };
+    }
+    
+    /// <summary>
+    /// Set the auto-generated code (called once after creation)
+    /// Code is immutable after being set
+    /// </summary>
+    public void SetCode(string code)
+    {
+        if (!string.IsNullOrWhiteSpace(Code))
+            throw new InvalidOperationException("Code cannot be changed once set");
+        
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code cannot be empty", nameof(code));
+        
+        Code = code;
     }
     
     public void UpdateContext(

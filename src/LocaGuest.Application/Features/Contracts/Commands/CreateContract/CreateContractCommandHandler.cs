@@ -1,7 +1,9 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,15 +14,18 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreateContractCommandHandler> _logger;
 
     public CreateContractCommandHandler(
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        INumberSequenceService numberSequenceService,
         ILogger<CreateContractCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
 
@@ -48,6 +53,14 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             if (!Enum.TryParse<ContractType>(request.Type, out var contractType))
                 contractType = ContractType.Unfurnished;
 
+            // ✅ QUICK WIN: Generate automatic code
+            var code = await _numberSequenceService.GenerateNextCodeAsync(
+                _tenantContext.TenantId!.Value,
+                EntityPrefixes.Contract,
+                cancellationToken);
+
+            _logger.LogInformation("Generated code for new contract: {Code}", code);
+
             // Créer le contrat
             var contract = Contract.Create(
                 request.PropertyId,
@@ -59,12 +72,16 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 request.Deposit
             );
 
+            // ✅ Set the generated code
+            contract.SetCode(code);
+
             await _unitOfWork.Contracts.AddAsync(contract, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             var contractDto = new ContractDto
             {
                 Id = contract.Id,
+                Code = contract.Code,  // ✅ Include generated code
                 PropertyId = contract.PropertyId,
                 TenantId = contract.RenterTenantId,
                 PropertyName = property.Name,

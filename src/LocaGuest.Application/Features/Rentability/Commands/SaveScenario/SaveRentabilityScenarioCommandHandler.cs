@@ -3,6 +3,7 @@ using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Rentability;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
+using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,17 +17,23 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ITenantContext _tenantContext;
+    private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<SaveRentabilityScenarioCommandHandler> _logger;
 
     public SaveRentabilityScenarioCommandHandler(
         IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
+        ITenantContext tenantContext,
+        INumberSequenceService numberSequenceService,
         ILogger<SaveRentabilityScenarioCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
+        _tenantContext = tenantContext;
+        _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
 
@@ -52,8 +59,20 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
             }
             else
             {
+                // ✅ QUICK WIN: Generate automatic code
+                var code = await _numberSequenceService.GenerateNextCodeAsync(
+                    _tenantContext.TenantId!.Value,
+                    EntityPrefixes.Scenario,
+                    cancellationToken);
+
+                _logger.LogInformation("Generated code for new scenario: {Code}", code);
+
                 // Create new scenario
                 scenario = RentabilityScenario.Create(userId, request.Name, request.IsBase);
+                
+                // ✅ Set the generated code
+                scenario.SetCode(code);
+                
                 _context.RentabilityScenarios.Add(scenario);
             }
 

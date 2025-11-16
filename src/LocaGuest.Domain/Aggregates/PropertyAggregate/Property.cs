@@ -6,6 +6,12 @@ namespace LocaGuest.Domain.Aggregates.PropertyAggregate;
 
 public class Property : AuditableEntity
 {
+    /// <summary>
+    /// Auto-generated unique code (e.g., T0001-APP0001)
+    /// Format: {TenantCode}-{Prefix}{Number}
+    /// </summary>
+    public string Code { get; private set; } = string.Empty;
+    
     public string Name { get; private set; } = string.Empty;
     public string Address { get; private set; } = string.Empty;
     public string City { get; private set; } = string.Empty;
@@ -56,6 +62,21 @@ public class Property : AuditableEntity
 
         property.AddDomainEvent(new PropertyCreated(property.Id, property.Name));
         return property;
+    }
+
+    /// <summary>
+    /// Set the auto-generated code (called once after creation)
+    /// Code is immutable after being set
+    /// </summary>
+    public void SetCode(string code)
+    {
+        if (!string.IsNullOrWhiteSpace(Code))
+            throw new InvalidOperationException("Code cannot be changed once set");
+        
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code cannot be empty", nameof(code));
+        
+        Code = code;
     }
 
     public void SetStatus(PropertyStatus newStatus)

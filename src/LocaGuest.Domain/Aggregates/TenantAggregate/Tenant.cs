@@ -5,6 +5,12 @@ namespace LocaGuest.Domain.Aggregates.TenantAggregate;
 
 public class Tenant : AuditableEntity
 {
+    /// <summary>
+    /// Auto-generated unique code (e.g., T0001-L0001)
+    /// Format: {TenantCode}-L{Number}
+    /// </summary>
+    public string Code { get; private set; } = string.Empty;
+    
     public string FullName { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string? Phone { get; private set; }
@@ -27,6 +33,21 @@ public class Tenant : AuditableEntity
 
         tenant.AddDomainEvent(new TenantCreated(tenant.Id, tenant.FullName, tenant.Email));
         return tenant;
+    }
+
+    /// <summary>
+    /// Set the auto-generated code (called once after creation)
+    /// Code is immutable after being set
+    /// </summary>
+    public void SetCode(string code)
+    {
+        if (!string.IsNullOrWhiteSpace(Code))
+            throw new InvalidOperationException("Code cannot be changed once set");
+        
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code cannot be empty", nameof(code));
+        
+        Code = code;
     }
 
     public void SetMoveInDate(DateTime moveInDate)

@@ -1,7 +1,9 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,15 +14,18 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreatePropertyCommandHandler> _logger;
 
     public CreatePropertyCommandHandler(
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        INumberSequenceService numberSequenceService,
         ILogger<CreatePropertyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
 
@@ -41,6 +46,14 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 return Result.Failure<PropertyDetailDto>("Invalid property type");
             }
 
+            // ✅ QUICK WIN: Generate automatic code
+            var code = await _numberSequenceService.GenerateNextCodeAsync(
+                _tenantContext.TenantId!.Value,
+                EntityPrefixes.Property,
+                cancellationToken);
+
+            _logger.LogInformation("Generated code for new property: {Code}", code);
+
             // Create property entity using factory method
             var property = Property.Create(
                 request.Name,
@@ -50,6 +63,9 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 request.Rent,
                 request.Bedrooms ?? 0,
                 request.Bathrooms ?? 0);
+
+            // ✅ Set the generated code
+            property.SetCode(code);
 
             // Add through repository
             await _unitOfWork.Properties.AddAsync(property, cancellationToken);
@@ -62,6 +78,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             var dto = new PropertyDetailDto
             {
                 Id = property.Id,
+                Code = property.Code,  // ✅ Include generated code
                 Name = property.Name,
                 Address = property.Address,
                 City = property.City,
