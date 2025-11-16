@@ -55,13 +55,26 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// PostgreSQL + EF Core
-builder.Services.AddDbContext<LocaGuestDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+// PostgreSQL + EF Core (conditional for testing)
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    // Use InMemory database for integration tests
+    builder.Services.AddDbContext<LocaGuestDbContext>(options =>
+        options.UseInMemoryDatabase("LocaGuestTestDb"));
+    
+    builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
+        options.UseInMemoryDatabase("LocaGuestAuditTestDb"));
+}
+else
+{
+    // Use PostgreSQL for development and production
+    builder.Services.AddDbContext<LocaGuestDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-// Audit Database (dedicated)
-builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Audit")));
+    // Audit Database (dedicated)
+    builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("Audit")));
+}
 
 // Register ILocaGuestDbContext
 builder.Services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
@@ -293,3 +306,6 @@ app.MapHub<NotificationsHub>("/hubs/notifications");
 Log.Information("LocaGuest API starting...");
 
 app.Run();
+
+// Make Program class accessible for integration tests
+public partial class Program { }

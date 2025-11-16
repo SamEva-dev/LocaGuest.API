@@ -1,0 +1,92 @@
+using LocaGuest.Application.DTOs.Contracts;
+
+namespace LocaGuest.Api.Tests.Builders;
+
+public class ContractDtoBuilder
+{
+    private Guid _id = Guid.NewGuid();
+    private Guid _propertyId = Guid.NewGuid();
+    private Guid _tenantId = Guid.NewGuid();
+    private string? _propertyName = "Test Property";
+    private string? _tenantName = "John Doe";
+    private string _type = "Unfurnished";
+    private DateTime _startDate = DateTime.UtcNow;
+    private DateTime _endDate = DateTime.UtcNow.AddYears(1);
+    private decimal _rent = 1200;
+    private decimal? _deposit = 2400;
+    private string _status = "Active";
+    private string? _notes = "Test contract notes";
+    private int _paymentsCount = 12;
+    private DateTime _createdAt = DateTime.UtcNow;
+
+    public ContractDtoBuilder WithId(Guid id)
+    {
+        _id = id;
+        return this;
+    }
+
+    public ContractDtoBuilder WithPropertyId(Guid propertyId)
+    {
+        _propertyId = propertyId;
+        return this;
+    }
+
+    public ContractDtoBuilder WithTenantId(Guid tenantId)
+    {
+        _tenantId = tenantId;
+        return this;
+    }
+
+    public ContractDtoBuilder WithPropertyName(string? propertyName)
+    {
+        _propertyName = propertyName;
+        return this;
+    }
+
+    public ContractDtoBuilder WithTenantName(string? tenantName)
+    {
+        _tenantName = tenantName;
+        return this;
+    }
+
+    public ContractDtoBuilder WithType(string type)
+    {
+        _type = type;
+        return this;
+    }
+
+    public ContractDtoBuilder WithStatus(string status)
+    {
+        _status = status;
+        return this;
+    }
+
+    public ContractDtoBuilder WithRent(decimal rent)
+    {
+        _rent = rent;
+        return this;
+    }
+
+    public ContractDto Build()
+    {
+        return new ContractDto
+        {
+            Id = _id,
+            PropertyId = _propertyId,
+            TenantId = _tenantId,
+            PropertyName = _propertyName,
+            TenantName = _tenantName,
+            Type = _type,
+            StartDate = _startDate,
+            EndDate = _endDate,
+            Rent = _rent,
+            Deposit = _deposit,
+            Status = _status,
+            Notes = _notes,
+            PaymentsCount = _paymentsCount,
+            CreatedAt = _createdAt
+        };
+    }
+
+    public static ContractDtoBuilder AContract() => new();
+}
