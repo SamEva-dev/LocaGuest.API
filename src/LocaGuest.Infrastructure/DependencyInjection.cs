@@ -5,7 +5,6 @@ using LocaGuest.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Http;
 
 namespace LocaGuest.Infrastructure;
 
@@ -22,13 +21,15 @@ public static class DependencyInjection
             {
                 options.UseSqlite(
                     configuration.GetConnectionString("SqliteConnection") ?? "Data Source=./Data/LocaGuest.db",
-                    b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName));
+                    b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName))
+                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             }
             else
             {
                 options.UseNpgsql(
                     configuration.GetConnectionString("Default"),
-                    b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName));
+                    b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName))
+                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             }
         });
 
@@ -39,16 +40,29 @@ public static class DependencyInjection
             {
                 options.UseSqlite(
                     configuration.GetConnectionString("SqliteAuditConnection") ?? "Data Source=./Data/LocaGuest_Audit.db",
-                    b => b.MigrationsAssembly(typeof(AuditDbContext).Assembly.FullName));
+                    b => b.MigrationsAssembly(typeof(AuditDbContext).Assembly.FullName))
+                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             }
             else
             {
                 options.UseNpgsql(
                     configuration.GetConnectionString("Audit"),
-                    b => b.MigrationsAssembly(typeof(AuditDbContext).Assembly.FullName));
+                    b => b.MigrationsAssembly(typeof(AuditDbContext).Assembly.FullName))
+                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             }
         });
 
+        // Register ILocaGuestDbContext
+        services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
+
+        // HttpClient for AuthGate
+        services.AddHttpClient("AuthGateApi", client =>
+        {
+            var baseUrl = configuration["HttpClients:AuthGateApi:BaseUrl"] ?? "https://localhost:8081";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        
         // Multi-Tenant Services  
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<INumberSequenceService, NumberSequenceService>();

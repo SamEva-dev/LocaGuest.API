@@ -5,36 +5,31 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
+namespace LocaGuest.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20251115143454_InitialAuditDatabase")]
-    partial class InitialAuditDatabase
+    [Migration("20251116190948_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
-
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
 
             modelBuilder.Entity("LocaGuest.Domain.Audit.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("AdditionalData")
                         .HasColumnType("jsonb");
@@ -44,28 +39,28 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
 
                     b.Property<string>("CorrelationId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long?>("DurationMs")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("EntityId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("HttpMethod")
                         .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
                         .HasMaxLength(45)
-                        .HasColumnType("character varying(45)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("NewValues")
                         .HasColumnType("jsonb");
@@ -75,31 +70,31 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
 
                     b.Property<string>("RequestPath")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("SessionId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("StatusCode")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserAgent")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -124,7 +119,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CommandData")
                         .IsRequired()
@@ -133,30 +128,30 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
                     b.Property<string>("CommandName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("DurationMs")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("ExecutedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
                         .HasMaxLength(45)
-                        .HasColumnType("character varying(45)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("RequestPath")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ResultData")
                         .HasColumnType("jsonb");
@@ -165,17 +160,17 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
                         .HasColumnType("text");
 
                     b.Property<bool>("Success")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UserEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

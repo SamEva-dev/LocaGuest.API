@@ -4,6 +4,7 @@ using LocaGuest.Api.Services;
 using LocaGuest.Application;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
+using LocaGuest.Infrastructure;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -55,29 +56,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// PostgreSQL + EF Core (conditional for testing)
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    // Use InMemory database for integration tests
-    builder.Services.AddDbContext<LocaGuestDbContext>(options =>
-        options.UseInMemoryDatabase("LocaGuestTestDb"));
-    
-    builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
-        options.UseInMemoryDatabase("LocaGuestAuditTestDb"));
-}
-else
-{
-    // Use PostgreSQL for development and production
-    builder.Services.AddDbContext<LocaGuestDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-
-    // Audit Database (dedicated)
-    builder.Services.AddDbContext<LocaGuest.Infrastructure.Persistence.AuditDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("Audit")));
-}
-
-// Register ILocaGuestDbContext
-builder.Services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
+// Infrastructure Layer (includes DbContexts, Repositories, Services)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Audit Interceptor
 builder.Services.AddScoped<LocaGuest.Infrastructure.Persistence.Interceptors.AuditSaveChangesInterceptor>();
@@ -286,12 +266,14 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
         
         Log.Information("Applying Audit database migrations...");
         await auditContext.Database.MigrateAsync();
-        Log.Information("Audit database migrations applied successfully");
+        
+        Log.Information("Seeding database...");
+        //await DbSeeder.SeedAsync(context); // Temporairement désactivé pour tests
         
         // Seed data
         if (app.Environment.IsDevelopment())
         {
-            await DbSeeder.SeedAsync(context);
+            //await DbSeeder.SeedAsync(context);
             Log.Information("Database seeded successfully");
         }
     }

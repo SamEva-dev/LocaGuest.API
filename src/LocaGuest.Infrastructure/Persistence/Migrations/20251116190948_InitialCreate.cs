@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
+namespace LocaGuest.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialAuditDatabase : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,25 +15,25 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
                 name: "AuditLogs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    EntityType = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    EntityId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: false),
-                    UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    UserEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    TenantId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Action = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    EntityType = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    EntityId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    IpAddress = table.Column<string>(type: "TEXT", maxLength: 45, nullable: false),
+                    UserAgent = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
                     OldValues = table.Column<string>(type: "jsonb", nullable: true),
                     NewValues = table.Column<string>(type: "jsonb", nullable: true),
                     Changes = table.Column<string>(type: "jsonb", nullable: true),
-                    RequestPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    HttpMethod = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
-                    StatusCode = table.Column<int>(type: "integer", nullable: true),
-                    DurationMs = table.Column<long>(type: "bigint", nullable: true),
-                    CorrelationId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    SessionId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RequestPath = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    HttpMethod = table.Column<string>(type: "TEXT", maxLength: 10, nullable: true),
+                    StatusCode = table.Column<int>(type: "INTEGER", nullable: true),
+                    DurationMs = table.Column<long>(type: "INTEGER", nullable: true),
+                    CorrelationId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    SessionId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     AdditionalData = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
@@ -45,21 +45,21 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
                 name: "CommandAuditLogs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CommandName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CommandName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     CommandData = table.Column<string>(type: "jsonb", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UserEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
-                    ExecutedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DurationMs = table.Column<long>(type: "bigint", nullable: false),
-                    Success = table.Column<bool>(type: "boolean", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    UserEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    TenantId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ExecutedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DurationMs = table.Column<long>(type: "INTEGER", nullable: false),
+                    Success = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     StackTrace = table.Column<string>(type: "text", nullable: true),
                     ResultData = table.Column<string>(type: "jsonb", nullable: true),
-                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: false),
-                    CorrelationId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    RequestPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    IpAddress = table.Column<string>(type: "TEXT", maxLength: 45, nullable: false),
+                    CorrelationId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    RequestPath = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {

@@ -9,7 +9,7 @@ public interface IUnitOfWork : IDisposable
     IContractRepository Contracts { get; }
     ITenantRepository Tenants { get; }
     ISubscriptionRepository Subscriptions { get; }
-
+    IOrganizationRepository Organizations { get; }
     Task<int> CommitAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync();
     bool HasActiveTransaction { get; }

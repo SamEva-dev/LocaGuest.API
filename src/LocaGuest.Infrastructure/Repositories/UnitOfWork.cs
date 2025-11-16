@@ -13,6 +13,7 @@ public class UnitOfWork : IUnitOfWork
     private IContractRepository? _contracts;
     private ITenantRepository? _tenants;
     private ISubscriptionRepository? _subscriptions;
+    private IOrganizationRepository? _organizations;
 
     public UnitOfWork(LocaGuestDbContext context)
     {
@@ -30,6 +31,9 @@ public class UnitOfWork : IUnitOfWork
 
     public ISubscriptionRepository Subscriptions => 
         _subscriptions ??= new SubscriptionRepository(_context);
+
+    public IOrganizationRepository Organizations => 
+        _organizations ??= new OrganizationRepository(_context);
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {
