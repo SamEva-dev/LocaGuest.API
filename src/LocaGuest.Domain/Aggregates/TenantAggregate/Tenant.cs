@@ -17,6 +17,16 @@ public class Tenant : AuditableEntity
     public DateTime? MoveInDate { get; private set; }
     public TenantStatus Status { get; private set; }
     public string? Notes { get; private set; }
+    
+    /// <summary>
+    /// Associated Property ID - Tenant can be associated to a property before contract creation
+    /// </summary>
+    public Guid? PropertyId { get; private set; }
+    
+    /// <summary>
+    /// Associated Property Code (e.g., T0001-APP0001) - for quick reference
+    /// </summary>
+    public string? PropertyCode { get; private set; }
 
     private Tenant() { } // EF
 
@@ -72,6 +82,24 @@ public class Tenant : AuditableEntity
     {
         if (email != null) Email = email;
         if (phone != null) Phone = phone;
+    }
+    
+    /// <summary>
+    /// Associate this tenant to a property
+    /// </summary>
+    public void AssociateToProperty(Guid propertyId, string propertyCode)
+    {
+        PropertyId = propertyId;
+        PropertyCode = propertyCode;
+    }
+    
+    /// <summary>
+    /// Remove association from property
+    /// </summary>
+    public void DissociateFromProperty()
+    {
+        PropertyId = null;
+        PropertyCode = null;
     }
 }
 

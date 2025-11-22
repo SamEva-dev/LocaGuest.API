@@ -75,6 +75,18 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             // ✅ Set the generated code
             contract.SetCode(code);
 
+            // ⭐ Associate tenant to property (bidirectional)
+            tenant.AssociateToProperty(property.Id, property.Code);
+            property.AddTenant(tenant.Code);
+
+            // ⭐ Reactivate tenant (tenant becomes active when associated to a property)
+            tenant.Reactivate();
+
+            _logger.LogInformation(
+                "Associated tenant {TenantCode} to property {PropertyCode} and reactivated tenant",
+                tenant.Code,
+                property.Code);
+
             await _unitOfWork.Contracts.AddAsync(contract, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 

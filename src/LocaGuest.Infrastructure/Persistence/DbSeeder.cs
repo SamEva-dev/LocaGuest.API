@@ -101,6 +101,45 @@ public static class DbSeeder
         context.Contracts.AddRange(contracts);
         await context.SaveChangesAsync();
 
+        // ⭐ Créer les associations bidirectionnelles Tenant ↔ Property
+        // Association basée sur les contrats créés
+        tenants[0].AssociateToProperty(properties[0].Id, properties[0].Code);
+        properties[0].AddTenant(tenants[0].Code);
+
+        tenants[1].AssociateToProperty(properties[1].Id, properties[1].Code);
+        properties[1].AddTenant(tenants[1].Code);
+
+        tenants[2].AssociateToProperty(properties[2].Id, properties[2].Code);
+        properties[2].AddTenant(tenants[2].Code);
+
+        tenants[3].AssociateToProperty(properties[4].Id, properties[4].Code);
+        properties[4].AddTenant(tenants[3].Code);
+
+        tenants[4].AssociateToProperty(properties[5].Id, properties[5].Code);
+        properties[5].AddTenant(tenants[4].Code);
+
+        tenants[5].AssociateToProperty(properties[6].Id, properties[6].Code);
+        properties[6].AddTenant(tenants[5].Code);
+
+        tenants[6].AssociateToProperty(properties[7].Id, properties[7].Code);
+        properties[7].AddTenant(tenants[6].Code);
+
+        tenants[7].AssociateToProperty(properties[8].Id, properties[8].Code);
+        properties[8].AddTenant(tenants[7].Code);
+
+        tenants[8].AssociateToProperty(properties[10].Id, properties[10].Code);
+        properties[10].AddTenant(tenants[8].Code);
+
+        tenants[9].AssociateToProperty(properties[11].Id, properties[11].Code);
+        properties[11].AddTenant(tenants[9].Code);
+
+        // ⭐ Associer aussi le locataire 10 (Camille) au bien vacant (Maison Familiale)
+        // Pour tester la génération de contrat sans contrat actif
+        tenants[10].AssociateToProperty(properties[3].Id, properties[3].Code);
+        properties[3].AddTenant(tenants[10].Code);
+
+        await context.SaveChangesAsync();
+
         // Créer les paiements (12 derniers mois pour chaque contrat actif)
         var random = new Random(42);
         foreach (var contract in contracts)

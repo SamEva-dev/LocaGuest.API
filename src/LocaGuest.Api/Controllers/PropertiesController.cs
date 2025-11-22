@@ -1,9 +1,11 @@
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
+using LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Features.Properties.Queries.GetProperty;
 using LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts;
 using LocaGuest.Application.Features.Properties.Queries.GetPropertyPayments;
 using LocaGuest.Application.Features.Properties.Queries.GetFinancialSummary;
+using LocaGuest.Application.Features.Properties.Queries.GetAssociatedTenants;
 using LocaGuest.Application.Features.Tenants.Queries.GetAvailableTenants;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using MediatR;
@@ -88,6 +90,18 @@ public class PropertiesController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpGet("{id}/associated-tenants")]
+    public async Task<IActionResult> GetAssociatedTenants(string id)
+    {
+        var query = new GetAssociatedTenantsQuery { PropertyId = id };
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
     [HttpGet("{id}/financial-summary")]
     public async Task<IActionResult> GetFinancialSummary(string id)
     {
@@ -124,5 +138,22 @@ public class PropertiesController : ControllerBase
             return BadRequest(new { message = result.ErrorMessage });
 
         return Ok(result.Data);
+    }
+
+    [HttpDelete("{propertyId}/dissociate-tenant/{tenantId}")]
+    public async Task<IActionResult> DissociateTenant(string propertyId, string tenantId)
+    {
+        var command = new DissociateTenantCommand
+        {
+            PropertyId = propertyId,
+            TenantId = tenantId
+        };
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return NoContent();
     }
 }

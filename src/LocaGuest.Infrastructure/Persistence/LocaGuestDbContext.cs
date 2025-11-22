@@ -378,11 +378,14 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     /// </summary>
     private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
     {
-        var tenantId = _tenantContext?.TenantId?.ToString();
+        // IMPORTANT: Ne PAS capturer tenantId dans une variable locale
+        // car cela fige la valeur au moment de OnModelCreating (avant l'authentification).
+        // Le filtre doit évaluer _tenantContext à CHAQUE requête.
         modelBuilder.Entity<TEntity>().HasQueryFilter(e => 
             _tenantContext == null || 
             !_tenantContext.IsAuthenticated || 
-            e.TenantId == tenantId);
+            _tenantContext.TenantId == null ||
+            e.TenantId == _tenantContext.TenantId.Value.ToString());
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -32,6 +32,12 @@ public class Property : AuditableEntity
     public string? Notes { get; private set; }
     public List<string> ImageUrls { get; private set; } = new();
     public DateTime? UpdatedAt { get; set; }
+    
+    /// <summary>
+    /// List of associated tenant codes (e.g., ["T0001-L0001", "T0001-L0002"])
+    /// Used to track which tenants are associated to this property
+    /// </summary>
+    public List<string> AssociatedTenantCodes { get; private set; } = new();
 
     private Property() { } // EF
 
@@ -111,6 +117,25 @@ public class Property : AuditableEntity
     public void SetImages(List<string> urls)
     {
         ImageUrls = urls;
+    }
+    
+    /// <summary>
+    /// Add a tenant to this property
+    /// </summary>
+    public void AddTenant(string tenantCode)
+    {
+        if (!AssociatedTenantCodes.Contains(tenantCode))
+        {
+            AssociatedTenantCodes.Add(tenantCode);
+        }
+    }
+    
+    /// <summary>
+    /// Remove a tenant from this property
+    /// </summary>
+    public void RemoveTenant(string tenantCode)
+    {
+        AssociatedTenantCodes.Remove(tenantCode);
     }
 }
 

@@ -404,3 +404,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+/src/LocaGuest.Api/Data/LocaGuest.db
+/src/LocaGuest.Api/Data/LocaGuest.db-shm
+/src/LocaGuest.Api/Data/LocaGuest.db-wal
+/src/LocaGuest.Api/Data/LocaGuest_Audit.db

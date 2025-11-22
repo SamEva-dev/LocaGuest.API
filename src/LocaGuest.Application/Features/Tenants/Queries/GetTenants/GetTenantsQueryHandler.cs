@@ -57,13 +57,16 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<Pa
             var dtos = tenants.Select(t => new TenantDto
             {
                 Id = t.Id,
+                Code = t.Code,
                 FullName = t.FullName,
                 Email = t.Email,
                 Phone = t.Phone,
                 Status = t.Status.ToString(),
                 ActiveContracts = 0, // TODO: Calculate from contracts
                 MoveInDate = t.MoveInDate,
-                CreatedAt = t.CreatedAt
+                CreatedAt = t.CreatedAt,
+                PropertyId = t.PropertyId,
+                PropertyCode = t.PropertyCode
             }).ToList();
 
             var result = new PagedResult<TenantDto>

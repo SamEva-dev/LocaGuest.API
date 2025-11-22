@@ -1,7 +1,9 @@
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Interfaces;
 using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Infrastructure.Services;
+using LocaGuest.Infrastructure.Services.ContractGenerator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +68,9 @@ public static class DependencyInjection
         // Multi-Tenant Services  
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<INumberSequenceService, NumberSequenceService>();
+
+        // Document Services
+        services.AddScoped<IContractGeneratorService, ContractGeneratorService>();
 
         return services;
     }

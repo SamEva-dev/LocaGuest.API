@@ -38,6 +38,7 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
             var tenantDto = new TenantDto
             {
                 Id = tenant.Id,
+                Code = tenant.Code,
                 FullName = tenant.FullName,
                 Email = tenant.Email,
                 Phone = tenant.Phone,
@@ -45,7 +46,9 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
                 Status = tenant.Status.ToString(),
                 ActiveContracts = 0, // Pas dans le domaine
                 MoveInDate = tenant.MoveInDate,
-                CreatedAt = tenant.CreatedAt
+                CreatedAt = tenant.CreatedAt,
+                PropertyId = tenant.PropertyId,
+                PropertyCode = tenant.PropertyCode
             };
 
             return Result.Success(tenantDto);
