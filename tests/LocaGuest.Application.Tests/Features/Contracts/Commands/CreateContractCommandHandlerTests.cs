@@ -2,6 +2,7 @@ using AutoFixture;
 using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
+using LocaGuest.Application.Services;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
@@ -18,6 +19,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IPropertyRepository> _propertyRepositoryMock;
     private readonly Mock<ITenantRepository> _tenantRepositoryMock;
     private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateContractCommandHandler>> _loggerMock;
     private readonly CreateContractCommandHandler _handler;
 
@@ -34,10 +36,14 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
         _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _numberSequenceServiceMock = new Mock<INumberSequenceService>();
+        _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("CTR-001");
 
         _handler = new CreateContractCommandHandler(
             _unitOfWorkMock.Object,
             _tenantContextMock.Object,
+            _numberSequenceServiceMock.Object,
             _loggerMock.Object);
     }
 

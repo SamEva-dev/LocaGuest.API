@@ -49,6 +49,17 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             if (tenant == null)
                 return Result.Failure<ContractDto>("Tenant not found");
 
+            // ⭐ Vérifier que le locataire n'est pas déjà associé à un autre bien
+            if (tenant.PropertyId.HasValue && tenant.PropertyId.Value != request.PropertyId)
+            {
+                _logger.LogWarning(
+                    "Tenant {TenantCode} is already associated to property {PropertyId}",
+                    tenant.Code,
+                    tenant.PropertyId.Value);
+                return Result.Failure<ContractDto>(
+                    $"Le locataire {tenant.FullName} est déjà associé à un autre bien. Veuillez le dissocier d'abord.");
+            }
+
             // Parser le type de contrat
             if (!Enum.TryParse<ContractType>(request.Type, out var contractType))
                 contractType = ContractType.Unfurnished;

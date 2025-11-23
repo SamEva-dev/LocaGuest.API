@@ -38,7 +38,7 @@ public class Tenant : AuditableEntity
             FullName = fullName,
             Email = email,
             Phone = phone,
-            Status = TenantStatus.Active
+            Status = TenantStatus.Inactive
         };
 
         tenant.AddDomainEvent(new TenantCreated(tenant.Id, tenant.FullName, tenant.Email));

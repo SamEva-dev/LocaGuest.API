@@ -1,7 +1,11 @@
 using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
+using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Interfaces;
+using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -13,13 +17,30 @@ public class DocumentsControllerTests : BaseTestFixture
 {
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<DocumentsController>> _loggerMock;
+    private readonly Mock<IContractGeneratorService> _contractGeneratorMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<IWebHostEnvironment> _webHostEnvironmentMock;
     private readonly DocumentsController _controller;
 
     public DocumentsControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<DocumentsController>>();
-        _controller = new DocumentsController(_mediatorMock.Object, _loggerMock.Object);
+        _contractGeneratorMock = new Mock<IContractGeneratorService>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _tenantContextMock = new Mock<ITenantContext>();
+        _webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
+        
+        _webHostEnvironmentMock.Setup(x => x.ContentRootPath).Returns("C:\\Test");
+        
+        _controller = new DocumentsController(
+            _mediatorMock.Object,
+            _loggerMock.Object,
+            _contractGeneratorMock.Object,
+            _unitOfWorkMock.Object,
+            _tenantContextMock.Object,
+            _webHostEnvironmentMock.Object);
     }
 
     [Fact]

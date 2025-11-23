@@ -1,6 +1,10 @@
 using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
+using LocaGuest.Application.Common;
+using LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
+using LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,69 +15,81 @@ namespace LocaGuest.Api.Tests.Controllers;
 public class DashboardControllerTests : BaseTestFixture
 {
     private readonly Mock<ILogger<DashboardController>> _loggerMock;
+    private readonly Mock<IMediator> _mediatorMock;
     private readonly DashboardController _controller;
 
     public DashboardControllerTests()
     {
         _loggerMock = new Mock<ILogger<DashboardController>>();
-        _controller = new DashboardController(_loggerMock.Object);
+        _mediatorMock = new Mock<IMediator>();
+        _controller = new DashboardController(_loggerMock.Object, _mediatorMock.Object);
     }
 
     #region GetSummary Tests
 
     [Fact]
-    public void GetSummary_ReturnsOkWithSummary()
+    public async Task GetSummary_ReturnsOkWithSummary()
     {
+        // Arrange
+        var summaryDto = new DashboardSummaryDto
+        {
+            PropertiesCount = 10,
+            ActiveTenants = 20,
+            OccupancyRate = 0.8m,
+            MonthlyRevenue = 5000m
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetDashboardSummaryQuery>(), default))
+            .ReturnsAsync(Result.Success(summaryDto));
+
         // Act
-        var result = _controller.GetSummary();
+        var result = await _controller.GetSummary();
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
-        okResult!.Value.Should().NotBeNull();
+        okResult!.Value.Should().BeEquivalentTo(summaryDto);
     }
 
     [Fact]
-    public void GetSummary_ReturnsExpectedProperties()
+    public async Task GetSummary_ReturnsExpectedProperties()
     {
+        // Arrange
+        var summaryDto = new DashboardSummaryDto
+        {
+            PropertiesCount = 10,
+            ActiveTenants = 20,
+            OccupancyRate = 0.8m,
+            MonthlyRevenue = 5000m
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetDashboardSummaryQuery>(), default))
+            .ReturnsAsync(Result.Success(summaryDto));
+
         // Act
-        var result = _controller.GetSummary();
+        var result = await _controller.GetSummary();
 
         // Assert
         var okResult = result as OkObjectResult;
-        var summary = okResult!.Value;
+        var summary = okResult!.Value as DashboardSummaryDto;
         
-        // Check that the object has expected properties
         summary.Should().NotBeNull();
-        summary.GetType().GetProperty("propertiesCount").Should().NotBeNull();
-        summary.GetType().GetProperty("activeTenants").Should().NotBeNull();
-        summary.GetType().GetProperty("occupancyRate").Should().NotBeNull();
-        summary.GetType().GetProperty("monthlyRevenue").Should().NotBeNull();
+        summary!.PropertiesCount.Should().Be(10);
+        summary.ActiveTenants.Should().Be(20);
+        summary.OccupancyRate.Should().Be(0.8m);
+        summary.MonthlyRevenue.Should().Be(5000m);
     }
 
     [Fact]
-    public void GetSummary_ReturnsValidValues()
+    public async Task GetSummary_WhenFails_ReturnsBadRequest()
     {
+        // Arrange
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetDashboardSummaryQuery>(), default))
+            .ReturnsAsync(Result.Failure<DashboardSummaryDto>("Error"));
+
         // Act
-        var result = _controller.GetSummary();
-        var okResult = result as OkObjectResult;
-        var summary = okResult!.Value;
+        var result = await _controller.GetSummary();
 
         // Assert
-        summary.Should().NotBeNull();
-        
-        // Verify properties exist and have expected types
-        var propertiesCount = summary.GetType().GetProperty("propertiesCount")?.GetValue(summary);
-        propertiesCount.Should().BeOfType<int>();
-        
-        var activeTenants = summary.GetType().GetProperty("activeTenants")?.GetValue(summary);
-        activeTenants.Should().BeOfType<int>();
-        
-        var occupancyRate = summary.GetType().GetProperty("occupancyRate")?.GetValue(summary);
-        occupancyRate.Should().BeOfType<decimal>();
-        
-        var monthlyRevenue = summary.GetType().GetProperty("monthlyRevenue")?.GetValue(summary);
-        monthlyRevenue.Should().BeOfType<decimal>();
+        result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     #endregion
@@ -81,34 +97,44 @@ public class DashboardControllerTests : BaseTestFixture
     #region GetActivities Tests
 
     [Fact]
-    public void GetActivities_WithDefaultLimit_ReturnsOkWithActivities()
+    public async Task GetActivities_WithDefaultLimit_ReturnsOkWithActivities()
     {
+        // Arrange
+        var activities = new List<ActivityDto>
+        {
+            new() { Type = "success", Title = "Test", Date = DateTime.UtcNow }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetRecentActivitiesQuery>(), default))
+            .ReturnsAsync(Result.Success(activities));
+
         // Act
-        var result = _controller.GetActivities();
+        var result = await _controller.GetActivities();
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
-        okResult!.Value.Should().NotBeNull();
+        okResult!.Value.Should().BeEquivalentTo(activities);
     }
 
     [Fact]
-    public void GetActivities_WithCustomLimit_RespectsLimit()
+    public async Task GetActivities_WithCustomLimit_RespectsLimit()
     {
         // Arrange
         var limit = 5;
+        var activities = new List<ActivityDto>
+        {
+            new() { Type = "success", Title = "Test", Date = DateTime.UtcNow }
+        };
+        _mediatorMock.Setup(m => m.Send(It.Is<GetRecentActivitiesQuery>(q => q.Limit == limit), default))
+            .ReturnsAsync(Result.Success(activities));
 
         // Act
-        var result = _controller.GetActivities(limit);
+        var result = await _controller.GetActivities(limit);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = result as OkObjectResult;
         okResult!.Value.Should().NotBeNull();
-        
-        // Verify result is enumerable
-        var activities = okResult.Value as System.Collections.IEnumerable;
-        activities.Should().NotBeNull();
     }
 
     [Theory]
@@ -116,43 +142,32 @@ public class DashboardControllerTests : BaseTestFixture
     [InlineData(10)]
     [InlineData(50)]
     [InlineData(100)]
-    public void GetActivities_WithVariousLimits_ReturnsOk(int limit)
+    public async Task GetActivities_WithVariousLimits_ReturnsOk(int limit)
     {
+        // Arrange
+        var activities = new List<ActivityDto>();
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetRecentActivitiesQuery>(), default))
+            .ReturnsAsync(Result.Success(activities));
+
         // Act
-        var result = _controller.GetActivities(limit);
+        var result = await _controller.GetActivities(limit);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().NotBeNull();
     }
 
     [Fact]
-    public void GetActivities_WithZeroLimit_ReturnsEmptyResult()
+    public async Task GetActivities_WhenFails_ReturnsBadRequest()
     {
         // Arrange
-        var limit = 0;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetRecentActivitiesQuery>(), default))
+            .ReturnsAsync(Result.Failure<List<ActivityDto>>("Error"));
 
         // Act
-        var result = _controller.GetActivities(limit);
+        var result = await _controller.GetActivities();
 
         // Assert
-        result.Should().BeOfType<OkObjectResult>();
-        var okResult = result as OkObjectResult;
-        okResult!.Value.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void GetActivities_WithNegativeLimit_HandlesGracefully()
-    {
-        // Arrange
-        var limit = -1;
-
-        // Act
-        var result = _controller.GetActivities(limit);
-
-        // Assert
-        result.Should().BeOfType<OkObjectResult>();
+        result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     #endregion

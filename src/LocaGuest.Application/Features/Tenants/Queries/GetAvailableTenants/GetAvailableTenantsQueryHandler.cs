@@ -27,28 +27,30 @@ public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenan
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            // Récupérer les IDs des locataires déjà associés à ce logement via un contrat actif
-            var assignedTenantIds = await _unitOfWork.Contracts.Query()
-                .Where(c => c.PropertyId == propertyId && c.Status == ContractStatus.Active)
-                .Select(c => c.RenterTenantId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-
-            // Récupérer tous les locataires sauf ceux déjà assignés
+            // ✅ Récupérer UNIQUEMENT les locataires qui ne sont associés à AUCUN bien
+            // Un locataire ne peut être associé qu'à un seul bien à la fois
             var availableTenants = await _unitOfWork.Tenants.Query()
-                .Where(t => !assignedTenantIds.Contains(t.Id))
+                .Where(t => t.PropertyId == null)
                 .Select(t => new TenantDto
                 {
                     Id = t.Id,
+                    Code = t.Code,
                     FullName = t.FullName,
                     Email = t.Email,
                     Phone = t.Phone,
                     Status = t.Status.ToString(),
                     MoveInDate = t.MoveInDate,
-                    CreatedAt = t.CreatedAt
+                    CreatedAt = t.CreatedAt,
+                    PropertyId = t.PropertyId,
+                    PropertyCode = t.PropertyCode
                 })
                 .OrderBy(t => t.FullName)
                 .ToListAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Found {Count} available tenants for property {PropertyId}", 
+                availableTenants.Count, 
+                propertyId);
 
             return Result.Success(availableTenants);
         }

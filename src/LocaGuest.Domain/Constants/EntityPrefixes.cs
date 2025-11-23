@@ -31,6 +31,11 @@ public static class EntityPrefixes
     public const string Contract = "CTR";
 
     /// <summary>
+    /// Document - DOC
+    /// </summary>
+    public const string Document = "DOC";
+
+    /// <summary>
     /// Paiement - PAY
     /// Example: T0001-PAY0001
     /// </summary>

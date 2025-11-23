@@ -1,3 +1,6 @@
+using LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
+using LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,39 +12,40 @@ namespace LocaGuest.Api.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly ILogger<DashboardController> _logger;
+    private readonly IMediator _mediator;
 
-    public DashboardController(ILogger<DashboardController> logger)
+    public DashboardController(ILogger<DashboardController> logger, IMediator mediator)
     {
         _logger = logger;
+        _mediator = mediator;
     }
 
     [HttpGet("summary")]
-    public IActionResult GetSummary()
+    public async Task<IActionResult> GetSummary()
     {
-        // TODO: Implement real logic
-        var summary = new
-        {
-            propertiesCount = 12,
-            activeTenants = 35,
-            occupancyRate = 0.92m,
-            monthlyRevenue = 14320m
-        };
+        var query = new GetDashboardSummaryQuery();
+        var result = await _mediator.Send(query);
 
-        return Ok(summary);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpGet("activities")]
-    public IActionResult GetActivities([FromQuery] int limit = 20)
+    public async Task<IActionResult> GetActivities([FromQuery] int limit = 20)
     {
-        // TODO: Implement real logic
-        var activities = new[]
-        {
-            new { type = "success", title = "Nouveau locataire ajouté", date = DateTime.UtcNow.AddMinutes(-5) },
-            new { type = "info", title = "Contrat renouvelé", date = DateTime.UtcNow.AddHours(-2) },
-            new { type = "warning", title = "Loyer en retard", date = DateTime.UtcNow.AddDays(-1) }
-        };
+        var query = new GetRecentActivitiesQuery { Limit = limit };
+        var result = await _mediator.Send(query);
 
-        return Ok(activities.Take(limit));
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpGet("deadlines")]

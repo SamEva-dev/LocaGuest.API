@@ -6,8 +6,9 @@ namespace LocaGuest.Domain.Repositories;
 public interface IUnitOfWork : IDisposable
 {
     IPropertyRepository Properties { get; }
-    IContractRepository Contracts { get; }
     ITenantRepository Tenants { get; }
+    IContractRepository Contracts { get; }
+    IDocumentRepository Documents { get; }
     ISubscriptionRepository Subscriptions { get; }
     IOrganizationRepository Organizations { get; }
     Task<int> CommitAsync(CancellationToken cancellationToken = default);

@@ -2,6 +2,7 @@ using AutoFixture;
 using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
+using LocaGuest.Application.Services;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Repositories;
@@ -16,6 +17,7 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ITenantRepository> _tenantRepositoryMock;
     private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateTenantCommandHandler>> _loggerMock;
     private readonly CreateTenantCommandHandler _handler;
 
@@ -24,14 +26,18 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _tenantRepositoryMock = new Mock<ITenantRepository>();
         _tenantContextMock = new Mock<ITenantContext>();
+        _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _loggerMock = new Mock<ILogger<CreateTenantCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
         _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("TEN-001");
 
         _handler = new CreateTenantCommandHandler(
             _unitOfWorkMock.Object,
             _tenantContextMock.Object,
+            _numberSequenceServiceMock.Object,
             _loggerMock.Object);
     }
 

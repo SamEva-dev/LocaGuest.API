@@ -4,6 +4,7 @@ using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Infrastructure.Services;
 using LocaGuest.Infrastructure.Services.ContractGenerator;
+using LocaGuest.Infrastructure.Services.QuittanceGenerator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,6 +72,7 @@ public static class DependencyInjection
 
         // Document Services
         services.AddScoped<IContractGeneratorService, ContractGeneratorService>();
+        services.AddScoped<IQuittanceGeneratorService, QuittanceGeneratorService>();
 
         return services;
     }

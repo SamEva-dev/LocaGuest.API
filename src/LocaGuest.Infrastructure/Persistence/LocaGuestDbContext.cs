@@ -1,4 +1,5 @@
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
@@ -41,6 +42,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<Document> Documents => Set<Document>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
     public DbSet<RentabilityScenario> RentabilityScenarios => Set<RentabilityScenario>();
@@ -355,13 +357,11 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             typeof(Property),
             typeof(Tenant),
             typeof(Contract),
-            typeof(UserSettings),
+            typeof(Document),
             typeof(RentabilityScenario),
             typeof(ScenarioVersion),
             typeof(ScenarioShare),
-            typeof(Subscription),
-            typeof(UsageEvent),
-            typeof(UsageAggregate)
+            typeof(UserSettings)
         };
         
         foreach (var entityType in tenantEntityTypes)

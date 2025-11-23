@@ -2,6 +2,7 @@ using LocaGuest.Application.Features.Analytics.Queries.GetProfitabilityStats;
 using LocaGuest.Application.Features.Analytics.Queries.GetRevenueEvolution;
 using LocaGuest.Application.Features.Analytics.Queries.GetPropertyPerformance;
 using LocaGuest.Application.Features.Analytics.Queries.GetAvailableYears;
+using LocaGuest.Application.Features.Analytics.Queries.GetOccupancyTrend;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -62,6 +63,18 @@ public class AnalyticsController : ControllerBase
     public async Task<IActionResult> GetAvailableYears()
     {
         var query = new GetAvailableYearsQuery();
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("occupancy-trend")]
+    public async Task<IActionResult> GetOccupancyTrend([FromQuery] int days = 30)
+    {
+        var query = new GetOccupancyTrendQuery { Days = days };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)

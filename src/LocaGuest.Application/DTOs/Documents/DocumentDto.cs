@@ -35,3 +35,35 @@ public class GenerateDocumentRequest
     public Guid? TenantId { get; set; }
     public string? Notes { get; set; }
 }
+
+public class DocumentDto
+{
+    public Guid Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public long FileSizeBytes { get; set; }
+    public string? Description { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public Guid? TenantId { get; set; }
+    public string? TenantName { get; set; }
+    public Guid? PropertyId { get; set; }
+    public string? PropertyName { get; set; }
+    public bool IsArchived { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class UploadDocumentDto
+{
+    public required string FileName { get; set; }
+    public required string Type { get; set; }
+    public required string Category { get; set; }
+    public required byte[] FileContent { get; set; }
+    public long FileSizeBytes { get; set; }
+    public string? Description { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public Guid? TenantId { get; set; }
+    public Guid? PropertyId { get; set; }
+}

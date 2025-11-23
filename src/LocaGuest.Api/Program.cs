@@ -267,15 +267,8 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
         Log.Information("Applying Audit database migrations...");
         await auditContext.Database.MigrateAsync();
         
-        Log.Information("Seeding database...");
-        //await DbSeeder.SeedAsync(context); // Temporairement désactivé pour tests
-        
-        // Seed data
-        if (app.Environment.IsDevelopment())
-        {
-            //await DbSeeder.SeedAsync(context);
-            Log.Information("Database seeded successfully");
-        }
+        // ❌ SEEDING DÉSACTIVÉ - Base vide
+        Log.Information("⚠️ Database seeding disabled - Empty database");
     }
     catch (Exception ex)
     {
