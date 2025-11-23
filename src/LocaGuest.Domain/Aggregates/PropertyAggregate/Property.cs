@@ -18,8 +18,18 @@ public class Property : AuditableEntity
     public string? ZipCode { get; private set; }
     public string? Country { get; private set; }
     public PropertyType Type { get; private set; }
+    public PropertyUsageType UsageType { get; private set; }
     public PropertyStatus Status { get; private set; }
     public decimal Rent { get; private set; }
+    
+    // Pour les colocations
+    public int? TotalRooms { get; private set; }
+    public int OccupiedRooms { get; private set; } = 0;
+    
+    // Pour Airbnb
+    public int? MinimumStay { get; private set; }
+    public int? MaximumStay { get; private set; }
+    public decimal? PricePerNight { get; private set; }
     public int Bedrooms { get; private set; }
     public int Bathrooms { get; private set; }
     public decimal? Surface { get; private set; }
@@ -46,12 +56,18 @@ public class Property : AuditableEntity
         string address,
         string city,
         PropertyType type,
+        PropertyUsageType usageType,
         decimal rent,
         int bedrooms,
-        int bathrooms)
+        int bathrooms,
+        int? totalRooms = null)
     {
         if (rent < 0)
             throw new ValidationException("PROPERTY_INVALID_RENT", "Rent cannot be negative");
+
+        // Validation pour colocation
+        if (usageType == PropertyUsageType.Colocation && (!totalRooms.HasValue || totalRooms.Value <= 0))
+            throw new ValidationException("PROPERTY_COLOCATION_ROOMS_REQUIRED", "TotalRooms is required for colocations");
 
         var property = new Property
         {
@@ -60,10 +76,13 @@ public class Property : AuditableEntity
             Address = address,
             City = city,
             Type = type,
+            UsageType = usageType,
             Rent = rent,
             Bedrooms = bedrooms,
             Bathrooms = bathrooms,
-            Status = PropertyStatus.Vacant
+            Status = PropertyStatus.Vacant,
+            TotalRooms = usageType == PropertyUsageType.Colocation ? totalRooms : null,
+            OccupiedRooms = 0
         };
 
         property.AddDomainEvent(new PropertyCreated(property.Id, property.Name));
@@ -127,6 +146,9 @@ public class Property : AuditableEntity
         if (!AssociatedTenantCodes.Contains(tenantCode))
         {
             AssociatedTenantCodes.Add(tenantCode);
+            
+            // Mettre à jour le statut en fonction du type de bien
+            UpdateOccupancyStatus();
         }
     }
     
@@ -136,6 +158,65 @@ public class Property : AuditableEntity
     public void RemoveTenant(string tenantCode)
     {
         AssociatedTenantCodes.Remove(tenantCode);
+        
+        // Mettre à jour le statut en fonction du type de bien
+        UpdateOccupancyStatus();
+    }
+    
+    /// <summary>
+    /// Met à jour le statut d'occupation en fonction du type de bien et du nombre de locataires
+    /// </summary>
+    public void UpdateOccupancyStatus()
+    {
+        OccupiedRooms = AssociatedTenantCodes.Count;
+        
+        if (UsageType == PropertyUsageType.Colocation)
+        {
+            // Pour une colocation
+            if (OccupiedRooms == 0)
+            {
+                SetStatus(PropertyStatus.Vacant);
+            }
+            else if (OccupiedRooms < TotalRooms)
+            {
+                SetStatus(PropertyStatus.PartiallyOccupied);
+            }
+            else
+            {
+                SetStatus(PropertyStatus.Occupied);
+            }
+        }
+        else
+        {
+            // Pour une location complète ou Airbnb
+            if (OccupiedRooms > 0)
+            {
+                SetStatus(PropertyStatus.Occupied);
+            }
+            else
+            {
+                SetStatus(PropertyStatus.Vacant);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Configure les paramètres Airbnb
+    /// </summary>
+    public void SetAirbnbSettings(int minimumStay, int maximumStay, decimal pricePerNight)
+    {
+        if (UsageType != PropertyUsageType.Airbnb)
+            throw new ValidationException("PROPERTY_NOT_AIRBNB", "This property is not configured for Airbnb");
+            
+        if (minimumStay <= 0 || maximumStay <= 0 || minimumStay > maximumStay)
+            throw new ValidationException("PROPERTY_INVALID_STAY_DURATION", "Invalid stay duration parameters");
+            
+        if (pricePerNight <= 0)
+            throw new ValidationException("PROPERTY_INVALID_PRICE", "Price per night must be positive");
+            
+        MinimumStay = minimumStay;
+        MaximumStay = maximumStay;
+        PricePerNight = pricePerNight;
     }
 }
 
@@ -152,5 +233,13 @@ public enum PropertyType
 public enum PropertyStatus
 {
     Vacant,
+    PartiallyOccupied,  // Pour les colocations partiellement occupées
     Occupied
+}
+
+public enum PropertyUsageType
+{
+    Complete,      // Location complète du bien
+    Colocation,    // Colocation (chambres individuelles)
+    Airbnb         // Location courte durée type Airbnb
 }

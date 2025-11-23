@@ -29,4 +29,15 @@ public record CreatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public decimal? PurchasePrice { get; init; }
     public string? EnergyClass { get; init; }
     public int? ConstructionYear { get; init; }
+    
+    // Nouveau: Type d'utilisation
+    public string PropertyUsageType { get; init; } = "Complete"; // "Complete", "Colocation", "Airbnb"
+    
+    // Pour les colocations
+    public int? TotalRooms { get; init; }
+    
+    // Pour Airbnb
+    public int? MinimumStay { get; init; }
+    public int? MaximumStay { get; init; }
+    public decimal? PricePerNight { get; init; }
 }

@@ -10,6 +10,7 @@ public class PropertyDto
     public string? PostalCode { get; set; }
     public string? Country { get; set; }
     public string Type { get; set; } = string.Empty;
+    public string PropertyUsageType { get; set; } = "Complete";  // Complete, Colocation, Airbnb
     public decimal Surface { get; set; }
     public int? Bedrooms { get; set; }
     public int? Bathrooms { get; set; }
@@ -20,6 +21,15 @@ public class PropertyDto
     public decimal Rent { get; set; }
     public decimal? Charges { get; set; }
     public string Status { get; set; } = "Vacant";
+    
+    // Pour les colocations
+    public int? TotalRooms { get; set; }
+    public int? OccupiedRooms { get; set; }
+    
+    // Pour Airbnb
+    public int? MinimumStay { get; set; }
+    public int? MaximumStay { get; set; }
+    public decimal? PricePerNight { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -44,6 +54,7 @@ public class CreatePropertyDto
     public string? PostalCode { get; set; }
     public string? Country { get; set; }
     public string Type { get; set; } = string.Empty;
+    public string PropertyUsageType { get; set; } = "Complete";  // Complete, Colocation, Airbnb
     public decimal Surface { get; set; }
     public int? Bedrooms { get; set; }
     public int? Bathrooms { get; set; }
@@ -54,6 +65,14 @@ public class CreatePropertyDto
     public decimal Rent { get; set; }
     public decimal? Charges { get; set; }
     public string? Description { get; set; }
+    
+    // Pour les colocations
+    public int? TotalRooms { get; set; }
+    
+    // Pour Airbnb
+    public int? MinimumStay { get; set; }
+    public int? MaximumStay { get; set; }
+    public decimal? PricePerNight { get; set; }
     public DateTime? PurchaseDate { get; set; }
     public decimal? PurchasePrice { get; set; }
     public string? EnergyClass { get; set; }

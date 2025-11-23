@@ -180,7 +180,7 @@ public static class DbSeeder
         int bathrooms,
         PropertyStatus status)
     {
-        var property = Property.Create(name, address, city, type, rent, bedrooms, bathrooms);
+        var property = Property.Create(name, address, city, type, PropertyUsageType.Complete, rent, bedrooms, bathrooms);
         property.SetStatus(status);
         return property;
     }

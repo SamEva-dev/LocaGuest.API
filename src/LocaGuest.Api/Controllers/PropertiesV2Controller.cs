@@ -207,6 +207,7 @@ public class PropertiesV2Controller : ControllerBase
             request.Address,
             request.City,
             request.Type,
+            Domain.Aggregates.PropertyAggregate.PropertyUsageType.Complete, // Type par défaut
             request.Rent,
             request.Bedrooms,
             request.Bathrooms

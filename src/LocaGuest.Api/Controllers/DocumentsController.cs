@@ -263,6 +263,48 @@ public class DocumentsController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpGet("property/{propertyId}")]
+    public async Task<IActionResult> GetPropertyDocuments(string propertyId)
+    {
+        try
+        {
+            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            var documents = await _unitOfWork.Documents.GetByPropertyIdAsync(Guid.Parse(propertyId));
+            
+            // Group by category
+            var groupedDocs = documents
+                .GroupBy(d => d.Category)
+                .Select(g => new
+                {
+                    Category = g.Key.ToString(),
+                    Count = g.Count(),
+                    Documents = g.Select(d => new
+                    {
+                        d.Id,
+                        d.Code,
+                        d.FileName,
+                        d.Type,
+                        Category = d.Category.ToString(),
+                        d.FileSizeBytes,
+                        d.CreatedAt,
+                        d.Description,
+                        d.TenantId,
+                        d.PropertyId
+                    }).ToList()
+                })
+                .ToList();
+
+            return Ok(groupedDocs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting property documents {PropertyId}", propertyId);
+            return StatusCode(500, new { message = "Error getting property documents", error = ex.Message });
+        }
+    }
+
     [HttpPost("upload")]
     public async Task<IActionResult> UploadDocument([FromForm] IFormFile file, [FromForm] string type, [FromForm] string category, [FromForm] string? tenantId, [FromForm] string? propertyId, [FromForm] string? description)
     {

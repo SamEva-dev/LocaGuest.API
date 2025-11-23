@@ -45,6 +45,12 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             {
                 return Result.Failure<PropertyDetailDto>("Invalid property type");
             }
+            
+            // Parse PropertyUsageType from string
+            if (!Enum.TryParse<PropertyUsageType>(request.PropertyUsageType, ignoreCase: true, out var usageType))
+            {
+                return Result.Failure<PropertyDetailDto>("Invalid property usage type");
+            }
 
             // ✅ QUICK WIN: Generate automatic code
             var code = await _numberSequenceService.GenerateNextCodeAsync(
@@ -60,12 +66,26 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 request.Address,
                 request.City ?? string.Empty,
                 propertyType,
+                usageType,
                 request.Rent,
                 request.Bedrooms ?? 0,
-                request.Bathrooms ?? 0);
+                request.Bathrooms ?? 0,
+                request.TotalRooms);
 
             // ✅ Set the generated code
             property.SetCode(code);
+            
+            // Configure Airbnb settings if applicable
+            if (usageType == PropertyUsageType.Airbnb && 
+                request.MinimumStay.HasValue && 
+                request.MaximumStay.HasValue && 
+                request.PricePerNight.HasValue)
+            {
+                property.SetAirbnbSettings(
+                    request.MinimumStay.Value,
+                    request.MaximumStay.Value,
+                    request.PricePerNight.Value);
+            }
 
             // Add through repository
             await _unitOfWork.Properties.AddAsync(property, cancellationToken);
@@ -85,6 +105,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 PostalCode = property.ZipCode,
                 Country = property.Country,
                 Type = property.Type.ToString(),
+                PropertyUsageType = property.UsageType.ToString(),
                 Surface = property.Surface ?? 0,
                 Bedrooms = property.Bedrooms,
                 Bathrooms = property.Bathrooms,
@@ -94,6 +115,11 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 Rent = property.Rent,
                 Charges = property.Charges,
                 Status = property.Status.ToString(),
+                TotalRooms = property.TotalRooms,
+                OccupiedRooms = property.OccupiedRooms,
+                MinimumStay = property.MinimumStay,
+                MaximumStay = property.MaximumStay,
+                PricePerNight = property.PricePerNight,
                 CreatedAt = property.CreatedAt
             };
 
