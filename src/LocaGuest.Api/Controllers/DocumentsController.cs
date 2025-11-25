@@ -215,6 +215,9 @@ public class DocumentsController : ControllerBase
             var documentType = dto.ContractType switch
             {
                 "Bail" => DocumentType.Bail,
+                "Avenant" => DocumentType.Avenant,
+                "EtatDesLieuxEntree" or "Etat_Lieux_Entree" => DocumentType.EtatDesLieuxEntree,
+                "EtatDesLieuxSortie" or "Etat_Lieux_Sortie" => DocumentType.EtatDesLieuxSortie,
                 "Colocation" => DocumentType.Colocation,
                 _ => DocumentType.Bail
             };
@@ -226,6 +229,7 @@ public class DocumentsController : ControllerBase
                 Type = documentType.ToString(),
                 Category = DocumentCategory.Contrats.ToString(),
                 FileSizeBytes = pdfBytes.Length,
+                ContractId = dto.ContractId, // NOUVEAU: Association au contrat
                 TenantId = dto.TenantId,
                 PropertyId = dto.PropertyId,
                 Description = $"Contrat {dto.ContractType} généré automatiquement"
@@ -239,6 +243,27 @@ public class DocumentsController : ControllerBase
             else
             {
                 _logger.LogInformation("Document metadata saved: {Code}", saveResult.Data!.Code);
+                
+                // NOUVEAU: Associer le document au contrat
+                if (dto.ContractId.HasValue && saveResult.Data?.Id != null)
+                {
+                    var contract = await _unitOfWork.Contracts.GetByIdAsync(dto.ContractId.Value, cancellationToken);
+                    if (contract != null)
+                    {
+                        contract.AssociateDocument(saveResult.Data.Id, documentType);
+                        await _unitOfWork.CommitAsync(cancellationToken);
+                        
+                        _logger.LogInformation(
+                            "Document {DocumentId} associated with Contract {ContractId}, Status={Status}",
+                            saveResult.Data.Id,
+                            contract.Id,
+                            contract.Status);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Contract {ContractId} not found for document association", dto.ContractId.Value);
+                    }
+                }
             }
 
             return File(pdfBytes, "application/pdf", fileName);
@@ -442,4 +467,130 @@ public class DocumentsController : ControllerBase
             return StatusCode(500, new { message = "Error generating quittance", error = ex.Message });
         }
     }
+    
+    /// <summary>
+    /// Marquer un document comme signé
+    /// PUT /api/documents/{id}/mark-signed
+    /// </summary>
+    [HttpPut("{id:guid}/mark-signed")]
+    public async Task<IActionResult> MarkDocumentAsSigned(
+        Guid id, 
+        [FromBody] MarkDocumentAsSignedRequest? request = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await _unitOfWork.Documents.GetByIdAsync(id, cancellationToken);
+            if (document == null)
+                return NotFound(new { message = "Document not found" });
+
+            document.MarkAsSigned(request?.SignedDate, request?.SignedBy);
+            await _unitOfWork.CommitAsync(cancellationToken);
+
+            _logger.LogInformation("Document {DocumentId} marked as signed by {SignedBy}", id, request?.SignedBy ?? "Unknown");
+
+            return Ok(new 
+            { 
+                message = "Document marked as signed successfully", 
+                id = document.Id,
+                status = document.Status.ToString(),
+                signedDate = document.SignedDate
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking document {DocumentId} as signed", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Récupérer le statut des documents d'un contrat
+    /// GET /api/documents/contract/{contractId}/status
+    /// </summary>
+    [HttpGet("contract/{contractId:guid}/status")]
+    public async Task<IActionResult> GetContractDocumentStatus(
+        Guid contractId, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId, cancellationToken);
+            if (contract == null)
+                return NotFound(new { message = "Contract not found" });
+
+            var documents = await _unitOfWork.Documents.GetByContractIdAsync(contractId, cancellationToken);
+
+            return Ok(new
+            {
+                contractId,
+                contractStatus = contract.Status.ToString(),
+                requiredDocuments = contract.RequiredDocuments.Select(r => new
+                {
+                    type = r.Type.ToString(),
+                    isRequired = r.IsRequired,
+                    isProvided = r.IsProvided,
+                    isSigned = r.IsSigned,
+                    documentInfo = documents.FirstOrDefault(d => d.Type == r.Type) != null ? new
+                    {
+                        id = documents.First(d => d.Type == r.Type).Id,
+                        fileName = documents.First(d => d.Type == r.Type).FileName,
+                        status = documents.First(d => d.Type == r.Type).Status.ToString(),
+                        signedDate = documents.First(d => d.Type == r.Type).SignedDate,
+                        createdAt = documents.First(d => d.Type == r.Type).CreatedAt
+                    } : null
+                }),
+                allRequiredSigned = contract.AreAllRequiredDocumentsSigned()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting contract document status for {ContractId}", contractId);
+            return StatusCode(500, new { message = "Error getting contract document status", error = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Récupérer un document par son ID
+    /// GET /api/documents/{id}
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetDocument(Guid id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await _unitOfWork.Documents.GetByIdAsync(id, cancellationToken);
+            if (document == null)
+                return NotFound(new { message = "Document not found" });
+
+            return Ok(new
+            {
+                document.Id,
+                document.Code,
+                document.FileName,
+                Type = document.Type.ToString(),
+                Category = document.Category.ToString(),
+                Status = document.Status.ToString(),
+                document.FileSizeBytes,
+                document.ContractId,
+                document.AssociatedTenantId,
+                document.PropertyId,
+                document.Description,
+                document.SignedDate,
+                document.SignedBy,
+                document.CreatedAt,
+                document.IsArchived
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting document {DocumentId}", id);
+            return StatusCode(500, new { message = "Error getting document", error = ex.Message });
+        }
+    }
 }
+
+public record MarkDocumentAsSignedRequest(
+    DateTime? SignedDate = null,
+    string? SignedBy = null
+);

@@ -149,8 +149,8 @@ public class ContractsController : ControllerBase
             request.Deposit
         );
 
-        // Marquer la propriété comme occupée
-        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied);
+        // NOTE: La propriété sera marquée comme occupée lors de la signature du contrat
+        // Un contrat Draft ne rend pas la propriété occupée
 
         _context.Contracts.Add(contract);
         await _context.SaveChangesAsync();
@@ -207,6 +207,35 @@ public class ContractsController : ControllerBase
 
         return Ok(new { message = "Contract terminated successfully", id = contract.Id });
     }
+
+    [HttpPut("{id:guid}/mark-signed")]
+    public async Task<IActionResult> MarkContractAsSigned(Guid id, [FromBody] MarkAsSignedRequest? request = null)
+    {
+        var contract = await _context.Contracts.FindAsync(id);
+        if (contract == null)
+            return NotFound(new { message = "Contract not found" });
+
+        try
+        {
+            contract.MarkAsSigned(request?.SignedDate);
+            
+            // Marquer la propriété comme occupée maintenant que le contrat est signé
+            var property = await _context.Properties.FindAsync(contract.PropertyId);
+            if (property != null)
+            {
+                property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied);
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Contract {ContractId} marked as signed, property {PropertyId} marked as occupied", id, contract.PropertyId);
+            return Ok(new { message = "Contract marked as signed successfully", id = contract.Id });
+        }
+        catch (Domain.Exceptions.ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 public record CreateContractRequest(
@@ -228,4 +257,8 @@ public record RecordPaymentRequest(
 public record TerminateContractRequest(
     DateTime TerminationDate,
     bool MarkPropertyVacant = true
+);
+
+public record MarkAsSignedRequest(
+    DateTime? SignedDate = null
 );

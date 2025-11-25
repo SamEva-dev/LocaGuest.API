@@ -3,6 +3,7 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251123214708_AddDocumentSignatureAndContractRequiredDocuments")]
+    partial class AddDocumentSignatureAndContractRequiredDocuments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -186,7 +189,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.OrganizationAggregate.Organization", b =>
@@ -688,7 +691,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("RentabilityScenarioId");
 
-                    b.ToTable("ScenarioComment", (string)null);
+                    b.ToTable("ScenarioComment");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioShare", b =>

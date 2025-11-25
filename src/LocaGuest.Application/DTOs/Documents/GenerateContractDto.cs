@@ -2,6 +2,12 @@ namespace LocaGuest.Application.DTOs.Documents;
 
 public record GenerateContractDto
 {
+    /// <summary>
+    /// ID du contrat auquel associer le document généré
+    /// Si null, le document sera créé sans association contractuelle
+    /// </summary>
+    public Guid? ContractId { get; init; }
+    
     public Guid TenantId { get; init; }
     public Guid PropertyId { get; init; }
     public string ContractType { get; init; } = string.Empty; // BAIL, AVENANT, ETAT_LIEUX_ENTREE, ETAT_LIEUX_SORTIE

@@ -62,16 +62,21 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 documentType,
                 documentCategory,
                 request.FileSizeBytes,
-                request.TenantId,
-                request.PropertyId,
-                request.Description);
+                contractId: request.ContractId, // Association au contrat si fourni
+                tenantId: request.TenantId,
+                propertyId: request.PropertyId,
+                description: request.Description);
 
             document.SetCode(code);
 
             await _unitOfWork.Documents.AddAsync(document, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
-            _logger.LogInformation("Document saved: {Code} - {FileName}", code, request.FileName);
+            _logger.LogInformation(
+                "Document saved: {Code} - {FileName}, ContractId={ContractId}", 
+                code, 
+                request.FileName, 
+                request.ContractId);
 
             // Load names for DTO
             string? tenantName = null;

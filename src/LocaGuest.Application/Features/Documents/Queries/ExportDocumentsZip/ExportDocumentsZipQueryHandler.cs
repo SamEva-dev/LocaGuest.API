@@ -24,11 +24,12 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
         {
             var tenantId = Guid.Parse(request.TenantId);
             var documents = await _unitOfWork.Documents.GetByTenantIdAsync(tenantId, cancellationToken);
+            var documentsList = documents.ToList();
 
             using var memoryStream = new MemoryStream();
             using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
             {
-                foreach (var doc in documents)
+                foreach (var doc in documentsList)
                 {
                     if (File.Exists(doc.FilePath))
                     {
@@ -50,7 +51,7 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
             }
 
             _logger.LogInformation("Created ZIP with {Count} documents for tenant {TenantId}", 
-                documents.Count, tenantId);
+                documentsList.Count, request.TenantId);
 
             return memoryStream.ToArray();
         }

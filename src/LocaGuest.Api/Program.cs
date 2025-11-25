@@ -27,7 +27,18 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Convertir les enums en strings (au lieu de nombres)
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        
+        // Accepter les noms de propriété case-insensitive
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        
+        // Utiliser camelCase pour la sérialisation (déjà par défaut mais on le spécifie explicitement)
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

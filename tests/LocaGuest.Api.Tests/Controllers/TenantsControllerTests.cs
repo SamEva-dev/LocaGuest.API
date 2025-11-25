@@ -8,6 +8,7 @@ using LocaGuest.Application.DTOs.Tenants;
 using LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenants;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenant;
+using LocaGuest.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -20,13 +21,15 @@ public class TenantsControllerTests : BaseTestFixture
 {
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<TenantsController>> _loggerMock;
+    private readonly Mock<LocaGuestDbContext> _contextMock;
     private readonly TenantsController _controller;
 
     public TenantsControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<TenantsController>>();
-        _controller = new TenantsController(_mediatorMock.Object, _loggerMock.Object);
+        _contextMock = new Mock<LocaGuestDbContext>();
+        _controller = new TenantsController(_mediatorMock.Object, _loggerMock.Object, _contextMock.Object);
     }
 
     #region GetTenants Tests

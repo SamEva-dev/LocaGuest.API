@@ -1,4 +1,6 @@
 using LocaGuest.Domain.Common;
+using LocaGuest.Domain.Aggregates.DocumentAggregate.Events;
+using LocaGuest.Domain.Exceptions;
 
 namespace LocaGuest.Domain.Aggregates.DocumentAggregate;
 
@@ -18,6 +20,11 @@ public class Document : AuditableEntity
     public DateTime? ExpiryDate { get; private set; }
     
     /// <summary>
+    /// Contrat associé à ce document (optionnel)
+    /// </summary>
+    public Guid? ContractId { get; private set; }
+    
+    /// <summary>
     /// Locataire associé à ce document (optionnel)
     /// Note: Le TenantId hérité de AuditableEntity est utilisé pour le multi-tenant filtering
     /// </summary>
@@ -27,6 +34,21 @@ public class Document : AuditableEntity
     /// Property associated with this document (optional)
     /// </summary>
     public Guid? PropertyId { get; private set; }
+    
+    /// <summary>
+    /// Statut du document (Draft, Signed, Validated, Archived)
+    /// </summary>
+    public DocumentStatus Status { get; private set; }
+    
+    /// <summary>
+    /// Date de signature du document
+    /// </summary>
+    public DateTime? SignedDate { get; private set; }
+    
+    /// <summary>
+    /// Nom de la personne qui a signé le document
+    /// </summary>
+    public string? SignedBy { get; private set; }
     
     /// <summary>
     /// If true, the document is still in storage but dissociated from tenant/property
@@ -41,6 +63,7 @@ public class Document : AuditableEntity
         DocumentType type,
         DocumentCategory category,
         long fileSizeBytes,
+        Guid? contractId = null,
         Guid? tenantId = null,
         Guid? propertyId = null,
         string? description = null,
@@ -54,12 +77,21 @@ public class Document : AuditableEntity
             Type = type,
             Category = category,
             FileSizeBytes = fileSizeBytes,
+            ContractId = contractId,
             AssociatedTenantId = tenantId,
             PropertyId = propertyId,
             Description = description,
             ExpiryDate = expiryDate,
+            Status = DocumentStatus.Draft, // Toujours créé en Draft
             IsArchived = false
         };
+
+        document.AddDomainEvent(new DocumentCreated(
+            document.Id,
+            contractId,
+            tenantId,
+            type,
+            category));
 
         return document;
     }
@@ -103,6 +135,50 @@ public class Document : AuditableEntity
     {
         ExpiryDate = expiryDate;
     }
+    
+    /// <summary>
+    /// Marquer le document comme signé
+    /// Transition: Draft → Signed
+    /// </summary>
+    public void MarkAsSigned(DateTime? signedDate = null, string? signedBy = null)
+    {
+        if (Status != DocumentStatus.Draft)
+            throw new ValidationException("DOCUMENT_ALREADY_SIGNED", 
+                "Only draft documents can be marked as signed");
+        
+        Status = DocumentStatus.Signed;
+        SignedDate = signedDate ?? DateTime.UtcNow;
+        SignedBy = signedBy;
+        
+        AddDomainEvent(new DocumentSigned(
+            Id,
+            ContractId,
+            AssociatedTenantId,
+            Type,
+            SignedDate.Value));
+    }
+    
+    /// <summary>
+    /// Valider le document (par le bailleur)
+    /// Transition: Signed → Validated
+    /// </summary>
+    public void Validate()
+    {
+        if (Status != DocumentStatus.Signed)
+            throw new ValidationException("DOCUMENT_NOT_SIGNED", 
+                "Only signed documents can be validated");
+        
+        Status = DocumentStatus.Validated;
+        AddDomainEvent(new DocumentValidated(Id, ContractId, Type));
+    }
+    
+    /// <summary>
+    /// Associer ce document à un contrat
+    /// </summary>
+    public void AssociateToContract(Guid contractId)
+    {
+        ContractId = contractId;
+    }
 }
 
 /// <summary>
@@ -145,6 +221,24 @@ public enum DocumentType
     
     /// <summary>Autre document</summary>
     Autre
+}
+
+/// <summary>
+/// Statut d'un document
+/// </summary>
+public enum DocumentStatus
+{
+    /// <summary>Brouillon, non signé</summary>
+    Draft,
+    
+    /// <summary>Signé par le locataire</summary>
+    Signed,
+    
+    /// <summary>Validé par le bailleur</summary>
+    Validated,
+    
+    /// <summary>Archivé</summary>
+    Archived
 }
 
 /// <summary>

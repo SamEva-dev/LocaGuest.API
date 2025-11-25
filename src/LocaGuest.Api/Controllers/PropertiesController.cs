@@ -1,4 +1,6 @@
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
+using LocaGuest.Application.Features.Properties.Commands.UpdateProperty;
+using LocaGuest.Application.Features.Properties.Commands.UpdatePropertyStatus;
 using LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Features.Properties.Queries.GetProperty;
@@ -64,6 +66,42 @@ public class PropertiesController : ControllerBase
         }
 
         return Ok(result.Data);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProperty(string id, [FromBody] UpdatePropertyCommand command)
+    {
+        if (!Guid.TryParse(id, out var propertyId) || command.Id != propertyId)
+            return BadRequest(new { message = "Property ID mismatch" });
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
+    }
+
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdatePropertyStatus(string id, [FromBody] UpdatePropertyStatusCommand command)
+    {
+        if (!Guid.TryParse(id, out var propertyId) || command.PropertyId != propertyId)
+            return BadRequest(new { message = "Property ID mismatch" });
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(new { success = result.Data });
     }
 
     [HttpGet("{id}/payments")]

@@ -11,7 +11,7 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
     {
     }
 
-    public async Task<List<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Where(d => d.AssociatedTenantId == tenantId && !d.IsArchived)
@@ -19,10 +19,18 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Where(d => d.PropertyId == propertyId && !d.IsArchived)
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(d => d.ContractId == contractId && !d.IsArchived)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(cancellationToken);
     }

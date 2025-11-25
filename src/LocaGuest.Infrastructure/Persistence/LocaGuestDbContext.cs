@@ -151,6 +151,21 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                   .HasForeignKey(p => p.ContractId)
                   .OnDelete(DeleteBehavior.Cascade);
 
+            // Configure RequiredDocuments as owned entity collection
+            entity.OwnsMany(c => c.RequiredDocuments, rd =>
+            {
+                rd.ToTable("contract_required_documents");
+                rd.WithOwner().HasForeignKey("ContractId");
+                rd.Property<Guid>("ContractId");
+                rd.HasKey("ContractId", "Type");
+                rd.Property(r => r.Type).HasConversion<string>().HasMaxLength(50);
+                rd.Property(r => r.IsRequired);
+                rd.Property(r => r.IsProvided);
+                rd.Property(r => r.IsSigned);
+            });
+
+            // Configure DocumentIds as a JSON column or ignore for now
+            entity.Ignore(c => c.DocumentIds);
             entity.Ignore(c => c.DomainEvents);
         });
 

@@ -131,6 +131,41 @@ public class Property : AuditableEntity
         }
         if (bedrooms.HasValue) Bedrooms = bedrooms.Value;
         if (bathrooms.HasValue) Bathrooms = bathrooms.Value;
+        
+        UpdatedAt = DateTime.UtcNow;
+    }
+    
+    public void UpdateExtendedDetails(
+        string? city = null,
+        string? zipCode = null,
+        string? country = null,
+        decimal? surface = null,
+        int? floor = null,
+        bool? hasElevator = null,
+        bool? hasParking = null,
+        bool? isFurnished = null,
+        decimal? charges = null,
+        decimal? deposit = null,
+        string? notes = null)
+    {
+        if (city != null) City = city;
+        if (zipCode != null) ZipCode = zipCode;
+        if (country != null) Country = country;
+        if (surface.HasValue)
+        {
+            if (surface.Value < 0)
+                throw new ValidationException("PROPERTY_INVALID_SURFACE", "Surface cannot be negative");
+            Surface = surface.Value;
+        }
+        if (floor.HasValue) Floor = floor.Value;
+        if (hasElevator.HasValue) HasElevator = hasElevator.Value;
+        if (hasParking.HasValue) HasParking = hasParking.Value;
+        if (isFurnished.HasValue) IsFurnished = isFurnished.Value;
+        if (charges.HasValue) Charges = charges.Value;
+        if (deposit.HasValue) Deposit = deposit.Value;
+        if (notes != null) Notes = notes;
+        
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void SetImages(List<string> urls)

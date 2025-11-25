@@ -1,0 +1,38 @@
+using LocaGuest.Application.Common;
+using LocaGuest.Application.DTOs.Properties;
+using MediatR;
+
+namespace LocaGuest.Application.Features.Properties.Commands.UpdateProperty;
+
+/// <summary>
+/// Command for updating an existing property
+/// </summary>
+public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
+{
+    public Guid Id { get; init; }
+    public string? Name { get; init; }
+    public string? Address { get; init; }
+    public string? City { get; init; }
+    public string? ZipCode { get; init; }
+    public string? Country { get; init; }
+    public string? Type { get; init; }
+    public decimal? Surface { get; init; }
+    public int? Bedrooms { get; init; }
+    public int? Bathrooms { get; init; }
+    public int? Floor { get; init; }
+    public bool? HasElevator { get; init; }
+    public bool? HasParking { get; init; }
+    public bool? IsFurnished { get; init; }
+    public decimal? Rent { get; init; }
+    public decimal? Charges { get; init; }
+    public decimal? Deposit { get; init; }
+    public string? Notes { get; init; }
+    public List<string>? ImageUrls { get; init; }
+    
+    // PropertyUsageType specific
+    public string? PropertyUsageType { get; init; }
+    public int? TotalRooms { get; init; }
+    public int? MinimumStay { get; init; }
+    public int? MaximumStay { get; init; }
+    public decimal? PricePerNight { get; init; }
+}
