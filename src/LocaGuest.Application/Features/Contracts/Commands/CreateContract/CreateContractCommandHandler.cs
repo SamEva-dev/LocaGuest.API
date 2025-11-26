@@ -49,6 +49,18 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             if (tenant == null)
                 return Result.Failure<ContractDto>("Tenant not found");
 
+            // ⭐ VALIDATION MÉTIER 1: Vérifier que le locataire est disponible
+            if (!tenant.IsAvailableForNewContract())
+            {
+                _logger.LogWarning(
+                    "Tenant {TenantCode} is not available (Status: {Status}). Cannot create new contract.",
+                    tenant.Code,
+                    tenant.Status);
+                return Result.Failure<ContractDto>(
+                    $"Le locataire {tenant.FullName} n'est pas disponible. " +
+                    $"Statut actuel: {tenant.Status}. Un locataire ne peut avoir qu'un seul contrat actif ou signé.");
+            }
+            
             // ⭐ Vérifier que le locataire n'est pas déjà associé à un autre bien
             if (tenant.PropertyId.HasValue && tenant.PropertyId.Value != request.PropertyId)
             {
@@ -58,6 +70,32 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                     tenant.PropertyId.Value);
                 return Result.Failure<ContractDto>(
                     $"Le locataire {tenant.FullName} est déjà associé à un autre bien. Veuillez le dissocier d'abord.");
+            }
+            
+            // ⭐ VALIDATION MÉTIER 2: Vérifier que le bien est disponible
+            if (!property.IsAvailableForNewContract())
+            {
+                _logger.LogWarning(
+                    "Property {PropertyCode} is not available (Status: {Status}, Usage: {UsageType}). Cannot create new contract.",
+                    property.Code,
+                    property.Status,
+                    property.UsageType);
+                return Result.Failure<ContractDto>(
+                    $"Le bien {property.Name} n'est pas disponible pour un nouveau contrat. " +
+                    $"Statut: {property.Status}.");
+            }
+            
+            // ⭐ VALIDATION MÉTIER 3: Pour colocation individuelle, vérifier RoomId obligatoire
+            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+            {
+                if (!request.RoomId.HasValue)
+                {
+                    return Result.Failure<ContractDto>(
+                        "Pour une colocation individuelle, l'identifiant de la chambre (RoomId) est obligatoire.");
+                }
+                
+                // TODO: Vérifier que la chambre est disponible (nécessite une entité Room)
+                // Pour l'instant, on suppose que la validation est faite côté UI
             }
 
             // Parser le type de contrat
@@ -80,7 +118,9 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 request.StartDate,
                 request.EndDate,
                 request.Rent,
-                request.Deposit
+                request.Charges,
+                request.Deposit,
+                request.RoomId
             );
 
             // ✅ Set the generated code

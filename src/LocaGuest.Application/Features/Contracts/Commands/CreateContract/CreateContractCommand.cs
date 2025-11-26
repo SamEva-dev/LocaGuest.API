@@ -12,6 +12,8 @@ public record CreateContractCommand : IRequest<Result<ContractDto>>
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
     public decimal Rent { get; init; }
+    public decimal Charges { get; init; } = 0;
     public decimal? Deposit { get; init; }
+    public Guid? RoomId { get; init; }
     public string? Notes { get; init; }
 }

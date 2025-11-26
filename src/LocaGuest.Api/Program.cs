@@ -92,6 +92,9 @@ builder.Services.AddScoped<LocaGuest.Application.Services.ITrackingService, Loca
 // Application Layer (includes MediatR)
 builder.Services.AddApplication();
 
+// Background Services
+builder.Services.AddHostedService<LocaGuest.Api.Services.BackgroundJobs.ContractActivationBackgroundService>();
+
 // JWT Authentication with AuthGate (RSA via JWKS)
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var authGateUrl = builder.Configuration["AuthGate:Url"] ?? "https://localhost:8081";

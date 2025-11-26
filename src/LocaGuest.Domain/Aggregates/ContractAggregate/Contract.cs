@@ -24,9 +24,21 @@ public class Contract : AuditableEntity
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public decimal Rent { get; private set; }
+    public decimal Charges { get; private set; }
     public decimal? Deposit { get; private set; }
     public ContractStatus Status { get; private set; }
     public string? Notes { get; private set; }
+    
+    /// <summary>
+    /// Identifiant de la chambre pour les colocations individuelles
+    /// Null pour location complète ou colocation solidaire
+    /// </summary>
+    public Guid? RoomId { get; private set; }
+    
+    /// <summary>
+    /// Marque le contrat comme en conflit (autre contrat signé sur même bien/chambre)
+    /// </summary>
+    public bool IsConflict { get; private set; }
 
     private readonly List<Payment> _payments = new();
     public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
@@ -46,13 +58,20 @@ public class Contract : AuditableEntity
         DateTime startDate,
         DateTime endDate,
         decimal rent,
-        decimal? deposit = null)
+        decimal charges = 0,
+        decimal? deposit = null,
+        Guid? roomId = null)
     {
+        // Validations dates
         if (startDate >= endDate)
             throw new ValidationException("CONTRACT_INVALID_DATES", "Start date must be before end date");
 
+        // Validations montants
         if (rent <= 0)
             throw new ValidationException("CONTRACT_INVALID_RENT", "Rent must be positive");
+        
+        if (charges < 0)
+            throw new ValidationException("CONTRACT_INVALID_CHARGES", "Charges cannot be negative");
 
         var contract = new Contract
         {
@@ -63,8 +82,11 @@ public class Contract : AuditableEntity
             StartDate = startDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) : startDate.ToUniversalTime(),
             EndDate = endDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) : endDate.ToUniversalTime(),
             Rent = rent,
+            Charges = charges,
             Deposit = deposit,
-            Status = ContractStatus.Draft
+            RoomId = roomId,
+            Status = ContractStatus.Draft,
+            IsConflict = false
         };
 
         // Définir les documents requis selon le type de contrat
@@ -105,6 +127,32 @@ public class Contract : AuditableEntity
         Status = ContractStatus.Terminated;
         AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
     }
+    
+    /// <summary>
+    /// Annuler un contrat non signé (Draft ou Pending)
+    /// Utilisé quand un autre contrat est choisi comme contrat principal
+    /// </summary>
+    public void Cancel()
+    {
+        if (Status != ContractStatus.Draft && Status != ContractStatus.Pending)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft or pending contracts can be cancelled");
+
+        Status = ContractStatus.Cancelled;
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+    }
+    
+    /// <summary>
+    /// Marquer le contrat comme en conflit (autre contrat signé sur même bien/chambre)
+    /// </summary>
+    public void MarkAsConflict()
+    {
+        if (Status != ContractStatus.Draft)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft contracts can be marked as conflict");
+            
+        IsConflict = true;
+        Status = ContractStatus.Cancelled;
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+    }
 
     public void MarkAsExpiring()
     {
@@ -113,31 +161,58 @@ public class Contract : AuditableEntity
             Status = ContractStatus.Expiring;
         }
     }
+    
+    /// <summary>
+    /// Marquer le contrat comme expiré (arrivé à terme)
+    /// Transition: Active ou Expiring → Expired
+    /// DÉCLENCHE: Locataire Inactive + Bien Vacant (si pas d'autre contrat)
+    /// </summary>
+    public void MarkAsExpired()
+    {
+        if (Status != ContractStatus.Active && Status != ContractStatus.Expiring)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only active or expiring contracts can be marked as expired");
+            
+        Status = ContractStatus.Expired;
+        AddDomainEvent(new ContractExpired(Id, PropertyId, RenterTenantId, EndDate));
+    }
 
     /// <summary>
-    /// Marquer le contrat comme signé (ancienne méthode, dépréciée)
-    /// Transition: Draft → FullySigned
-    /// Cette méthode est conservée pour compatibilité mais il est recommandé de signer les documents individuellement
+    /// Marquer le contrat comme en attente de signature (PDF généré)
+    /// Transition: Draft → Pending
     /// </summary>
-    [Obsolete("Utilisez la signature de documents individuels via OnDocumentSigned")]
+    public void MarkAsPending()
+    {
+        if (Status != ContractStatus.Draft)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft contracts can be marked as pending");
+            
+        Status = ContractStatus.Pending;
+        AddDomainEvent(new ContractPending(Id, PropertyId, RenterTenantId));
+    }
+    
+    /// <summary>
+    /// Marquer le contrat comme signé (bail signé juridiquement)
+    /// Transition: Draft ou Pending → Signed
+    /// DÉCLENCHE: Locataire Reserved + Bien Reserved
+    /// </summary>
     public void MarkAsSigned(DateTime? signedDate = null)
     {
-        if (Status != ContractStatus.Draft && Status != ContractStatus.PartialSigned)
-            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft or partial signed contracts can be marked as signed");
+        if (Status != ContractStatus.Draft && Status != ContractStatus.Pending)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft or pending contracts can be marked as signed");
 
-        Status = ContractStatus.FullySigned;
+        Status = ContractStatus.Signed;
         var effectiveSignedDate = signedDate ?? DateTime.UtcNow;
         AddDomainEvent(new ContractSigned(Id, PropertyId, RenterTenantId, effectiveSignedDate));
     }
 
     /// <summary>
-    /// Activer un contrat signé
-    /// Transition: FullySigned → Active
+    /// Activer un contrat signé (au jour de la date de début)
+    /// Transition: Signed → Active
+    /// DÉCLENCHE: Locataire Occupant + Bien Occupé
     /// </summary>
     public void Activate()
     {
-        if (Status != ContractStatus.FullySigned)
-            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only fully signed contracts can be activated");
+        if (Status != ContractStatus.Signed)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only signed contracts can be activated");
 
         if (DateTime.UtcNow < StartDate)
             throw new ValidationException("CONTRACT_NOT_STARTED", "Contract cannot be activated before start date");
@@ -211,7 +286,7 @@ public class Contract : AuditableEntity
     
     /// <summary>
     /// Notifier qu'un document a été signé
-    /// Vérifie si tous les documents requis sont signés pour activation automatique
+    /// Vérifie si tous les documents requis sont signés pour marquer comme Signed
     /// </summary>
     public void OnDocumentSigned(DocumentType type)
     {
@@ -224,22 +299,16 @@ public class Contract : AuditableEntity
         // Vérifier si tous les documents requis sont signés
         if (AreAllRequiredDocumentsSigned())
         {
-            if (Status == ContractStatus.Draft || Status == ContractStatus.PartialSigned)
+            if (Status == ContractStatus.Draft || Status == ContractStatus.Pending)
             {
-                Status = ContractStatus.FullySigned;
-                AddDomainEvent(new ContractFullySigned(Id, PropertyId, RenterTenantId));
-                
-                // Activation automatique si dans la période de validité
-                if (CanActivate())
-                {
-                    Activate();
-                }
+                // Tous documents signés → Marquer comme Signed
+                MarkAsSigned();
             }
         }
         else if (Status == ContractStatus.Draft)
         {
-            // Au moins un document signé mais pas tous
-            Status = ContractStatus.PartialSigned;
+            // Au moins un document signé mais pas tous → Passer en Pending
+            MarkAsPending();
         }
     }
     
@@ -254,11 +323,11 @@ public class Contract : AuditableEntity
     }
     
     /// <summary>
-    /// Vérifier si le contrat peut être activé
+    /// Vérifier si le contrat peut être activé (au jour de début)
     /// </summary>
     public bool CanActivate()
     {
-        return Status == ContractStatus.FullySigned 
+        return Status == ContractStatus.Signed 
             && DateTime.UtcNow >= StartDate;
     }
 }
@@ -271,12 +340,14 @@ public enum ContractType
 
 public enum ContractStatus
 {
-    Draft,          // Brouillon, documents non créés ou non signés
-    PartialSigned,  // Certains documents signés mais pas tous
-    FullySigned,    // Tous les documents requis signés
-    Active,         // Contrat activé
-    Expiring,       // Expire bientôt
-    Terminated      // Résilié
+    Draft,          // Brouillon modifiable, aucun impact réel
+    Pending,        // En attente de signature (PDF généré mais pas signé)
+    Signed,         // Bail signé et validé juridiquement (déclenche réservation)
+    Active,         // Bail commence le jour de la date de début (locataire occupant)
+    Expiring,       // Expire bientôt (notification automatique)
+    Terminated,     // Rupture anticipée ou fin de bail
+    Expired,        // Bail arrivé à terme
+    Cancelled       // Annulé (contrat Draft qui n'a pas été choisi, conflit)
 }
 
 /// <summary>

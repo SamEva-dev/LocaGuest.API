@@ -551,6 +551,76 @@ public class DocumentsController : ControllerBase
     }
     
     /// <summary>
+    /// Envoyer un document pour signature électronique
+    /// POST /api/documents/{id}/send-for-signature
+    /// </summary>
+    [HttpPost("{id:guid}/send-for-signature")]
+    public async Task<IActionResult> SendDocumentForElectronicSignature(
+        Guid id, 
+        [FromBody] SendDocumentForSignatureRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await _unitOfWork.Documents.GetByIdAsync(id, cancellationToken);
+            if (document == null)
+                return NotFound(new { message = "Document not found" });
+
+            // Vérifier que le document est un PDF
+            if (!document.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Only PDF documents can be sent for electronic signature" });
+
+            // Si le document est lié à un contrat, vérifier son statut
+            if (document.ContractId.HasValue)
+            {
+                var contract = await _unitOfWork.Contracts.GetByIdAsync(document.ContractId.Value, cancellationToken);
+                if (contract != null && contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Draft)
+                {
+                    return BadRequest(new { message = "Only draft contracts can be sent for signature" });
+                }
+            }
+
+            // TODO: Implémenter l'intégration avec un service de signature électronique
+            // Services recommandés:
+            // - DocuSign API: https://developers.docusign.com/
+            // - HelloSign API (Dropbox Sign): https://www.hellosign.com/api
+            // - Adobe Sign API: https://www.adobe.io/apis/documentcloud/sign.html
+            // - Yousign API (France): https://yousign.com/fr-fr/api
+            
+            // Processus type:
+            // 1. Lire le fichier PDF depuis le disque
+            // 2. Créer une enveloppe de signature
+            // 3. Ajouter le document à l'enveloppe
+            // 4. Ajouter les signataires (destinataires)
+            // 5. Configurer les champs de signature
+            // 6. Envoyer l'enveloppe
+            // 7. Sauvegarder l'ID d'enveloppe pour tracking
+            // 8. Mettre à jour le statut du document/contrat
+
+            _logger.LogInformation(
+                "Document {DocumentId} ({FileName}) sent for electronic signature to {Recipients}",
+                id, 
+                document.FileName,
+                string.Join(", ", request.Recipients.Select(r => r.Email)));
+
+            return Ok(new
+            {
+                message = "Document sent for electronic signature successfully",
+                documentId = id,
+                fileName = document.FileName,
+                recipients = request.Recipients.Count,
+                status = "sent",
+                // envelopeId = "xxx-xxx-xxx" // ID retourné par le service de signature
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending document {DocumentId} for signature", id);
+            return StatusCode(500, new { message = "Error sending document for signature", error = ex.Message });
+        }
+    }
+    
+    /// <summary>
     /// Récupérer un document par son ID
     /// GET /api/documents/{id}
     /// </summary>
@@ -593,4 +663,16 @@ public class DocumentsController : ControllerBase
 public record MarkDocumentAsSignedRequest(
     DateTime? SignedDate = null,
     string? SignedBy = null
+);
+
+public record SendDocumentForSignatureRequest(
+    List<SignatureRecipient> Recipients,
+    string? Message = null,
+    int? ExpirationDays = 30
+);
+
+public record SignatureRecipient(
+    string Email,
+    string Name,
+    int SigningOrder = 1
 );

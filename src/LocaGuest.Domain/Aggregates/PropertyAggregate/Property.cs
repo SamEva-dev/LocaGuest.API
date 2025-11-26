@@ -66,7 +66,8 @@ public class Property : AuditableEntity
             throw new ValidationException("PROPERTY_INVALID_RENT", "Rent cannot be negative");
 
         // Validation pour colocation
-        if (usageType == PropertyUsageType.Colocation && (!totalRooms.HasValue || totalRooms.Value <= 0))
+        if ((usageType == PropertyUsageType.ColocationIndividual || usageType == PropertyUsageType.ColocationSolidaire) 
+            && (!totalRooms.HasValue || totalRooms.Value <= 0))
             throw new ValidationException("PROPERTY_COLOCATION_ROOMS_REQUIRED", "TotalRooms is required for colocations");
 
         var property = new Property
@@ -81,7 +82,7 @@ public class Property : AuditableEntity
             Bedrooms = bedrooms,
             Bathrooms = bathrooms,
             Status = PropertyStatus.Vacant,
-            TotalRooms = usageType == PropertyUsageType.Colocation ? totalRooms : null,
+            TotalRooms = (usageType == PropertyUsageType.ColocationIndividual || usageType == PropertyUsageType.ColocationSolidaire) ? totalRooms : null,
             OccupiedRooms = 0
         };
 
@@ -205,7 +206,7 @@ public class Property : AuditableEntity
     {
         OccupiedRooms = AssociatedTenantCodes.Count;
         
-        if (UsageType == PropertyUsageType.Colocation)
+        if (UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.ColocationSolidaire)
         {
             // Pour une colocation
             if (OccupiedRooms == 0)
@@ -233,6 +234,87 @@ public class Property : AuditableEntity
                 SetStatus(PropertyStatus.Vacant);
             }
         }
+    }
+    
+    /// <summary>
+    /// Incrémenter le nombre de chambres occupées (pour colocation individuelle)
+    /// </summary>
+    public void IncrementOccupiedRooms()
+    {
+        if (UsageType != PropertyUsageType.ColocationIndividual)
+            throw new ValidationException("PROPERTY_NOT_COLOCATION_INDIVIDUAL", "Only colocation individual properties can increment occupied rooms");
+            
+        if (OccupiedRooms >= (TotalRooms ?? 0))
+            throw new ValidationException("PROPERTY_NO_MORE_ROOMS", "All rooms are already occupied");
+            
+        OccupiedRooms++;
+    }
+    
+    /// <summary>
+    /// Décrémenter le nombre de chambres occupées (pour colocation individuelle)
+    /// </summary>
+    public void DecrementOccupiedRooms()
+    {
+        if (UsageType != PropertyUsageType.ColocationIndividual)
+            throw new ValidationException("PROPERTY_NOT_COLOCATION_INDIVIDUAL", "Only colocation individual properties can decrement occupied rooms");
+            
+        if (OccupiedRooms <= 0)
+            throw new ValidationException("PROPERTY_NO_OCCUPIED_ROOMS", "No rooms are currently occupied");
+            
+        OccupiedRooms--;
+    }
+    
+    /// <summary>
+    /// Vérifier si le bien est disponible pour un nouveau contrat
+    /// </summary>
+    public bool IsAvailableForNewContract()
+    {
+        // Location complète: doit être Vacant ou ne pas avoir de contrat Signed/Active
+        if (UsageType == PropertyUsageType.Complete)
+        {
+            return Status == PropertyStatus.Vacant;
+        }
+        
+        // Colocation solidaire: même règle que location complète
+        if (UsageType == PropertyUsageType.ColocationSolidaire)
+        {
+            return Status == PropertyStatus.Vacant;
+        }
+        
+        // Colocation individuelle: vérifier s'il reste des chambres
+        if (UsageType == PropertyUsageType.ColocationIndividual)
+        {
+            return OccupiedRooms < (TotalRooms ?? 0);
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Vérifier si une chambre spécifique est disponible (colocation individuelle)
+    /// Note: Cette méthode nécessite le contexte des contrats actifs
+    /// </summary>
+    public bool CanAcceptNewTenant()
+    {
+        if (UsageType == PropertyUsageType.ColocationIndividual)
+        {
+            return OccupiedRooms < (TotalRooms ?? 0);
+        }
+        
+        return Status == PropertyStatus.Vacant;
+    }
+    
+    /// <summary>
+    /// Marquer le bien comme réservé (contrat signé, début futur)
+    /// </summary>
+    public void SetReserved(Guid contractId, DateTime startDate)
+    {
+        if (Status == PropertyStatus.Occupied)
+            throw new ValidationException("PROPERTY_ALREADY_OCCUPIED", "Property is already occupied");
+        
+        var oldStatus = Status;
+        Status = PropertyStatus.Reserved;
+        AddDomainEvent(new PropertyStatusChanged(Id, oldStatus, PropertyStatus.Reserved));
     }
     
     /// <summary>
@@ -267,14 +349,16 @@ public enum PropertyType
 
 public enum PropertyStatus
 {
-    Vacant,
-    PartiallyOccupied,  // Pour les colocations partiellement occupées
-    Occupied
+    Vacant,              // Libre, disponible à la location
+    Reserved,            // Réservé (contrat signé, début futur)
+    PartiallyOccupied,   // Pour les colocations partiellement occupées
+    Occupied             // Occupé (au moins un contrat actif)
 }
 
 public enum PropertyUsageType
 {
-    Complete,      // Location complète du bien
-    Colocation,    // Colocation (chambres individuelles)
-    Airbnb         // Location courte durée type Airbnb
+    Complete,              // Location complète du bien (1 seul contrat)
+    ColocationIndividual,  // Colocation avec baux individuels (1 contrat par chambre)
+    ColocationSolidaire,   // Colocation avec bail solidaire (1 contrat pour tous)
+    Airbnb                 // Location courte durée type Airbnb
 }

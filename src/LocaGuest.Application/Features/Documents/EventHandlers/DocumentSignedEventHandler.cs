@@ -64,8 +64,22 @@ public class DocumentSignedEventHandler : INotificationHandler<DocumentSigned>
             "Contract {ContractId} updated after document signature. Status: {PreviousStatus} → {NewStatus}",
             contract.Id, previousStatus, newStatus);
 
-        // Si le contrat est maintenant FullySigned ou Active, marquer la propriété comme occupée
-        if (newStatus == ContractStatus.FullySigned || newStatus == ContractStatus.Active)
+        // Si le contrat est maintenant Signed, marquer la propriété comme Reserved
+        // Si Active, marquer comme Occupied
+        if (newStatus == ContractStatus.Signed)
+        {
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            if (property != null)
+            {
+                property.SetStatus(PropertyStatus.Reserved);
+                await _unitOfWork.CommitAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Property {PropertyId} marked as Reserved due to contract {ContractId} being Signed",
+                    property.Id, contract.Id);
+            }
+        }
+        else if (newStatus == ContractStatus.Active)
         {
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
             if (property != null)
@@ -74,8 +88,8 @@ public class DocumentSignedEventHandler : INotificationHandler<DocumentSigned>
                 await _unitOfWork.CommitAsync(cancellationToken);
 
                 _logger.LogInformation(
-                    "Property {PropertyId} marked as Occupied due to contract {ContractId} being {Status}",
-                    property.Id, contract.Id, newStatus);
+                    "Property {PropertyId} marked as Occupied due to contract {ContractId} being Active",
+                    property.Id, contract.Id);
             }
         }
     }

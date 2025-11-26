@@ -146,7 +146,9 @@ public class ContractsController : ControllerBase
             request.StartDate,
             request.EndDate,
             request.Rent,
-            request.Deposit
+            request.Charges,
+            request.Deposit,
+            request.RoomId
         );
 
         // NOTE: La propriété sera marquée comme occupée lors de la signature du contrat
@@ -202,6 +204,17 @@ public class ContractsController : ControllerBase
                 property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Vacant);
             }
         }
+        
+        // ✅ DISSOCIATION: Retirer le locataire du bien
+        var tenant = await _context.Tenants.FindAsync(contract.RenterTenantId);
+        if (tenant != null)
+        {
+            tenant.DissociateFromProperty();
+            tenant.Deactivate();
+            _logger.LogInformation(
+                "Tenant {TenantCode} dissociated from property (contract terminated)",
+                tenant.Code);
+        }
 
         await _context.SaveChangesAsync();
 
@@ -215,25 +228,277 @@ public class ContractsController : ControllerBase
         if (contract == null)
             return NotFound(new { message = "Contract not found" });
 
+        var property = await _context.Properties.FindAsync(contract.PropertyId);
+        if (property == null)
+            return NotFound(new { message = "Property not found" });
+            
+        var tenant = await _context.Tenants.FindAsync(contract.RenterTenantId);
+        if (tenant == null)
+            return NotFound(new { message = "Tenant not found" });
+
         try
         {
+            // ⭐ VALIDATION MÉTIER: Vérifier selon le type de bien
+            var existingSignedContracts = await _context.Contracts
+                .Where(c => 
+                    c.PropertyId == contract.PropertyId &&
+                    c.Id != id &&
+                    (c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Signed ||
+                     c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active))
+                .ToListAsync();
+            
+            // Non-colocation ou Colocation solidaire: 1 seul contrat Signed/Active autorisé
+            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Complete ||
+                property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationSolidaire)
+            {
+                if (existingSignedContracts.Any())
+                {
+                    return BadRequest(new { 
+                        message = "Un contrat signé ou actif existe déjà pour ce bien. " +
+                                 "Un seul contrat est autorisé pour une location complète ou colocation solidaire."
+                    });
+                }
+            }
+            
+            // Colocation individuelle: vérifier chambre disponible
+            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+            {
+                if (contract.RoomId.HasValue)
+                {
+                    var roomTaken = existingSignedContracts.Any(c => c.RoomId == contract.RoomId);
+                    if (roomTaken)
+                    {
+                        return BadRequest(new { 
+                            message = "Cette chambre est déjà occupée ou réservée par un autre contrat."
+                        });
+                    }
+                }
+            }
+            
+            // Marquer le contrat comme signé
             contract.MarkAsSigned(request?.SignedDate);
             
-            // Marquer la propriété comme occupée maintenant que le contrat est signé
-            var property = await _context.Properties.FindAsync(contract.PropertyId);
-            if (property != null)
+            // 1. Annuler tous les autres contrats Draft ou Pending du même locataire
+            // et marquer comme conflictuels
+            var otherContractsToCancel = await _context.Contracts
+                .Where(c => 
+                    c.RenterTenantId == contract.RenterTenantId &&
+                    c.Id != id &&
+                    (c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Draft || 
+                     c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Pending))
+                .ToListAsync();
+            
+            foreach (var otherContract in otherContractsToCancel)
             {
-                property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied);
+                otherContract.MarkAsConflict();
+                _logger.LogInformation("Contract {ContractId} marked as conflict because tenant chose contract {ChosenContractId}", 
+                    otherContract.Id, id);
             }
+            
+            // 2. Marquer la propriété comme RESERVED (pas Occupied - commence à StartDate)
+            property.SetReserved(contract.Id, contract.StartDate);
+            _logger.LogInformation("Property {PropertyId} marked as Reserved for contract {ContractId}", 
+                contract.PropertyId, contract.Id);
+            
+            // 3. Marquer le locataire comme Reserved
+            tenant.SetReserved(contract.Id, contract.StartDate);
+            _logger.LogInformation("Tenant {TenantId} marked as Reserved for contract {ContractId}", 
+                contract.RenterTenantId, contract.Id);
+            
+            // 4. ✅ ASSIGNATION AUTOMATIQUE: Assigner le locataire au bien (Futur occupant)
+            tenant.AssociateToProperty(property.Id, property.Code);
+            _logger.LogInformation(
+                "Tenant {TenantCode} automatically assigned to Property {PropertyCode} as future occupant",
+                tenant.Code, property.Code);
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Contract {ContractId} marked as signed, property {PropertyId} marked as occupied", id, contract.PropertyId);
-            return Ok(new { message = "Contract marked as signed successfully", id = contract.Id });
+            _logger.LogInformation(
+                "Contract {ContractId} marked as Signed, {CancelledCount} other contracts marked as conflict, " +
+                "property and tenant marked as Reserved", 
+                id, otherContractsToCancel.Count);
+                
+            return Ok(new { 
+                message = "Contrat marqué comme signé avec succès. Le bien et le locataire sont maintenant réservés.", 
+                id = contract.Id,
+                conflictContracts = otherContractsToCancel.Count,
+                propertyStatus = "Reserved",
+                tenantStatus = "Reserved",
+                startDate = contract.StartDate
+            });
         }
         catch (Domain.Exceptions.ValidationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+    
+    /// <summary>
+    /// Activer manuellement un contrat signé (normalement fait automatiquement par le BackgroundService)
+    /// </summary>
+    [HttpPut("{id:guid}/activate")]
+    public async Task<IActionResult> ActivateContract(Guid id)
+    {
+        var contract = await _context.Contracts.FindAsync(id);
+            
+        if (contract == null)
+            return NotFound(new { message = "Contract not found" });
+
+        try
+        {
+            // Activer le contrat
+            contract.Activate();
+
+            // Charger le bien associé
+            var property = await _context.Properties.FindAsync(contract.PropertyId);
+            if (property != null)
+            {
+                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+                {
+                    property.IncrementOccupiedRooms();
+                    
+                    if (property.OccupiedRooms >= (property.TotalRooms ?? 0))
+                    {
+                        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied);
+                    }
+                    else
+                    {
+                        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.PartiallyOccupied);
+                    }
+                }
+                else
+                {
+                    property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied);
+                }
+            }
+
+            // Charger le locataire associé
+            var tenant = await _context.Tenants.FindAsync(contract.RenterTenantId);
+            if (tenant != null)
+            {
+                tenant.SetActive();
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "✅ Contrat {ContractId} activé manuellement (Signed → Active)",
+                id);
+                
+            return Ok(new { 
+                message = "Contrat activé avec succès", 
+                id = contract.Id,
+                propertyStatus = property?.Status.ToString(),
+                tenantStatus = tenant?.Status.ToString()
+            });
+        }
+        catch (Domain.Exceptions.ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Erreur lors de l'activation du contrat {ContractId}", id);
+            return StatusCode(500, new { message = "Erreur lors de l'activation du contrat" });
+        }
+    }
+    
+    /// <summary>
+    /// Marquer manuellement un contrat comme expiré (normalement fait automatiquement par le BackgroundService)
+    /// </summary>
+    [HttpPut("{id:guid}/mark-expired")]
+    public async Task<IActionResult> MarkContractAsExpired(Guid id)
+    {
+        var contract = await _context.Contracts.FindAsync(id);
+            
+        if (contract == null)
+            return NotFound(new { message = "Contract not found" });
+
+        try
+        {
+            // Marquer comme expiré
+            contract.MarkAsExpired();
+
+            // Charger le bien associé
+            var property = await _context.Properties.FindAsync(contract.PropertyId);
+            if (property != null)
+            {
+                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+                {
+                    property.DecrementOccupiedRooms();
+                    
+                    if (property.OccupiedRooms == 0)
+                    {
+                        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Vacant);
+                    }
+                    else
+                    {
+                        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.PartiallyOccupied);
+                    }
+                }
+                else
+                {
+                    // Vérifier s'il reste d'autres contrats actifs
+                    var hasOtherActiveContracts = await _context.Contracts
+                        .AnyAsync(c => 
+                            c.PropertyId == property.Id &&
+                            c.Id != id &&
+                            c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active);
+
+                    if (!hasOtherActiveContracts)
+                    {
+                        property.SetStatus(Domain.Aggregates.PropertyAggregate.PropertyStatus.Vacant);
+                    }
+                }
+            }
+
+            // Charger le locataire associé
+            var tenant = await _context.Tenants.FindAsync(contract.RenterTenantId);
+            if (tenant != null)
+            {
+                // Vérifier si le locataire a d'autres contrats actifs
+                var hasOtherActiveContracts = await _context.Contracts
+                    .AnyAsync(c => 
+                        c.RenterTenantId == tenant.Id &&
+                        c.Id != id &&
+                        c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active);
+
+                if (!hasOtherActiveContracts)
+                {
+                    // ✅ DISSOCIATION: Retirer le locataire du bien
+                    tenant.DissociateFromProperty();
+                    tenant.Deactivate();
+                    _logger.LogInformation(
+                        "Tenant {TenantCode} dissociated from property (contract expired)",
+                        tenant.Code);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "✅ Contrat {ContractId} marqué comme expiré manuellement (Active → Expired)",
+                id);
+                
+            return Ok(new { 
+                message = "Contrat marqué comme expiré", 
+                id = contract.Id,
+                propertyStatus = property?.Status.ToString(),
+                tenantStatus = tenant?.Status.ToString()
+            });
+        }
+        catch (Domain.Exceptions.ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Erreur lors de l'expiration du contrat {ContractId}", id);
+            return StatusCode(500, new { message = "Erreur lors de l'expiration du contrat" });
         }
     }
 }
@@ -245,7 +510,9 @@ public record CreateContractRequest(
     DateTime StartDate,
     DateTime EndDate,
     decimal Rent,
-    decimal? Deposit = null
+    decimal Charges = 0,
+    decimal? Deposit = null,
+    Guid? RoomId = null
 );
 
 public record RecordPaymentRequest(

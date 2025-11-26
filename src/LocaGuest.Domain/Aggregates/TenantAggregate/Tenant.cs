@@ -101,10 +101,51 @@ public class Tenant : AuditableEntity
         PropertyId = null;
         PropertyCode = null;
     }
+    
+    /// <summary>
+    /// Marquer le locataire comme réservé (contrat signé, début futur)
+    /// Transition: Inactive → Reserved
+    /// </summary>
+    public void SetReserved(Guid contractId, DateTime startDate)
+    {
+        if (Status == TenantStatus.Active)
+            throw new InvalidOperationException("Cannot reserve an active tenant");
+            
+        Status = TenantStatus.Reserved;
+        AddDomainEvent(new TenantStatusChanged(Id, TenantStatus.Reserved));
+    }
+    
+    /// <summary>
+    /// Activer le locataire (contrat devient actif)
+    /// Transition: Reserved → Active
+    /// </summary>
+    public void SetActive()
+    {
+        Status = TenantStatus.Active;
+        AddDomainEvent(new TenantStatusChanged(Id, TenantStatus.Active));
+    }
+    
+    /// <summary>
+    /// Vérifier si le locataire est disponible pour un nouveau contrat
+    /// Un locataire Reserved ou Active ne peut pas avoir de nouveau contrat (sauf colocation)
+    /// </summary>
+    public bool IsAvailableForNewContract()
+    {
+        return Status == TenantStatus.Inactive;
+    }
+    
+    /// <summary>
+    /// Vérifier si le locataire a un contrat actif ou signé
+    /// </summary>
+    public bool HasActiveOrReservedStatus()
+    {
+        return Status == TenantStatus.Active || Status == TenantStatus.Reserved;
+    }
 }
 
 public enum TenantStatus
 {
-    Active,
-    Inactive
+    Active,      // Locataire avec contrat actif (occupant actuel)
+    Reserved,    // Locataire avec contrat signé (futur occupant)
+    Inactive     // Locataire sans contrat actif
 }
