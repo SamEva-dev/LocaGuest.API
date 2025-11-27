@@ -9,6 +9,7 @@ using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Security.Cryptography;
 using System.Text;
@@ -65,6 +66,12 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+    //c.EnableAnnotations();
+    //c.MapType<IFormFile>(() => new OpenApiSchema
+    //{
+    //    Type = "string",
+    //    Format = "binary"
+    //});
 });
 
 // Infrastructure Layer (includes DbContexts, Repositories, Services)

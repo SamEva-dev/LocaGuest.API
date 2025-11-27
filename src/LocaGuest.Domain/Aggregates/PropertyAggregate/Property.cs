@@ -360,5 +360,6 @@ public enum PropertyUsageType
     Complete,              // Location complète du bien (1 seul contrat)
     ColocationIndividual,  // Colocation avec baux individuels (1 contrat par chambre)
     ColocationSolidaire,   // Colocation avec bail solidaire (1 contrat pour tous)
+    Colocation,
     Airbnb                 // Location courte durée type Airbnb
 }

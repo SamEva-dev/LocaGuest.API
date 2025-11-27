@@ -49,7 +49,7 @@ public class DocumentsController : ControllerBase
     {
         var query = new GetDocumentStatsQuery();
         var result = await _mediator.Send(query);
-        
+
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
 
@@ -61,7 +61,7 @@ public class DocumentsController : ControllerBase
     {
         var query = new GetAllDocumentsQuery();
         var result = await _mediator.Send(query);
-        
+
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
 
@@ -73,7 +73,7 @@ public class DocumentsController : ControllerBase
     {
         var query = new GetDocumentTemplatesQuery();
         var result = await _mediator.Send(query);
-        
+
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
 
@@ -243,7 +243,7 @@ public class DocumentsController : ControllerBase
             else
             {
                 _logger.LogInformation("Document metadata saved: {Code}", saveResult.Data!.Code);
-                
+
                 // NOUVEAU: Associer le document au contrat
                 if (dto.ContractId.HasValue && saveResult.Data?.Id != null)
                 {
@@ -252,7 +252,7 @@ public class DocumentsController : ControllerBase
                     {
                         contract.AssociateDocument(saveResult.Data.Id, documentType);
                         await _unitOfWork.CommitAsync(cancellationToken);
-                        
+
                         _logger.LogInformation(
                             "Document {DocumentId} associated with Contract {ContractId}, Status={Status}",
                             saveResult.Data.Id,
@@ -270,7 +270,7 @@ public class DocumentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating contract for Tenant={TenantId}, Property={PropertyId}", 
+            _logger.LogError(ex, "Error generating contract for Tenant={TenantId}, Property={PropertyId}",
                 dto.TenantId, dto.PropertyId);
             return StatusCode(500, new { message = "Error generating contract", error = ex.Message });
         }
@@ -281,7 +281,7 @@ public class DocumentsController : ControllerBase
     {
         var query = new GetTenantDocumentsQuery { TenantId = tenantId };
         var result = await _mediator.Send(query);
-        
+
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
 
@@ -297,7 +297,7 @@ public class DocumentsController : ControllerBase
                 return Unauthorized(new { message = "User not authenticated" });
 
             var documents = await _unitOfWork.Documents.GetByPropertyIdAsync(Guid.Parse(propertyId));
-            
+
             // Group by category
             var groupedDocs = documents
                 .GroupBy(d => d.Category)
@@ -331,7 +331,14 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadDocument([FromForm] IFormFile file, [FromForm] string type, [FromForm] string category, [FromForm] string? tenantId, [FromForm] string? propertyId, [FromForm] string? description)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadDocument(
+        IFormFile file,
+        [FromForm] string type,
+        [FromForm] string category,
+        [FromForm] string? tenantId,
+        [FromForm] string? propertyId,
+        [FromForm] string? description)
     {
         try
         {

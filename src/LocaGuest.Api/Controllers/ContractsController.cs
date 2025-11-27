@@ -501,6 +501,75 @@ public class ContractsController : ControllerBase
             return StatusCode(500, new { message = "Erreur lors de l'expiration du contrat" });
         }
     }
+    
+    /// <summary>
+    /// Supprimer un contrat (uniquement les contrats Draft ou Cancelled)
+    /// DELETE /api/contracts/{id}
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteContract(Guid id)
+    {
+        var contract = await _context.Contracts
+            .Include(c => c.Payments)
+            .FirstOrDefaultAsync(c => c.Id == id);
+            
+        if (contract == null)
+            return NotFound(new { message = "Contract not found" });
+
+        // ✅ VALIDATION: Seuls les contrats Draft ou Cancelled peuvent être supprimés
+        if (contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Draft &&
+            contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Cancelled)
+        {
+            return BadRequest(new { 
+                message = $"Impossible de supprimer un contrat avec le statut '{contract.Status}'. Seuls les contrats Draft ou Cancelled peuvent être supprimés."
+            });
+        }
+
+        try
+        {
+            // ✅ CASCADE: Supprimer les paiements associés
+            if (contract.Payments.Any())
+            {
+                _context.Payments.RemoveRange(contract.Payments);
+                _logger.LogInformation(
+                    "Suppression de {PaymentCount} paiements pour le contrat {ContractId}",
+                    contract.Payments.Count, id);
+            }
+
+            // ✅ CASCADE: Supprimer les documents associés
+            var documents = await _context.Documents
+                .Where(d => d.ContractId == id)
+                .ToListAsync();
+                
+            if (documents.Any())
+            {
+                _context.Documents.RemoveRange(documents);
+                _logger.LogInformation(
+                    "Suppression de {DocumentCount} documents pour le contrat {ContractId}",
+                    documents.Count, id);
+            }
+
+            // Supprimer le contrat
+            _context.Contracts.Remove(contract);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "✅ Contrat {ContractId} (Code: {ContractCode}, Status: {Status}) supprimé avec succès",
+                id, contract.Code, contract.Status);
+                
+            return Ok(new { 
+                message = "Contrat supprimé avec succès", 
+                id = contract.Id,
+                deletedPayments = contract.Payments.Count,
+                deletedDocuments = documents.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Erreur lors de la suppression du contrat {ContractId}", id);
+            return StatusCode(500, new { message = "Erreur lors de la suppression du contrat", error = ex.Message });
+        }
+    }
 }
 
 public record CreateContractRequest(
