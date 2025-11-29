@@ -157,7 +157,23 @@ public class ContractsController : ControllerBase
         _context.Contracts.Add(contract);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetContract), new { id = contract.Id }, new { id = contract.Id, propertyId = contract.PropertyId, tenantId = contract.RenterTenantId });
+        // ✅ FIX #1: Return tenantName in response
+        return CreatedAtAction(nameof(GetContract), new { id = contract.Id }, new 
+        { 
+            id = contract.Id, 
+            propertyId = contract.PropertyId, 
+            propertyName = property.Name,
+            tenantId = contract.RenterTenantId,
+            tenantName = tenant.FullName, // ✅ Include tenant name
+            type = contract.Type,
+            startDate = contract.StartDate,
+            endDate = contract.EndDate,
+            rent = contract.Rent,
+            charges = contract.Charges,
+            deposit = contract.Deposit,
+            status = contract.Status,
+            roomId = contract.RoomId
+        });
     }
 
     [HttpPost("{id:guid}/payments")]

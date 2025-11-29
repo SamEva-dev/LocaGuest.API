@@ -19,7 +19,7 @@ namespace LocaGuest.Api.Controllers;
 /// </summary>
 [Authorize]
 [ApiController]
-[Route("api/inventories")]
+[Route("api/[controller]")]
 public class InventoriesController : ControllerBase
 {
     private readonly IMediator _mediator;

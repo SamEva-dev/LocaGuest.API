@@ -35,6 +35,20 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 return Result.Failure<PropertyDto>($"Property with ID {request.Id} not found");
             }
 
+            // ✅ Mapper les rooms pour les colocations
+            var roomDtos = property.Rooms?.Select(r => new PropertyRoomDto
+            {
+                Id = r.Id,
+                PropertyId = r.PropertyId,
+                Name = r.Name,
+                Surface = r.Surface,
+                Rent = r.Rent,
+                Charges = r.Charges,
+                Description = r.Description,
+                Status = r.Status.ToString(),
+                CurrentContractId = r.CurrentContractId
+            }).ToList() ?? new List<PropertyRoomDto>();
+
             var propertyDto = new PropertyDto
             {
                 Id = property.Id,
@@ -78,7 +92,8 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 AcquisitionDate = property.AcquisitionDate,
                 TotalWorksAmount = property.TotalWorksAmount,
                 CreatedAt = property.CreatedAt,
-                UpdatedAt = property.UpdatedAt
+                UpdatedAt = property.UpdatedAt,
+                Rooms = roomDtos  // ✅ Inclure les rooms
             };
 
             return Result.Success(propertyDto);

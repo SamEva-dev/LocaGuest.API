@@ -25,6 +25,7 @@ public class PropertyDto
     // Pour les colocations
     public int? TotalRooms { get; set; }
     public int? OccupiedRooms { get; set; }
+    public List<PropertyRoomDto> Rooms { get; set; } = new();  // ✅ Liste des chambres
     
     // Pour Airbnb
     public int? MinimumStay { get; set; }
@@ -71,7 +72,7 @@ public class PropertyDetailDto : PropertyDto
     /// <summary>
     /// Liste des chambres pour les colocations
     /// </summary>
-    public List<PropertyRoomDto> Rooms { get; set; } = new();
+    public new List<PropertyRoomDto> Rooms { get; set; } = new();
 }
 
 /// <summary>

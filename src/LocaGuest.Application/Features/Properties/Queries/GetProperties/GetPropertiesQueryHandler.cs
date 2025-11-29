@@ -26,7 +26,9 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
     {
         try
         {
-            var query = _unitOfWork.Properties.Query();
+            // ✅ Charger les rooms pour les colocations
+            var queryWithRooms = _unitOfWork.Properties.Query().Include(p => p.Rooms);
+            IQueryable<Property> query = queryWithRooms;
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))
@@ -103,7 +105,19 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 MaximumStay = p.MaximumStay,
                 PricePerNight = p.PricePerNight,
                 GesRating = p.GesRating,
-                PropertyUsageType = p.UsageType.ToString()
+                PropertyUsageType = p.UsageType.ToString(),
+                Rooms = p.Rooms?.Select(r => new PropertyRoomDto  // ✅ Mapper les rooms
+                {
+                    Id = r.Id,
+                    PropertyId = r.PropertyId,
+                    Name = r.Name,
+                    Surface = r.Surface,
+                    Rent = r.Rent,
+                    Charges = r.Charges,
+                    Description = r.Description,
+                    Status = r.Status.ToString(),
+                    CurrentContractId = r.CurrentContractId
+                }).ToList() ?? new List<PropertyRoomDto>()
 
             }).ToList();
 
