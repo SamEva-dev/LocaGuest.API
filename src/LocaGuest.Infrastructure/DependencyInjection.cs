@@ -73,6 +73,9 @@ public static class DependencyInjection
         // Document Services
         services.AddScoped<IContractGeneratorService, ContractGeneratorService>();
         services.AddScoped<IQuittanceGeneratorService, QuittanceGeneratorService>();
+        
+        // Email Service
+        services.AddScoped<IEmailService, EmailService>();
 
         return services;
     }

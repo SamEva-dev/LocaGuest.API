@@ -6,6 +6,7 @@ using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
+using LocaGuest.Domain.Aggregates.InventoryAggregate;
 using LocaGuest.Domain.Entities;
 using LocaGuest.Domain.Analytics;
 using LocaGuest.Domain.Common;
@@ -45,6 +46,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<InventoryEntry> InventoryEntries => Set<InventoryEntry>();
+    public DbSet<InventoryExit> InventoryExits => Set<InventoryExit>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
     public DbSet<RentabilityScenario> RentabilityScenarios => Set<RentabilityScenario>();
     public DbSet<ScenarioVersion> ScenarioVersions => Set<ScenarioVersion>();
@@ -384,6 +387,119 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasIndex(te => new { te.TenantId, te.UserId, te.Timestamp });
             entity.HasIndex(te => new { te.EventType, te.Timestamp });
         });
+        
+        // ✅ InventoryEntry (EDL Entrée)
+        modelBuilder.Entity<InventoryEntry>(entity =>
+        {
+            entity.ToTable("inventory_entries");
+            entity.HasKey(ie => ie.Id);
+            entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
+            entity.HasIndex(ie => ie.TenantId);
+            entity.Property(ie => ie.PropertyId).IsRequired();
+            entity.Property(ie => ie.ContractId).IsRequired();
+            entity.HasIndex(ie => ie.ContractId);
+            entity.Property(ie => ie.AgentName).IsRequired().HasMaxLength(200);
+            entity.Property(ie => ie.InspectionDate).IsRequired();
+            entity.Property(ie => ie.Status).IsRequired();
+            entity.Property(ie => ie.GeneralObservations).HasMaxLength(1000);
+            entity.Property(ie => ie.RepresentativeName).HasMaxLength(200);
+            
+            // PhotoUrls as comma-separated string
+            entity.Property(ie => ie.PhotoUrls)
+                .HasConversion(
+                    v => string.Join(",", v),
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                );
+            
+            // Items as owned entities
+            entity.OwnsMany(ie => ie.Items, item =>
+            {
+                item.ToTable("inventory_items");
+                item.WithOwner().HasForeignKey("InventoryEntryId");
+                item.Property<Guid>("InventoryEntryId");
+                item.HasKey("InventoryEntryId", "RoomName", "ElementName");
+                item.Property(i => i.RoomName).IsRequired().HasMaxLength(100);
+                item.Property(i => i.ElementName).IsRequired().HasMaxLength(100);
+                item.Property(i => i.Category).IsRequired().HasMaxLength(50);
+                item.Property(i => i.Condition).IsRequired();
+                item.Property(i => i.Comment).HasMaxLength(500);
+                item.Property(i => i.PhotoUrls)
+                    .HasConversion(
+                        v => string.Join(",", v),
+                        v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                    );
+            });
+            
+            entity.Ignore(ie => ie.DomainEvents);
+        });
+        
+        // ✅ InventoryExit (EDL Sortie)
+        modelBuilder.Entity<InventoryExit>(entity =>
+        {
+            entity.ToTable("inventory_exits");
+            entity.HasKey(ie => ie.Id);
+            entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
+            entity.HasIndex(ie => ie.TenantId);
+            entity.Property(ie => ie.PropertyId).IsRequired();
+            entity.Property(ie => ie.ContractId).IsRequired();
+            entity.HasIndex(ie => ie.ContractId);
+            entity.Property(ie => ie.InventoryEntryId).IsRequired();
+            entity.HasIndex(ie => ie.InventoryEntryId);
+            entity.Property(ie => ie.AgentName).IsRequired().HasMaxLength(200);
+            entity.Property(ie => ie.InspectionDate).IsRequired();
+            entity.Property(ie => ie.TotalDeductionAmount).HasColumnType("decimal(18,2)");
+            entity.Property(ie => ie.OwnerCoveredAmount).HasColumnType("decimal(18,2)");
+            entity.Property(ie => ie.FinancialNotes).HasMaxLength(1000);
+            entity.Property(ie => ie.Status).IsRequired();
+            entity.Property(ie => ie.GeneralObservations).HasMaxLength(1000);
+            entity.Property(ie => ie.RepresentativeName).HasMaxLength(200);
+            
+            entity.Property(ie => ie.PhotoUrls)
+                .HasConversion(
+                    v => string.Join(",", v),
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                );
+            
+            // Comparisons as owned entities
+            entity.OwnsMany(ie => ie.Comparisons, comp =>
+            {
+                comp.ToTable("inventory_comparisons");
+                comp.WithOwner().HasForeignKey("InventoryExitId");
+                comp.Property<Guid>("InventoryExitId");
+                comp.HasKey("InventoryExitId", "RoomName", "ElementName");
+                comp.Property(c => c.RoomName).IsRequired().HasMaxLength(100);
+                comp.Property(c => c.ElementName).IsRequired().HasMaxLength(100);
+                comp.Property(c => c.EntryCondition).IsRequired();
+                comp.Property(c => c.ExitCondition).IsRequired();
+                comp.Property(c => c.Comment).HasMaxLength(500);
+                comp.Property(c => c.PhotoUrls)
+                    .HasConversion(
+                        v => string.Join(",", v),
+                        v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                    );
+            });
+            
+            // Degradations as owned entities
+            entity.OwnsMany(ie => ie.Degradations, deg =>
+            {
+                deg.ToTable("inventory_degradations");
+                deg.WithOwner().HasForeignKey("InventoryExitId");
+                deg.Property<Guid>("InventoryExitId");
+                deg.HasKey("InventoryExitId", "RoomName", "ElementName");
+                deg.Property(d => d.RoomName).IsRequired().HasMaxLength(100);
+                deg.Property(d => d.ElementName).IsRequired().HasMaxLength(100);
+                deg.Property(d => d.Description).IsRequired().HasMaxLength(500);
+                deg.Property(d => d.EstimatedCost).HasColumnType("decimal(18,2)");
+                deg.Property(d => d.IsImputedToTenant).IsRequired();
+                deg.Property(d => d.PhotoUrls)
+                    .HasConversion(
+                        v => string.Join(",", v),
+                        v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                    );
+            });
+            
+            entity.Ignore(ie => ie.DomainEvents);
+        });
     }
     
     /// <summary>
@@ -399,6 +515,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             typeof(Tenant),
             typeof(Contract),
             typeof(Document),
+            typeof(InventoryEntry),
+            typeof(InventoryExit),
             typeof(RentabilityScenario),
             typeof(ScenarioVersion),
             typeof(ScenarioShare),

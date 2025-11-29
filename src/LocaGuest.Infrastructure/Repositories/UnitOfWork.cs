@@ -1,3 +1,5 @@
+using LocaGuest.Domain.Aggregates.InventoryAggregate;
+using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Repositories;
 using LocaGuest.Infrastructure.Persistence;
 

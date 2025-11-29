@@ -1,10 +1,12 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
+using LocaGuest.Domain.Aggregates.InventoryAggregate;
 using LocaGuest.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -17,10 +19,14 @@ public interface ILocaGuestDbContext
     DbSet<PropertyRoom> PropertyRooms { get; }
     DbSet<Tenant> Tenants { get; }
     DbSet<Contract> Contracts { get; }
-    DbSet<UserSettings> UserSettings { get; }
+    DbSet<Document> Documents { get; }
+    DbSet<Payment> Payments { get; }
+    DbSet<InventoryEntry> InventoryEntries { get; }
+    DbSet<InventoryExit> InventoryExits { get; }
     DbSet<RentabilityScenario> RentabilityScenarios { get; }
     DbSet<ScenarioVersion> ScenarioVersions { get; }
     DbSet<ScenarioShare> ScenarioShares { get; }
+    DbSet<UserSettings> UserSettings { get; }
     
     // Subscription System
     DbSet<Plan> Plans { get; }

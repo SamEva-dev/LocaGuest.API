@@ -95,6 +95,68 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 lotNumber: request.LotNumber,
                 acquisitionDate: request.AcquisitionDate,
                 totalWorksAmount: request.TotalWorksAmount);
+            
+            // ✅ Update rooms for colocation if provided
+            if (request.Rooms != null)
+            {
+                // Get existing rooms
+                var existingRooms = property.Rooms.ToList();
+                var newRoomNames = request.Rooms.Select(r => r.Name).ToList();
+                
+                // Remove rooms that are not in the new list (only if Available)
+                foreach (var existingRoom in existingRooms)
+                {
+                    if (!newRoomNames.Contains(existingRoom.Name))
+                    {
+                        try
+                        {
+                            property.RemoveRoom(existingRoom.Id);
+                            _logger.LogInformation("Room {RoomName} removed from property {PropertyId}", 
+                                existingRoom.Name, property.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("Cannot remove room {RoomName}: {Message}", 
+                                existingRoom.Name, ex.Message);
+                            // Continue - room is probably occupied
+                        }
+                    }
+                }
+                
+                // Update or add rooms
+                foreach (var roomDto in request.Rooms)
+                {
+                    var existingRoom = existingRooms.FirstOrDefault(r => r.Name == roomDto.Name);
+                    
+                    if (existingRoom != null)
+                    {
+                        // Update existing room
+                        property.UpdateRoom(
+                            roomId: existingRoom.Id,
+                            name: roomDto.Name,
+                            rent: roomDto.Rent,
+                            surface: roomDto.Surface,
+                            charges: roomDto.Charges,
+                            description: roomDto.Description);
+                        
+                        _logger.LogInformation("Room {RoomName} updated in property {PropertyId}", 
+                            roomDto.Name, property.Id);
+                    }
+                    else
+                    {
+                        // Add new room
+                        property.AddRoom(
+                            name: roomDto.Name,
+                            rent: roomDto.Rent,
+                            surface: roomDto.Surface,
+                            charges: roomDto.Charges ?? 0,
+                            description: roomDto.Description);
+                        
+                        _logger.LogInformation("Room {RoomName} added to property {PropertyId}", 
+                            roomDto.Name, property.Id);
+                    }
+                }
+            }
 
             // Update through repository
             _unitOfWork.Properties.Update(property);
@@ -146,7 +208,19 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 AcquisitionDate = property.AcquisitionDate,
                 TotalWorksAmount = property.TotalWorksAmount,
                 CreatedAt = property.CreatedAt,
-                UpdatedAt = property.UpdatedAt
+                UpdatedAt = property.UpdatedAt,
+                // ✅ Include rooms in response
+                Rooms = property.Rooms.Select(r => new PropertyRoomDto
+                {
+                    Id = r.Id,
+                    PropertyId = r.PropertyId,
+                    Name = r.Name,
+                    Rent = r.Rent,
+                    Surface = r.Surface,
+                    Charges = r.Charges,
+                    Description = r.Description,
+                    Status = r.Status.ToString()
+                }).ToList()
             };
 
             return Result.Success(dto);
