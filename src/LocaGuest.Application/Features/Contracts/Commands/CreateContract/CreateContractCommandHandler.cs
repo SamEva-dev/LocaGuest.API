@@ -86,7 +86,8 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             }
             
             // ⭐ VALIDATION MÉTIER 3: Pour colocation individuelle, vérifier RoomId obligatoire
-            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual || 
+                property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation)
             {
                 if (!request.RoomId.HasValue)
                 {

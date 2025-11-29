@@ -83,7 +83,8 @@ public class ContractActivationBackgroundService : BackgroundService
                 var property = await context.Properties.FindAsync(contract.PropertyId);
                 if (property != null)
                 {
-                    if (property.UsageType == PropertyUsageType.ColocationIndividual)
+                    if (property.UsageType == PropertyUsageType.ColocationIndividual ||
+                        property.UsageType == PropertyUsageType.Colocation)
                     {
                         // Colocation individuelle: incrémenter occupiedRooms
                         property.IncrementOccupiedRooms();
@@ -172,7 +173,8 @@ public class ContractActivationBackgroundService : BackgroundService
                 var property = await context.Properties.FindAsync(contract.PropertyId);
                 if (property != null)
                 {
-                    if (property.UsageType == PropertyUsageType.ColocationIndividual)
+                    if (property.UsageType == PropertyUsageType.ColocationIndividual ||
+                        property.UsageType == PropertyUsageType.Colocation)
                     {
                         // Colocation individuelle: décrémenter occupiedRooms
                         property.DecrementOccupiedRooms();

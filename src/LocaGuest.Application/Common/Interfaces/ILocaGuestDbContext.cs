@@ -14,6 +14,7 @@ namespace LocaGuest.Application.Common.Interfaces;
 public interface ILocaGuestDbContext
 {
     DbSet<Property> Properties { get; }
+    DbSet<PropertyRoom> PropertyRooms { get; }
     DbSet<Tenant> Tenants { get; }
     DbSet<Contract> Contracts { get; }
     DbSet<UserSettings> UserSettings { get; }

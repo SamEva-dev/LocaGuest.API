@@ -35,4 +35,28 @@ public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public int? MinimumStay { get; init; }
     public int? MaximumStay { get; init; }
     public decimal? PricePerNight { get; init; }
+
+    public List<CreatePropertyRoomDto>? Rooms { get; init; }
+
+    // Diagnostics obligatoires
+    public string? DpeRating { get; init; }
+    public int? DpeValue { get; init; }
+    public string? GesRating { get; init; }
+    public DateTime? ElectricDiagnosticDate { get; init; }
+    public DateTime? ElectricDiagnosticExpiry { get; init; }
+    public DateTime? GasDiagnosticDate { get; init; }
+    public DateTime? GasDiagnosticExpiry { get; init; }
+    public bool? HasAsbestos { get; init; }
+    public DateTime? AsbestosDiagnosticDate { get; init; }
+    public string? ErpZone { get; init; }
+    
+    // Informations financières complémentaires
+    public decimal? PropertyTax { get; init; }
+    public decimal? CondominiumCharges { get; init; }
+    
+    // Informations administratives
+    public string? CadastralReference { get; init; }
+    public string? LotNumber { get; init; }
+    public DateTime? AcquisitionDate { get; init; }
+    public decimal? TotalWorksAmount { get; init; }
 }

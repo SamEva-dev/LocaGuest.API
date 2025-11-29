@@ -78,9 +78,33 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 HasParking = p.HasParking,
                 Rent = p.Rent,
                 Charges = p.Charges,
+                TotalRooms = p.TotalRooms,
+                OccupiedRooms = p.OccupiedRooms,
                 Status = p.Status.ToString(),
                 CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
+                UpdatedAt = p.UpdatedAt,
+                AcquisitionDate = p.AcquisitionDate,
+                AsbestosDiagnosticDate = p.AsbestosDiagnosticDate,
+                CadastralReference = p.CadastralReference,
+                Code = p.Code,
+                DpeRating = p.DpeRating,
+                DpeValue = p.DpeValue,
+                ElectricDiagnosticDate = p.ElectricDiagnosticDate,
+                ElectricDiagnosticExpiry = p.ElectricDiagnosticExpiry,
+                GasDiagnosticDate = p.GasDiagnosticDate,
+                GasDiagnosticExpiry = p.GasDiagnosticExpiry,
+                HasAsbestos = p.HasAsbestos,
+                ErpZone = p.ErpZone,
+                PropertyTax = p.PropertyTax,
+                CondominiumCharges = p.CondominiumCharges,
+                LotNumber = p.LotNumber,
+                TotalWorksAmount = p.TotalWorksAmount,
+                MinimumStay = p.MinimumStay,
+                MaximumStay = p.MaximumStay,
+                PricePerNight = p.PricePerNight,
+                GesRating = p.GesRating,
+                PropertyUsageType = p.UsageType.ToString()
+
             }).ToList();
 
             var result = new PagedResult<PropertyDto>

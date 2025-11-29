@@ -3,6 +3,7 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251128194923_AddPropertyDiagnosticsAndAdminFields")]
+    partial class AddPropertyDiagnosticsAndAdminFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -440,48 +443,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("properties", (string)null);
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.PropertyRoom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("Charges")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid?>("CurrentContractId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PropertyId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Rent")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal?>("Surface")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CurrentContractId");
-
-                    b.HasIndex("PropertyId");
-
-                    b.ToTable("property_rooms", (string)null);
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", b =>
@@ -1485,15 +1446,6 @@ namespace LocaGuest.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.PropertyRoom", b =>
-                {
-                    b.HasOne("LocaGuest.Domain.Aggregates.PropertyAggregate.Property", null)
-                        .WithMany("Rooms")
-                        .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioComment", b =>
                 {
                     b.HasOne("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", null)
@@ -1542,11 +1494,6 @@ namespace LocaGuest.Infrastructure.Migrations
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
                 {
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.Property", b =>
-                {
-                    b.Navigation("Rooms");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", b =>

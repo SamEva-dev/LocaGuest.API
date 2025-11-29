@@ -75,7 +75,55 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             // ✅ Set the generated code
             property.SetCode(code);
             
-            // Configure Airbnb settings if applicable
+            // ✅ Update extended details (city, zipCode, country, surface, floor, elevator, parking, furnished, charges, deposit, notes)
+            property.UpdateExtendedDetails(
+                city: request.City,
+                zipCode: request.PostalCode,
+                country: request.Country,
+                surface: request.Surface,
+                floor: request.Floor,
+                hasElevator: request.HasElevator,
+                hasParking: request.HasParking,
+                isFurnished: request.IsFurnished,
+                charges: request.Charges,
+                deposit: request.Deposit,
+                notes: request.Notes ?? request.Description);
+            
+            // ✅ Update diagnostics if provided
+            if (request.DpeRating != null || request.GesRating != null)
+            {
+                property.UpdateDiagnostics(
+                    dpeRating: request.DpeRating,
+                    dpeValue: request.DpeValue,
+                    gesRating: request.GesRating,
+                    electricDiagnosticDate: request.ElectricDiagnosticDate,
+                    electricDiagnosticExpiry: request.ElectricDiagnosticExpiry,
+                    gasDiagnosticDate: request.GasDiagnosticDate,
+                    gasDiagnosticExpiry: request.GasDiagnosticExpiry,
+                    hasAsbestos: request.HasAsbestos,
+                    asbestosDiagnosticDate: request.AsbestosDiagnosticDate,
+                    erpZone: request.ErpZone);
+            }
+            
+            // ✅ Update financial info if provided
+            if (request.PropertyTax.HasValue || request.CondominiumCharges.HasValue)
+            {
+                property.UpdateFinancialInfo(
+                    propertyTax: request.PropertyTax,
+                    condominiumCharges: request.CondominiumCharges);
+            }
+            
+            // ✅ Update administrative info if provided
+            if (!string.IsNullOrEmpty(request.CadastralReference) || request.AcquisitionDate.HasValue)
+            {
+                property.UpdateAdministrativeInfo(
+                    cadastralReference: request.CadastralReference,
+                    lotNumber: request.LotNumber,
+                    acquisitionDate: request.AcquisitionDate ?? request.PurchaseDate,
+                    totalWorksAmount: request.TotalWorksAmount);
+            }
+            
+            // ✅ Configure Airbnb settings if applicable
             if (usageType == PropertyUsageType.Airbnb && 
                 request.MinimumStay.HasValue && 
                 request.MaximumStay.HasValue && 
@@ -86,6 +134,24 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     request.MaximumStay.Value,
                     request.PricePerNight.Value);
             }
+            
+            // ✅ Create rooms for colocation if provided
+            if ((usageType == PropertyUsageType.Colocation || usageType == PropertyUsageType.ColocationIndividual) && 
+                request.Rooms != null && request.Rooms.Any())
+            {
+                foreach (var roomDto in request.Rooms)
+                {
+                    property.AddRoom(
+                        name: roomDto.Name,
+                        rent: roomDto.Rent,
+                        surface: roomDto.Surface,
+                        charges: roomDto.Charges,
+                        description: roomDto.Description);
+                }
+                
+                _logger.LogInformation("{RoomCount} rooms added to colocation property {PropertyId}", 
+                    request.Rooms.Count, property.Id);
+            }
 
             // Add through repository
             await _unitOfWork.Properties.AddAsync(property, cancellationToken);
@@ -94,11 +160,11 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {TenantId}", 
                 property.Id, property.Name, _tenantContext.TenantId);
 
-            // Map to DTO
+            // ✅ Map to DTO with ALL fields
             var dto = new PropertyDetailDto
             {
                 Id = property.Id,
-                Code = property.Code,  // ✅ Include generated code
+                Code = property.Code,
                 Name = property.Name,
                 Address = property.Address,
                 City = property.City,
@@ -120,7 +186,47 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 MinimumStay = property.MinimumStay,
                 MaximumStay = property.MaximumStay,
                 PricePerNight = property.PricePerNight,
-                CreatedAt = property.CreatedAt
+                // ✅ Diagnostics
+                DpeRating = property.DpeRating,
+                DpeValue = property.DpeValue,
+                GesRating = property.GesRating,
+                ElectricDiagnosticDate = property.ElectricDiagnosticDate,
+                ElectricDiagnosticExpiry = property.ElectricDiagnosticExpiry,
+                GasDiagnosticDate = property.GasDiagnosticDate,
+                GasDiagnosticExpiry = property.GasDiagnosticExpiry,
+                HasAsbestos = property.HasAsbestos,
+                AsbestosDiagnosticDate = property.AsbestosDiagnosticDate,
+                ErpZone = property.ErpZone,
+                // ✅ Financial info
+                PropertyTax = property.PropertyTax,
+                CondominiumCharges = property.CondominiumCharges,
+                // ✅ Administrative info
+                CadastralReference = property.CadastralReference,
+                LotNumber = property.LotNumber,
+                AcquisitionDate = property.AcquisitionDate,
+                TotalWorksAmount = property.TotalWorksAmount,
+                // ✅ Timestamps
+                CreatedAt = property.CreatedAt,
+                UpdatedAt = property.UpdatedAt,
+                // ✅ Other fields
+                Description = property.Notes,
+                PurchaseDate = property.AcquisitionDate,
+                PurchasePrice = request.PurchasePrice,
+                EnergyClass = request.EnergyClass,
+                ConstructionYear = request.ConstructionYear,
+                // ✅ Rooms (for colocation)
+                Rooms = property.Rooms.Select(r => new PropertyRoomDto
+                {
+                    Id = r.Id,
+                    PropertyId = r.PropertyId,
+                    Name = r.Name,
+                    Surface = r.Surface,
+                    Rent = r.Rent,
+                    Charges = r.Charges,
+                    Description = r.Description,
+                    Status = r.Status.ToString(),
+                    CurrentContractId = r.CurrentContractId
+                }).ToList()
             };
 
             return Result.Success(dto);

@@ -261,7 +261,8 @@ public class ContractsController : ControllerBase
             }
             
             // Colocation individuelle: vérifier chambre disponible
-            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+            if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual ||
+                property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation)
             {
                 if (contract.RoomId.HasValue)
                 {
@@ -357,7 +358,8 @@ public class ContractsController : ControllerBase
             var property = await _context.Properties.FindAsync(contract.PropertyId);
             if (property != null)
             {
-                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual
+                    || property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation)
                 {
                     property.IncrementOccupiedRooms();
                     
@@ -427,7 +429,8 @@ public class ContractsController : ControllerBase
             var property = await _context.Properties.FindAsync(contract.PropertyId);
             if (property != null)
             {
-                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual)
+                if (property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual || 
+                    property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation)
                 {
                     property.DecrementOccupiedRooms();
                     

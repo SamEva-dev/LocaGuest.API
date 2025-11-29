@@ -40,6 +40,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<TenantSequence> TenantSequences => Set<TenantSequence>();
 
     public DbSet<Property> Properties => Set<Property>();
+    public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Document> Documents => Set<Document>();
@@ -119,6 +120,31 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                 );
             
             entity.Ignore(p => p.DomainEvents);
+            
+            // Configure relationship with PropertyRooms
+            entity.HasMany(p => p.Rooms)
+                .WithOne()
+                .HasForeignKey(r => r.PropertyId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // PropertyRoom (Chambres de colocation)
+        modelBuilder.Entity<PropertyRoom>(entity =>
+        {
+            entity.ToTable("property_rooms");
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.PropertyId).IsRequired();
+            entity.HasIndex(r => r.PropertyId);
+            entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
+            entity.Property(r => r.Rent).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(r => r.Surface).HasColumnType("decimal(18,2)");
+            entity.Property(r => r.Charges).HasColumnType("decimal(18,2)");
+            entity.Property(r => r.Description).HasMaxLength(500);
+            entity.Property(r => r.Status).IsRequired();
+            entity.Property(r => r.CurrentContractId);
+            entity.HasIndex(r => r.CurrentContractId);
+            
+            entity.Ignore(r => r.DomainEvents);
         });
 
         // Tenant (Locataire - à ne pas confondre avec TenantId multi-tenant)

@@ -70,6 +70,31 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
             {
                 property.SetImages(request.ImageUrls);
             }
+            
+            // Update diagnostics if provided
+            property.UpdateDiagnostics(
+                dpeRating: request.DpeRating,
+                dpeValue: request.DpeValue,
+                gesRating: request.GesRating,
+                electricDiagnosticDate: request.ElectricDiagnosticDate,
+                electricDiagnosticExpiry: request.ElectricDiagnosticExpiry,
+                gasDiagnosticDate: request.GasDiagnosticDate,
+                gasDiagnosticExpiry: request.GasDiagnosticExpiry,
+                hasAsbestos: request.HasAsbestos,
+                asbestosDiagnosticDate: request.AsbestosDiagnosticDate,
+                erpZone: request.ErpZone);
+            
+            // Update financial info if provided
+            property.UpdateFinancialInfo(
+                propertyTax: request.PropertyTax,
+                condominiumCharges: request.CondominiumCharges);
+            
+            // Update administrative info if provided
+            property.UpdateAdministrativeInfo(
+                cadastralReference: request.CadastralReference,
+                lotNumber: request.LotNumber,
+                acquisitionDate: request.AcquisitionDate,
+                totalWorksAmount: request.TotalWorksAmount);
 
             // Update through repository
             _unitOfWork.Properties.Update(property);
@@ -104,6 +129,22 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 MinimumStay = property.MinimumStay,
                 MaximumStay = property.MaximumStay,
                 PricePerNight = property.PricePerNight,
+                DpeRating = property.DpeRating,
+                DpeValue = property.DpeValue,
+                GesRating = property.GesRating,
+                ElectricDiagnosticDate = property.ElectricDiagnosticDate,
+                ElectricDiagnosticExpiry = property.ElectricDiagnosticExpiry,
+                GasDiagnosticDate = property.GasDiagnosticDate,
+                GasDiagnosticExpiry = property.GasDiagnosticExpiry,
+                HasAsbestos = property.HasAsbestos,
+                AsbestosDiagnosticDate = property.AsbestosDiagnosticDate,
+                ErpZone = property.ErpZone,
+                PropertyTax = property.PropertyTax,
+                CondominiumCharges = property.CondominiumCharges,
+                CadastralReference = property.CadastralReference,
+                LotNumber = property.LotNumber,
+                AcquisitionDate = property.AcquisitionDate,
+                TotalWorksAmount = property.TotalWorksAmount,
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt
             };

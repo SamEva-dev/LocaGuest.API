@@ -30,6 +30,29 @@ public class PropertyDto
     public int? MinimumStay { get; set; }
     public int? MaximumStay { get; set; }
     public decimal? PricePerNight { get; set; }
+    
+    // Diagnostics obligatoires
+    public string? DpeRating { get; set; }  // A, B, C, D, E, F, G
+    public int? DpeValue { get; set; }  // kWh/m²/an
+    public string? GesRating { get; set; }  // A, B, C, D, E, F, G
+    public DateTime? ElectricDiagnosticDate { get; set; }
+    public DateTime? ElectricDiagnosticExpiry { get; set; }
+    public DateTime? GasDiagnosticDate { get; set; }
+    public DateTime? GasDiagnosticExpiry { get; set; }
+    public bool? HasAsbestos { get; set; }
+    public DateTime? AsbestosDiagnosticDate { get; set; }
+    public string? ErpZone { get; set; }  // Zone de risques (ERP)
+    
+    // Informations financières complémentaires
+    public decimal? PropertyTax { get; set; }  // Taxe foncière annuelle
+    public decimal? CondominiumCharges { get; set; }  // Charges de copropriété annuelles
+    
+    // Informations administratives
+    public string? CadastralReference { get; set; }  // Référence cadastrale
+    public string? LotNumber { get; set; }  // Numéro de lot
+    public DateTime? AcquisitionDate { get; set; }  // Date d'acquisition
+    public decimal? TotalWorksAmount { get; set; }  // Montant total des travaux réalisés
+    
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -44,6 +67,39 @@ public class PropertyDetailDto : PropertyDto
     public List<string> Features { get; set; } = new();
     public int ActiveContractsCount { get; set; }
     public decimal TotalRevenue { get; set; }
+    
+    /// <summary>
+    /// Liste des chambres pour les colocations
+    /// </summary>
+    public List<PropertyRoomDto> Rooms { get; set; } = new();
+}
+
+/// <summary>
+/// DTO pour une chambre de colocation
+/// </summary>
+public class PropertyRoomDto
+{
+    public Guid Id { get; set; }
+    public Guid PropertyId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal? Surface { get; set; }
+    public decimal Rent { get; set; }
+    public decimal? Charges { get; set; }
+    public string? Description { get; set; }
+    public string Status { get; set; } = "Available"; // Available, Reserved, Occupied
+    public Guid? CurrentContractId { get; set; }
+}
+
+/// <summary>
+/// DTO pour créer une chambre
+/// </summary>
+public class CreatePropertyRoomDto
+{
+    public string Name { get; set; } = string.Empty;
+    public decimal? Surface { get; set; }
+    public decimal Rent { get; set; }
+    public decimal? Charges { get; set; }
+    public string? Description { get; set; }
 }
 
 public class CreatePropertyDto
@@ -68,11 +124,35 @@ public class CreatePropertyDto
     
     // Pour les colocations
     public int? TotalRooms { get; set; }
+    public List<CreatePropertyRoomDto>? Rooms { get; set; }
     
     // Pour Airbnb
     public int? MinimumStay { get; set; }
     public int? MaximumStay { get; set; }
     public decimal? PricePerNight { get; set; }
+    
+    // Diagnostics obligatoires
+    public string? DpeRating { get; set; }
+    public int? DpeValue { get; set; }
+    public string? GesRating { get; set; }
+    public DateTime? ElectricDiagnosticDate { get; set; }
+    public DateTime? ElectricDiagnosticExpiry { get; set; }
+    public DateTime? GasDiagnosticDate { get; set; }
+    public DateTime? GasDiagnosticExpiry { get; set; }
+    public bool? HasAsbestos { get; set; }
+    public DateTime? AsbestosDiagnosticDate { get; set; }
+    public string? ErpZone { get; set; }
+    
+    // Informations financières complémentaires
+    public decimal? PropertyTax { get; set; }
+    public decimal? CondominiumCharges { get; set; }
+    
+    // Informations administratives
+    public string? CadastralReference { get; set; }
+    public string? LotNumber { get; set; }
+    public DateTime? AcquisitionDate { get; set; }
+    public decimal? TotalWorksAmount { get; set; }
+    
     public DateTime? PurchaseDate { get; set; }
     public decimal? PurchasePrice { get; set; }
     public string? EnergyClass { get; set; }
