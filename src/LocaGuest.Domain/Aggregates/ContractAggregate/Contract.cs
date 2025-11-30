@@ -110,6 +110,43 @@ public class Contract : AuditableEntity
         
         Code = code;
     }
+    
+    /// <summary>
+    /// Mettre à jour les informations de base d'un contrat Draft
+    /// </summary>
+    public void UpdateBasicInfo(
+        Guid renterTenantId,
+        Guid propertyId,
+        Guid? roomId,
+        string type,
+        DateTime startDate,
+        DateTime endDate,
+        decimal rent,
+        decimal charges,
+        decimal deposit)
+    {
+        if (Status != ContractStatus.Draft)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft contracts can be updated");
+        
+        if (startDate >= endDate)
+            throw new ValidationException("CONTRACT_INVALID_DATES", "Start date must be before end date");
+        
+        if (rent <= 0)
+            throw new ValidationException("CONTRACT_INVALID_RENT", "Rent must be positive");
+        
+        if (charges < 0)
+            throw new ValidationException("CONTRACT_INVALID_CHARGES", "Charges cannot be negative");
+        
+        RenterTenantId = renterTenantId;
+        PropertyId = propertyId;
+        RoomId = roomId;
+        Type = Enum.Parse<ContractType>(type, ignoreCase: true);
+        StartDate = startDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) : startDate.ToUniversalTime();
+        EndDate = endDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) : endDate.ToUniversalTime();
+        Rent = rent;
+        Charges = charges;
+        Deposit = deposit;
+    }
 
     public void Renew(DateTime newEndDate)
     {

@@ -1,9 +1,11 @@
+using LocaGuest.Application.Common;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using LocaGuest.Application.Features.Contracts.Commands.RecordPayment;
 using LocaGuest.Application.Features.Contracts.Commands.TerminateContract;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsSigned;
 using LocaGuest.Application.Features.Contracts.Commands.ActivateContract;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsExpired;
+using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
 using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
@@ -205,6 +207,24 @@ public class ContractsController : ControllerBase
         }
 
         return Ok(new { message = "Contract marked as expired successfully", id });
+    }
+    
+    /// <summary>
+    /// Mettre à jour un contrat Draft
+    /// PUT /api/contracts/{id}
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractCommand command)
+    {
+        if (id != command.ContractId)
+            return BadRequest(Result.Failure("Contract ID in URL does not match request body"));
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+            return BadRequest(result);
+        
+        return Ok(new { message = "Contract updated successfully", id });
     }
     
     /// <summary>
