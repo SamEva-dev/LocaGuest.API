@@ -214,10 +214,21 @@ public class ContractsController : ControllerBase
     /// PUT /api/contracts/{id}
     /// </summary>
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractCommand command)
+    public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractRequest request)
     {
-        if (id != command.ContractId)
-            return BadRequest(Result.Failure("Contract ID in URL does not match request body"));
+        var command = new UpdateContractCommand
+        {
+            ContractId = id,
+            TenantId = request.TenantId,
+            PropertyId = request.PropertyId,
+            RoomId = request.RoomId,
+            Type = request.Type,
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            Rent = request.Rent,
+            Charges = request.Charges ?? 0,
+            Deposit = request.Deposit
+        };
 
         var result = await _mediator.Send(command);
         
@@ -226,6 +237,18 @@ public class ContractsController : ControllerBase
         
         return Ok(new { message = "Contract updated successfully", id });
     }
+    
+    public record UpdateContractRequest(
+        Guid TenantId,
+        Guid PropertyId,
+        Guid? RoomId,
+        string Type,
+        DateTime StartDate,
+        DateTime EndDate,
+        decimal Rent,
+        decimal? Charges,
+        decimal? Deposit
+    );
     
     /// <summary>
     /// Supprimer un contrat (uniquement les contrats Draft ou Cancelled)

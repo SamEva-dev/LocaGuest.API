@@ -3,6 +3,7 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251130193327_AddInventoryFinalizationFields")]
+    partial class AddInventoryFinalizationFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -245,10 +248,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("RenterTenantId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("RenterTenantId");
-
                     b.Property<string>("RepresentativeName")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
@@ -259,8 +258,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
@@ -270,8 +268,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ContractId");
-
-                    b.HasIndex("RenterTenantId");
 
                     b.HasIndex("TenantId");
 
@@ -329,10 +325,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("RenterTenantId")
-                        .HasColumnType("TEXT")
-                        .HasColumnName("RenterTenantId");
-
                     b.Property<string>("RepresentativeName")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
@@ -343,8 +335,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
+                    b.Property<Guid>("TenantId")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
@@ -359,8 +350,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("ContractId");
 
                     b.HasIndex("InventoryEntryId");
-
-                    b.HasIndex("RenterTenantId");
 
                     b.HasIndex("TenantId");
 

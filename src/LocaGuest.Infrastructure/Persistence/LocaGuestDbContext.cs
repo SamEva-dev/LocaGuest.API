@@ -393,8 +393,15 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("inventory_entries");
             entity.HasKey(ie => ie.Id);
+            
+            // TenantId (string) hérité de AuditableEntity pour multi-tenant
             entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
             entity.HasIndex(ie => ie.TenantId);
+            
+            // RenterTenantId (Guid) pour le locataire du contrat
+            entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
+            entity.HasIndex(ie => ie.RenterTenantId);
+            
             entity.Property(ie => ie.PropertyId).IsRequired();
             entity.Property(ie => ie.ContractId).IsRequired();
             entity.HasIndex(ie => ie.ContractId);
@@ -438,8 +445,15 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("inventory_exits");
             entity.HasKey(ie => ie.Id);
+            
+            // TenantId (string) hérité de AuditableEntity pour multi-tenant
             entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
             entity.HasIndex(ie => ie.TenantId);
+            
+            // RenterTenantId (Guid) pour le locataire du contrat
+            entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
+            entity.HasIndex(ie => ie.RenterTenantId);
+            
             entity.Property(ie => ie.PropertyId).IsRequired();
             entity.Property(ie => ie.ContractId).IsRequired();
             entity.HasIndex(ie => ie.ContractId);

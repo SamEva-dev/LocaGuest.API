@@ -33,8 +33,26 @@ public class DeleteInventoryEntryCommandHandler : IRequestHandler<DeleteInventor
             var hasExit = await _context.InventoryExits
                 .AnyAsync(ie => ie.InventoryEntryId == request.Id, cancellationToken);
 
-            if (hasExit)
-                return Result.Failure("Cannot delete inventory entry: an inventory exit is linked to it");
+            // ✅ Vérifier le statut du contrat
+            var contract = await _context.Contracts
+                .FirstOrDefaultAsync(c => c.Id == inventoryEntry.ContractId, cancellationToken);
+            
+            var contractIsActive = contract != null && contract.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active;
+
+            // ✅ Utiliser les règles métier de l'aggregate
+            if (!inventoryEntry.CanBeDeleted(contractIsActive, hasExit))
+            {
+                if (inventoryEntry.IsFinalized)
+                    return Result.Failure("Cannot delete finalized inventory entry - legal document");
+                    
+                if (contractIsActive)
+                    return Result.Failure("Cannot delete inventory entry: contract is active");
+                    
+                if (hasExit)
+                    return Result.Failure("Cannot delete inventory entry: an inventory exit is linked to it");
+                    
+                return Result.Failure("Cannot delete this inventory entry");
+            }
 
             _context.InventoryEntries.Remove(inventoryEntry);
             await _context.SaveChangesAsync(cancellationToken);

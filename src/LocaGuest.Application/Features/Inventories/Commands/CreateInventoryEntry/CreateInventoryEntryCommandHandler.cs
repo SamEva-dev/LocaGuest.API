@@ -56,7 +56,7 @@ public class CreateInventoryEntryCommandHandler : IRequestHandler<CreateInventor
             var inventoryEntry = InventoryEntry.Create(
                 propertyId: request.PropertyId,
                 contractId: request.ContractId,
-                tenantId: contract.RenterTenantId,
+                renterTenantId: contract.RenterTenantId,
                 inspectionDate: request.InspectionDate,
                 agentName: request.AgentName,
                 tenantPresent: request.TenantPresent,
@@ -105,7 +105,7 @@ public class CreateInventoryEntryCommandHandler : IRequestHandler<CreateInventor
                 PropertyId = inventoryEntry.PropertyId,
                 RoomId = inventoryEntry.RoomId,
                 ContractId = inventoryEntry.ContractId,
-                TenantId = inventoryEntry.TenantId,
+                RenterTenantId = inventoryEntry.RenterTenantId,
                 InspectionDate = inventoryEntry.InspectionDate,
                 AgentName = inventoryEntry.AgentName,
                 TenantPresent = inventoryEntry.TenantPresent,

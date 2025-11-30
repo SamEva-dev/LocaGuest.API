@@ -12,7 +12,11 @@ public class InventoryEntry : AuditableEntity
     public Guid PropertyId { get; private set; }
     public Guid? RoomId { get; private set; } // Pour colocation
     public Guid ContractId { get; private set; }
-    public Guid TenantId { get; private set; }
+    
+    /// <summary>
+    /// ID du locataire (Tenant entity) - ne pas confondre avec TenantId multi-tenant hérité de AuditableEntity
+    /// </summary>
+    public Guid RenterTenantId { get; private set; }
     
     public DateTime InspectionDate { get; private set; }
     public string AgentName { get; private set; } = string.Empty;
@@ -27,12 +31,22 @@ public class InventoryEntry : AuditableEntity
     
     public InventoryStatus Status { get; private set; }
     
+    /// <summary>
+    /// EDL finalisé = document légal, ne peut plus être modifié ni supprimé
+    /// </summary>
+    public bool IsFinalized { get; private set; }
+    
+    /// <summary>
+    /// Date de finalisation (signature)
+    /// </summary>
+    public DateTime? FinalizedAt { get; private set; }
+    
     private InventoryEntry() { } // EF Core
 
     public static InventoryEntry Create(
         Guid propertyId,
         Guid contractId,
-        Guid tenantId,
+        Guid renterTenantId,
         DateTime inspectionDate,
         string agentName,
         bool tenantPresent,
@@ -52,20 +66,21 @@ public class InventoryEntry : AuditableEntity
             PropertyId = propertyId,
             RoomId = roomId,
             ContractId = contractId,
-            TenantId = tenantId,
+            RenterTenantId = renterTenantId,
             InspectionDate = inspectionDate,
             AgentName = agentName,
             TenantPresent = tenantPresent,
             RepresentativeName = representativeName,
             GeneralObservations = generalObservations,
-            Status = InventoryStatus.Draft
+            Status = InventoryStatus.Draft,
+            IsFinalized = false
         };
     }
 
     public void AddItem(InventoryItem item)
     {
-        if (Status == InventoryStatus.Completed)
-            throw new ValidationException("INVENTORY_COMPLETED", "Cannot modify a completed inventory");
+        if (IsFinalized)
+            throw new ValidationException("INVENTORY_FINALIZED", "Cannot modify a finalized inventory - legal document");
             
         _items.Add(item);
     }
@@ -93,6 +108,52 @@ public class InventoryEntry : AuditableEntity
             
         Status = InventoryStatus.Completed;
     }
+    
+    /// <summary>
+    /// Finaliser l'EDL = signer et verrouiller
+    /// Devient un document légal opposable
+    /// </summary>
+    public void MarkAsFinalized()
+    {
+        if (IsFinalized)
+            throw new ValidationException("INVENTORY_ALREADY_FINALIZED", "This inventory is already finalized");
+            
+        if (_items.Count == 0)
+            throw new ValidationException("INVENTORY_NO_ITEMS", "Cannot finalize an inventory without items");
+            
+        IsFinalized = true;
+        FinalizedAt = DateTime.UtcNow;
+        Status = InventoryStatus.Completed;
+    }
+    
+    /// <summary>
+    /// Vérifier si l'EDL peut être modifié
+    /// </summary>
+    public bool CanBeModified()
+    {
+        return !IsFinalized;
+    }
+    
+    /// <summary>
+    /// Vérifier si l'EDL peut être supprimé
+    /// </summary>
+    public bool CanBeDeleted(bool contractIsActive, bool exitExists)
+    {
+        // EDL finalisé = JAMAIS supprimable
+        if (IsFinalized)
+            return false;
+            
+        // Contrat actif = JAMAIS supprimable
+        if (contractIsActive)
+            return false;
+            
+        // EDL de sortie existe = JAMAIS supprimable
+        if (exitExists)
+            return false;
+            
+        // Sinon = supprimable (Draft seulement)
+        return Status == InventoryStatus.Draft;
+    }
 
     public void UpdateGeneralInfo(
         DateTime? inspectionDate = null,
@@ -101,8 +162,8 @@ public class InventoryEntry : AuditableEntity
         string? representativeName = null,
         string? generalObservations = null)
     {
-        if (Status == InventoryStatus.Completed)
-            throw new ValidationException("INVENTORY_COMPLETED", "Cannot modify a completed inventory");
+        if (IsFinalized)
+            throw new ValidationException("INVENTORY_FINALIZED", "Cannot modify a finalized inventory - legal document");
 
         if (inspectionDate.HasValue)
             InspectionDate = inspectionDate.Value;

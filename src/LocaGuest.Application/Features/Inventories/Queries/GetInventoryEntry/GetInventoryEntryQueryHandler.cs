@@ -30,7 +30,7 @@ public class GetInventoryEntryQueryHandler : IRequestHandler<GetInventoryEntryQu
             PropertyId = inventoryEntry.PropertyId,
             RoomId = inventoryEntry.RoomId,
             ContractId = inventoryEntry.ContractId,
-            TenantId = inventoryEntry.TenantId,
+            RenterTenantId = inventoryEntry.RenterTenantId,
             InspectionDate = inventoryEntry.InspectionDate,
             AgentName = inventoryEntry.AgentName,
             TenantPresent = inventoryEntry.TenantPresent,
@@ -47,6 +47,8 @@ public class GetInventoryEntryQueryHandler : IRequestHandler<GetInventoryEntryQu
             }).ToList(),
             PhotoUrls = inventoryEntry.PhotoUrls.ToList(),
             Status = inventoryEntry.Status.ToString(),
+            IsFinalized = inventoryEntry.IsFinalized,
+            FinalizedAt = inventoryEntry.FinalizedAt,
             CreatedAt = inventoryEntry.CreatedAt
         };
 

@@ -57,7 +57,7 @@ public class CreateInventoryExitCommandHandler : IRequestHandler<CreateInventory
             var inventoryExit = InventoryExit.Create(
                 propertyId: request.PropertyId,
                 contractId: request.ContractId,
-                tenantId: contract.RenterTenantId,
+                renterTenantId: contract.RenterTenantId,
                 inventoryEntryId: request.InventoryEntryId,
                 inspectionDate: request.InspectionDate,
                 agentName: request.AgentName,
@@ -127,7 +127,7 @@ public class CreateInventoryExitCommandHandler : IRequestHandler<CreateInventory
                 PropertyId = inventoryExit.PropertyId,
                 RoomId = inventoryExit.RoomId,
                 ContractId = inventoryExit.ContractId,
-                TenantId = inventoryExit.TenantId,
+                RenterTenantId = inventoryExit.RenterTenantId,
                 InventoryEntryId = inventoryExit.InventoryEntryId,
                 InspectionDate = inventoryExit.InspectionDate,
                 AgentName = inventoryExit.AgentName,

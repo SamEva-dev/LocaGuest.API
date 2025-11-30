@@ -9,7 +9,7 @@ public class InventoryEntryDto
     public Guid PropertyId { get; set; }
     public Guid? RoomId { get; set; }
     public Guid ContractId { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid RenterTenantId { get; set; }
     public DateTime InspectionDate { get; set; }
     public string AgentName { get; set; } = string.Empty;
     public bool TenantPresent { get; set; }
@@ -17,7 +17,18 @@ public class InventoryEntryDto
     public string? GeneralObservations { get; set; }
     public List<InventoryItemDto> Items { get; set; } = new();
     public List<string> PhotoUrls { get; set; } = new();
-    public string Status { get; set; } = "Draft";
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// EDL finalisé = document légal, non modifiable
+    /// </summary>
+    public bool IsFinalized { get; set; }
+
+    /// <summary>
+    /// Date de finalisation (signature)
+    /// </summary>
+    public DateTime? FinalizedAt { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }
 
@@ -43,7 +54,7 @@ public class InventoryExitDto
     public Guid PropertyId { get; set; }
     public Guid? RoomId { get; set; }
     public Guid ContractId { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid RenterTenantId { get; set; }
     public Guid InventoryEntryId { get; set; }
     public DateTime InspectionDate { get; set; }
     public string AgentName { get; set; } = string.Empty;

@@ -43,7 +43,7 @@ public class GetInventoryByContractQueryHandler : IRequestHandler<GetInventoryBy
             PropertyId = entry.PropertyId,
             RoomId = entry.RoomId,
             ContractId = entry.ContractId,
-            TenantId = entry.TenantId,
+            RenterTenantId = entry.RenterTenantId,
             InspectionDate = entry.InspectionDate,
             AgentName = entry.AgentName,
             TenantPresent = entry.TenantPresent,
@@ -60,6 +60,8 @@ public class GetInventoryByContractQueryHandler : IRequestHandler<GetInventoryBy
             }).ToList(),
             PhotoUrls = entry.PhotoUrls.ToList(),
             Status = entry.Status.ToString(),
+            IsFinalized = entry.IsFinalized,
+            FinalizedAt = entry.FinalizedAt,
             CreatedAt = entry.CreatedAt
         };
     }
@@ -72,7 +74,7 @@ public class GetInventoryByContractQueryHandler : IRequestHandler<GetInventoryBy
             PropertyId = exit.PropertyId,
             RoomId = exit.RoomId,
             ContractId = exit.ContractId,
-            TenantId = exit.TenantId,
+            RenterTenantId = exit.RenterTenantId,
             InventoryEntryId = exit.InventoryEntryId,
             InspectionDate = exit.InspectionDate,
             AgentName = exit.AgentName,

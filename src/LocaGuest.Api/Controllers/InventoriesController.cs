@@ -4,6 +4,7 @@ using LocaGuest.Application.Features.Inventories.Commands.DeleteInventoryEntry;
 using LocaGuest.Application.Features.Inventories.Commands.DeleteInventoryExit;
 using LocaGuest.Application.Features.Inventories.Commands.SendInventoryEmail;
 using LocaGuest.Application.Features.Inventories.Commands.SignInventory;
+using LocaGuest.Application.Features.Inventories.Commands.FinalizeInventoryEntry;
 using LocaGuest.Application.Features.Inventories.Queries.GetInventoryEntry;
 using LocaGuest.Application.Features.Inventories.Queries.GetInventoryExit;
 using LocaGuest.Application.Features.Inventories.Queries.GetInventoryByContract;
@@ -134,6 +135,31 @@ public class InventoriesController : ControllerBase
     }
 
     /// <summary>
+    /// Finaliser un état des lieux d'entrée (signer et verrouiller)
+    /// </summary>
+    /// <param name="id">ID de l'EDL</param>
+    [HttpPut("entry/{id:guid}/finalize")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> FinalizeEntry(Guid id)
+    {
+        _logger.LogInformation("Finalizing inventory entry {InventoryEntryId}", id);
+        
+        var command = new FinalizeInventoryEntryCommand(id);
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Failed to finalize inventory entry: {Error}", result.ErrorMessage);
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+        
+        _logger.LogInformation("Inventory entry finalized successfully");
+        return Ok(new { message = "Inventory entry finalized successfully" });
+    }
+
+    /// <summary>
     /// Supprimer un EDL d'entrée
     /// </summary>
     /// <param name="id">ID de l'EDL d'entrée</param>
@@ -151,7 +177,7 @@ public class InventoriesController : ControllerBase
         if (!result.IsSuccess)
         {
             _logger.LogWarning("Failed to delete inventory entry: {Error}", result.ErrorMessage);
-            return BadRequest(new { error = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
         }
 
         _logger.LogInformation("Inventory entry deleted successfully: {InventoryId}", id);
