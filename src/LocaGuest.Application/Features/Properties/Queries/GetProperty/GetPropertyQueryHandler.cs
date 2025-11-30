@@ -2,6 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetProperty;
@@ -28,7 +29,10 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 return Result.Failure<PropertyDto>($"Invalid property ID format: {request.Id}");
             }
 
-            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
+            // ✅ Charger la propriété avec ses rooms (pour les colocations)
+            var property = await _unitOfWork.Properties.Query()
+                .Include(p => p.Rooms)
+                .FirstOrDefaultAsync(p => p.Id == propertyId, cancellationToken);
 
             if (property == null)
             {
