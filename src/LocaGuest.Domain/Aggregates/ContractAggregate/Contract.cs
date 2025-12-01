@@ -39,6 +39,26 @@ public class Contract : AuditableEntity
     /// Marque le contrat comme en conflit (autre contrat signé sur même bien/chambre)
     /// </summary>
     public bool IsConflict { get; private set; }
+    
+    /// <summary>
+    /// ID du contrat de renouvellement (si ce contrat a été renouvelé)
+    /// </summary>
+    public Guid? RenewedContractId { get; private set; }
+    
+    /// <summary>
+    /// Clauses personnalisées du contrat (spécificités, interdictions, etc.)
+    /// </summary>
+    public string? CustomClauses { get; private set; }
+    
+    /// <summary>
+    /// Ancien IRL utilisé pour la révision (Indice de Référence des Loyers)
+    /// </summary>
+    public decimal? PreviousIRL { get; private set; }
+    
+    /// <summary>
+    /// Nouvel IRL utilisé pour la révision
+    /// </summary>
+    public decimal? CurrentIRL { get; private set; }
 
     private readonly List<Payment> _payments = new();
     public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
@@ -212,6 +232,38 @@ public class Contract : AuditableEntity
         Status = ContractStatus.Expired;
         AddDomainEvent(new ContractExpired(Id, PropertyId, RenterTenantId, EndDate));
     }
+    
+    /// <summary>
+    /// Marquer le contrat comme renouvelé (remplacé par un nouveau contrat)
+    /// Transition: Active ou Expiring → Renewed
+    /// DÉCLENCHE: Création d'un nouveau contrat qui prend le relais
+    /// </summary>
+    public void MarkAsRenewed(Guid newContractId)
+    {
+        if (Status != ContractStatus.Active && Status != ContractStatus.Expiring)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only active or expiring contracts can be renewed");
+            
+        RenewedContractId = newContractId;
+        Status = ContractStatus.Renewed;
+        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterTenantId, EndDate));
+    }
+    
+    /// <summary>
+    /// Mettre à jour les clauses personnalisées
+    /// </summary>
+    public void UpdateCustomClauses(string? clauses)
+    {
+        CustomClauses = clauses;
+    }
+    
+    /// <summary>
+    /// Mettre à jour les indices IRL pour la révision de loyer
+    /// </summary>
+    public void UpdateIRL(decimal? previousIRL, decimal? currentIRL)
+    {
+        PreviousIRL = previousIRL;
+        CurrentIRL = currentIRL;
+    }
 
     /// <summary>
     /// Marquer le contrat comme en attente de signature (PDF généré)
@@ -384,7 +436,8 @@ public enum ContractStatus
     Expiring,       // Expire bientôt (notification automatique)
     Terminated,     // Rupture anticipée ou fin de bail
     Expired,        // Bail arrivé à terme
-    Cancelled       // Annulé (contrat Draft qui n'a pas été choisi, conflit)
+    Cancelled,      // Annulé (contrat Draft qui n'a pas été choisi, conflit)
+    Renewed         // Contrat renouvelé (remplacé par un nouveau contrat)
 }
 
 /// <summary>

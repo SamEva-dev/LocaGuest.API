@@ -7,6 +7,7 @@ using LocaGuest.Application.Features.Contracts.Commands.ActivateContract;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsExpired;
 using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
+using LocaGuest.Application.Features.Contracts.Commands.RenewContract;
 using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 using LocaGuest.Application.Features.Contracts.Queries.GetContracts;
@@ -269,4 +270,51 @@ public class ContractsController : ControllerBase
 
         return Ok(new { message = "Contract deleted successfully", id });
     }
+    
+    /// <summary>
+    /// Renouveler un contrat existant
+    /// POST /api/contracts/{id}/renew
+    /// </summary>
+    [HttpPost("{id:guid}/renew")]
+    public async Task<IActionResult> RenewContract(Guid id, [FromBody] RenewContractRequest request)
+    {
+        var command = new RenewContractCommand
+        {
+            ContractId = id,
+            NewStartDate = request.NewStartDate,
+            NewEndDate = request.NewEndDate,
+            ContractType = request.ContractType,
+            NewRent = request.NewRent,
+            NewCharges = request.NewCharges,
+            PreviousIRL = request.PreviousIRL,
+            CurrentIRL = request.CurrentIRL,
+            Deposit = request.Deposit,
+            CustomClauses = request.CustomClauses,
+            Notes = request.Notes,
+            TacitRenewal = request.TacitRenewal,
+            AttachedDocumentIds = request.AttachedDocumentIds ?? new List<Guid>()
+        };
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { message = "Contract renewed successfully", newContractId = result.Data });
+    }
+    
+    public record RenewContractRequest(
+        DateTime NewStartDate,
+        DateTime NewEndDate,
+        string ContractType,
+        decimal NewRent,
+        decimal NewCharges,
+        decimal? PreviousIRL,
+        decimal? CurrentIRL,
+        decimal? Deposit,
+        string? CustomClauses,
+        string? Notes,
+        bool TacitRenewal,
+        List<Guid>? AttachedDocumentIds
+    );
 }
