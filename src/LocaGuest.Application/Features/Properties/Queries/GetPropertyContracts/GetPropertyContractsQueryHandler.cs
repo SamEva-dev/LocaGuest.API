@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -10,13 +11,16 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts
 public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContractsQuery, Result<List<ContractDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestDbContext _context;
     private readonly ILogger<GetPropertyContractsQueryHandler> _logger;
 
     public GetPropertyContractsQueryHandler(
         IUnitOfWork unitOfWork,
+        ILocaGuestDbContext context,
         ILogger<GetPropertyContractsQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
         _logger = logger;
     }
 
@@ -51,10 +55,31 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                 .Where(t => tenantIds.Contains(t.Id))
                 .Select(t => new { t.Id, t.FullName })
                 .ToListAsync(cancellationToken);
+            
+            // ✅ Charger les informations EDL pour chaque contrat
+            var contractIds = contracts.Select(c => c.Id).ToList();
+            var inventoryEntries = await _context.InventoryEntries
+                .Where(ie => contractIds.Contains(ie.ContractId))
+                .Select(ie => new { ie.Id, ie.ContractId })
+                .ToListAsync(cancellationToken);
+                
+            var inventoryExits = await _context.InventoryExits
+                .Where(ie => contractIds.Contains(ie.ContractId))
+                .Select(ie => new { ie.Id, ie.ContractId })
+                .ToListAsync(cancellationToken);
 
             foreach (var contract in contracts)
             {
                 contract.TenantName = tenants.FirstOrDefault(t => t.Id == contract.TenantId)?.FullName;
+                
+                // ✅ Enrichir avec les informations EDL
+                var entry = inventoryEntries.FirstOrDefault(ie => ie.ContractId == contract.Id);
+                var exit = inventoryExits.FirstOrDefault(ie => ie.ContractId == contract.Id);
+                
+                contract.HasInventoryEntry = entry != null;
+                contract.InventoryEntryId = entry?.Id;
+                contract.HasInventoryExit = exit != null;
+                contract.InventoryExitId = exit?.Id;
             }
 
             return Result.Success(contracts);

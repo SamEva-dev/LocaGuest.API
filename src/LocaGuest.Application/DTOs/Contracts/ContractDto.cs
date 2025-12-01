@@ -17,6 +17,12 @@ public class ContractDto
     public string? Notes { get; set; }
     public int PaymentsCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    
+    // ✅ Informations EDL
+    public bool HasInventoryEntry { get; set; }
+    public bool HasInventoryExit { get; set; }
+    public Guid? InventoryEntryId { get; set; }
+    public Guid? InventoryExitId { get; set; }
 }
 
 public class CreateContractDto
