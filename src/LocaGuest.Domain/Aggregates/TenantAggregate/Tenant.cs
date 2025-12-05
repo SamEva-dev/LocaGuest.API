@@ -18,6 +18,23 @@ public class Tenant : AuditableEntity
     public TenantStatus Status { get; private set; }
     public string? Notes { get; private set; }
     
+    // 📋 Informations personnelles détaillées
+    public DateTime? DateOfBirth { get; private set; }
+    public string? Address { get; private set; }
+    public string? City { get; private set; }
+    public string? PostalCode { get; private set; }
+    public string? Country { get; private set; }
+    public string? Nationality { get; private set; }
+    public string? IdNumber { get; private set; }
+    
+    // 🚨 Contact d'urgence
+    public string? EmergencyContact { get; private set; }
+    public string? EmergencyPhone { get; private set; }
+    
+    // 💼 Situation professionnelle
+    public string? Occupation { get; private set; }
+    public decimal? MonthlyIncome { get; private set; }
+    
     /// <summary>
     /// Associated Property ID - Tenant can be associated to a property before contract creation
     /// </summary>
@@ -82,6 +99,37 @@ public class Tenant : AuditableEntity
     {
         if (email != null) Email = email;
         if (phone != null) Phone = phone;
+    }
+    
+    /// <summary>
+    /// Update tenant detailed information
+    /// </summary>
+    public void UpdateDetails(
+        DateTime? dateOfBirth = null,
+        string? address = null,
+        string? city = null,
+        string? postalCode = null,
+        string? country = null,
+        string? nationality = null,
+        string? idNumber = null,
+        string? emergencyContact = null,
+        string? emergencyPhone = null,
+        string? occupation = null,
+        decimal? monthlyIncome = null,
+        string? notes = null)
+    {
+        if (dateOfBirth.HasValue) DateOfBirth = dateOfBirth;
+        if (address != null) Address = address;
+        if (city != null) City = city;
+        if (postalCode != null) PostalCode = postalCode;
+        if (country != null) Country = country;
+        if (nationality != null) Nationality = nationality;
+        if (idNumber != null) IdNumber = idNumber;
+        if (emergencyContact != null) EmergencyContact = emergencyContact;
+        if (emergencyPhone != null) EmergencyPhone = emergencyPhone;
+        if (occupation != null) Occupation = occupation;
+        if (monthlyIncome.HasValue) MonthlyIncome = monthlyIncome;
+        if (notes != null) Notes = notes;
     }
     
     /// <summary>

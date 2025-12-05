@@ -52,6 +52,22 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
 
             // ✅ Set the generated code
             tenant.SetCode(code);
+            
+            // ✅ Set detailed information
+            tenant.UpdateDetails(
+                dateOfBirth: request.DateOfBirth,
+                address: request.Address,
+                city: request.City,
+                postalCode: request.PostalCode,
+                country: request.Country,
+                nationality: request.Nationality,
+                idNumber: request.IdNumber,
+                emergencyContact: request.EmergencyContact,
+                emergencyPhone: request.EmergencyPhone,
+                occupation: request.Occupation,
+                monthlyIncome: request.MonthlyIncome,
+                notes: request.Notes
+            );
 
             // Add to context
             await _unitOfWork.Tenants.AddAsync(tenant, cancellationToken);

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace LocaGuest.Application.Features.Tenants.Queries.GetTenant;
 
-public record GetTenantQuery : IRequest<Result<TenantDto>>
+public record GetTenantQuery : IRequest<Result<TenantDetailDto>>
 {
     public required string Id { get; init; }
 }

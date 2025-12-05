@@ -176,7 +176,7 @@ public class TenantsControllerTests : BaseTestFixture
     {
         // Arrange
         var tenantId = Guid.NewGuid();
-        var tenant = TenantDtoBuilder.ATenant()
+        var tenant = TenantDetailDtoBuilder.ATenant()
             .WithId(tenantId)
             .WithFullName("John Doe")
             .Build();
@@ -207,7 +207,7 @@ public class TenantsControllerTests : BaseTestFixture
         // Arrange
         var tenantId = Guid.NewGuid();
         var errorMessage = "Tenant not found";
-        var result = Result.Failure<TenantDto>(errorMessage);
+        var result = Result.Failure<TenantDetailDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetTenantQuery>(q => q.Id == tenantId.ToString()), It.IsAny<CancellationToken>()))
@@ -228,7 +228,7 @@ public class TenantsControllerTests : BaseTestFixture
         // Arrange
         var tenantId = Guid.NewGuid();
         var errorMessage = "Database connection failed";
-        var result = Result.Failure<TenantDto>(errorMessage);
+        var result = Result.Failure<TenantDetailDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetTenantQuery>(q => q.Id == tenantId.ToString()), It.IsAny<CancellationToken>()))
