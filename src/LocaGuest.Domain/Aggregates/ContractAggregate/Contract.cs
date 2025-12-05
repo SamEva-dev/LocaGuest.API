@@ -68,6 +68,9 @@ public class Contract : AuditableEntity
     
     private readonly List<Guid> _documentIds = new();
     public IReadOnlyCollection<Guid> DocumentIds => _documentIds.AsReadOnly();
+    
+    private readonly List<Addendum> _addendums = new();
+    public IReadOnlyCollection<Addendum> Addendums => _addendums.AsReadOnly();
 
     private Contract() { } // EF
 
@@ -418,6 +421,84 @@ public class Contract : AuditableEntity
     {
         return Status == ContractStatus.Signed 
             && DateTime.UtcNow >= StartDate;
+    }
+    
+    // ========== GESTION DES AVENANTS ==========
+    
+    /// <summary>
+    /// Ajouter un avenant au contrat
+    /// </summary>
+    public void AddAddendum(Addendum addendum)
+    {
+        if (addendum == null)
+            throw new ArgumentNullException(nameof(addendum));
+        
+        _addendums.Add(addendum);
+    }
+    
+    /// <summary>
+    /// Vérifier si un avenant peut être créé
+    /// </summary>
+    public bool CanCreateAddendum()
+    {
+        // Un avenant ne peut être créé que si :
+        // - Le contrat est Active ou Signed
+        // - Pas de procédure de sortie (Terminated)
+        // - Pas de renouvellement (Renewed)
+        return (Status == ContractStatus.Active || Status == ContractStatus.Signed) 
+            && Status != ContractStatus.Terminated
+            && Status != ContractStatus.Renewed
+            && Status != ContractStatus.Expired;
+    }
+    
+    /// <summary>
+    /// Appliquer les modifications d'un avenant financier au contrat
+    /// </summary>
+    public void ApplyFinancialAddendum(decimal newRent, decimal newCharges)
+    {
+        if (newRent <= 0)
+            throw new ValidationException("INVALID_RENT", "Rent must be positive");
+        
+        if (newCharges < 0)
+            throw new ValidationException("INVALID_CHARGES", "Charges cannot be negative");
+        
+        Rent = newRent;
+        Charges = newCharges;
+    }
+    
+    /// <summary>
+    /// Appliquer les modifications de durée au contrat
+    /// </summary>
+    public void ApplyDurationAddendum(DateTime newEndDate)
+    {
+        if (newEndDate <= DateTime.UtcNow)
+            throw new ValidationException("INVALID_DATE", "New end date must be in the future");
+        
+        if (newEndDate <= StartDate)
+            throw new ValidationException("INVALID_DATE", "End date must be after start date");
+        
+        EndDate = newEndDate.Kind == DateTimeKind.Unspecified 
+            ? DateTime.SpecifyKind(newEndDate, DateTimeKind.Utc) 
+            : newEndDate.ToUniversalTime();
+    }
+    
+    /// <summary>
+    /// Appliquer les modifications de chambre au contrat (colocation)
+    /// </summary>
+    public void ApplyRoomAddendum(Guid newRoomId)
+    {
+        RoomId = newRoomId;
+    }
+    
+    /// <summary>
+    /// Appliquer les modifications de clauses au contrat
+    /// </summary>
+    public void ApplyClausesAddendum(string newClauses)
+    {
+        if (string.IsNullOrWhiteSpace(newClauses))
+            throw new ValidationException("INVALID_CLAUSES", "Clauses cannot be empty");
+        
+        CustomClauses = newClauses;
     }
 }
 

@@ -44,6 +44,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<Addendum> Addendums => Set<Addendum>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<InventoryEntry> InventoryEntries => Set<InventoryEntry>();

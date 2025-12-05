@@ -8,6 +8,7 @@ using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsExpired;
 using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
 using LocaGuest.Application.Features.Contracts.Commands.RenewContract;
+using LocaGuest.Application.Features.Contracts.Commands.CreateAddendum;
 using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 using LocaGuest.Application.Features.Contracts.Queries.GetContracts;
@@ -316,5 +317,56 @@ public class ContractsController : ControllerBase
         string? Notes,
         bool TacitRenewal,
         List<Guid>? AttachedDocumentIds
+    );
+    
+    /// <summary>
+    /// Créer un avenant au contrat
+    /// POST /api/contracts/{id}/addendum
+    /// </summary>
+    [HttpPost("{id:guid}/addendum")]
+    public async Task<IActionResult> CreateAddendum(Guid id, [FromBody] CreateAddendumRequest request)
+    {
+        var command = new CreateAddendumCommand
+        {
+            ContractId = id,
+            Type = request.Type,
+            EffectiveDate = request.EffectiveDate,
+            Reason = request.Reason,
+            Description = request.Description,
+            NewRent = request.NewRent,
+            NewCharges = request.NewCharges,
+            NewEndDate = request.NewEndDate,
+            OccupantChanges = request.OccupantChanges,
+            NewRoomId = request.NewRoomId,
+            NewClauses = request.NewClauses,
+            AttachedDocumentIds = request.AttachedDocumentIds ?? new List<Guid>(),
+            Notes = request.Notes,
+            SendEmail = request.SendEmail,
+            RequireSignature = request.RequireSignature
+        };
+
+        var result = await _mediator.Send(command);
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { message = "Addendum created successfully", addendumId = result.Data });
+    }
+    
+    public record CreateAddendumRequest(
+        string Type,
+        DateTime EffectiveDate,
+        string Reason,
+        string Description,
+        decimal? NewRent,
+        decimal? NewCharges,
+        DateTime? NewEndDate,
+        string? OccupantChanges,
+        Guid? NewRoomId,
+        string? NewClauses,
+        List<Guid>? AttachedDocumentIds,
+        string? Notes,
+        bool SendEmail,
+        bool RequireSignature
     );
 }
