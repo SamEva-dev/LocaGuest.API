@@ -80,7 +80,7 @@ public class PropertiesV2Controller : ControllerBase
                 p.Name,
                 p.Address,
                 p.City,
-                p.ZipCode,
+                p.PostalCode,
                 p.Country,
                 p.Type,
                 p.Status,
@@ -175,8 +175,8 @@ public class PropertiesV2Controller : ControllerBase
             request.Bathrooms
         );
 
-        if (!string.IsNullOrEmpty(request.ZipCode))
-            property.GetType().GetProperty("ZipCode")!.SetValue(property, request.ZipCode);
+        if (!string.IsNullOrEmpty(request.PostalCode))
+            property.GetType().GetProperty("PostalCode")!.SetValue(property, request.PostalCode);
         
         if (!string.IsNullOrEmpty(request.Country))
             property.GetType().GetProperty("Country")!.SetValue(property, request.Country);
@@ -221,7 +221,7 @@ public record CreatePropertyRequest(
     decimal Rent,
     int Bedrooms,
     int Bathrooms,
-    string? ZipCode = null,
+    string? PostalCode = null,
     string? Country = null,
     Domain.Aggregates.PropertyAggregate.PropertyStatus Status = Domain.Aggregates.PropertyAggregate.PropertyStatus.Vacant
 );

@@ -75,10 +75,10 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             // ✅ Set the generated code
             property.SetCode(code);
             
-            // ✅ Update extended details (city, zipCode, country, surface, floor, elevator, parking, furnished, charges, deposit, notes)
+            // ✅ Update extended details (city, postalCode, country, surface, floor, elevator, parking, furnished, charges, deposit, notes)
             property.UpdateExtendedDetails(
                 city: request.City,
-                zipCode: request.PostalCode,
+                postalCode: request.PostalCode,
                 country: request.Country,
                 surface: request.Surface,
                 floor: request.Floor,
@@ -168,7 +168,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 Name = property.Name,
                 Address = property.Address,
                 City = property.City,
-                PostalCode = property.ZipCode,
+                PostalCode = property.PostalCode,
                 Country = property.Country,
                 Type = property.Type.ToString(),
                 PropertyUsageType = property.UsageType.ToString(),

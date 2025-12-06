@@ -13,7 +13,7 @@ public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public string? Name { get; init; }
     public string? Address { get; init; }
     public string? City { get; init; }
-    public string? ZipCode { get; init; }
+    public string? PostalCode { get; init; }
     public string? Country { get; init; }
     public string? Type { get; init; }
     public decimal? Surface { get; init; }

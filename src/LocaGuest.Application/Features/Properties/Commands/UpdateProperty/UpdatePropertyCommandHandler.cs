@@ -54,7 +54,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
             // Update extended details
             property.UpdateExtendedDetails(
                 city: request.City,
-                zipCode: request.ZipCode,
+                postalCode: request.PostalCode,
                 country: request.Country,
                 surface: request.Surface,
                 floor: request.Floor,
@@ -173,7 +173,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 Name = property.Name,
                 Address = property.Address,
                 City = property.City,
-                PostalCode = property.ZipCode,
+                PostalCode = property.PostalCode,
                 Country = property.Country,
                 Type = property.Type.ToString(),
                 PropertyUsageType = property.UsageType.ToString(),

@@ -15,7 +15,7 @@ public class Property : AuditableEntity
     public string Name { get; private set; } = string.Empty;
     public string Address { get; private set; } = string.Empty;
     public string City { get; private set; } = string.Empty;
-    public string? ZipCode { get; private set; }
+    public string? PostalCode { get; private set; }
     public string? Country { get; private set; }
     public PropertyType Type { get; private set; }
     public PropertyUsageType UsageType { get; private set; }
@@ -166,7 +166,7 @@ public class Property : AuditableEntity
     
     public void UpdateExtendedDetails(
         string? city = null,
-        string? zipCode = null,
+        string? postalCode = null,
         string? country = null,
         decimal? surface = null,
         int? floor = null,
@@ -178,7 +178,7 @@ public class Property : AuditableEntity
         string? notes = null)
     {
         if (city != null) City = city;
-        if (zipCode != null) ZipCode = zipCode;
+        if (postalCode != null) PostalCode = postalCode;
         if (country != null) Country = country;
         if (surface.HasValue)
         {

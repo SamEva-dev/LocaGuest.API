@@ -60,7 +60,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 Name = property.Name,
                 Address = property.Address,
                 City = property.City,
-                PostalCode = property.ZipCode,
+                PostalCode = property.PostalCode,
                 Country = property.Country,
                 Type = property.Type.ToString(),
                 PropertyUsageType = property.UsageType.ToString(),

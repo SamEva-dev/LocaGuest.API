@@ -337,7 +337,7 @@ public class ContractGeneratorService : IContractGeneratorService
             // Property
             PropertyAddress = property.Address,
             PropertyCity = property.City,
-            PropertyPostalCode = property.ZipCode ?? "N/A",
+            PropertyPostalCode = property.PostalCode ?? "N/A",
             PropertyType = property.Type.ToString(),
             PropertyTypeLabel = GetPropertyTypeLabel(property.Type.ToString()),
             PropertySurface = property.Surface ?? 0m,
