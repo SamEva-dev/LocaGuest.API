@@ -37,7 +37,7 @@ public class GetTenantPaymentStatsQueryHandler : IRequestHandler<GetTenantPaymen
 
             var totalPaid = allPayments.Sum(p => p.Amount);
             var totalPayments = allPayments.Count;
-            var latePayments = allPayments.Count(p => p.Status == PaymentStatus.Late);
+            var latePayments = allPayments.Count(p => p.Status == ContractPaymentStatus.Late);
             var onTimeRate = totalPayments > 0 ? (decimal)(totalPayments - latePayments) / totalPayments : 1.0m;
 
             var stats = new TenantPaymentStatsDto

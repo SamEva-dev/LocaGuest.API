@@ -1,0 +1,119 @@
+using LocaGuest.Domain.Common;
+
+namespace LocaGuest.Domain.Aggregates.PaymentAggregate;
+
+/// <summary>
+/// Représente une facture de loyer mensuelle pour un contrat
+/// Générée automatiquement chaque mois pour les contrats actifs
+/// </summary>
+public class RentInvoice : AuditableEntity
+{
+    public Guid ContractId { get; private set; }
+    public new Guid TenantId { get; private set; }
+    public Guid PropertyId { get; private set; }
+    
+    /// <summary>
+    /// Mois de la facture (1-12)
+    /// </summary>
+    public int Month { get; private set; }
+    
+    /// <summary>
+    /// Année de la facture
+    /// </summary>
+    public int Year { get; private set; }
+    
+    /// <summary>
+    /// Montant total dû (loyer + charges)
+    /// </summary>
+    public decimal Amount { get; private set; }
+    
+    /// <summary>
+    /// Statut de la facture
+    /// </summary>
+    public InvoiceStatus Status { get; private set; }
+    
+    /// <summary>
+    /// ID du paiement associé (si payé)
+    /// </summary>
+    public Guid? PaymentId { get; private set; }
+    
+    /// <summary>
+    /// Date de génération de la facture
+    /// </summary>
+    public DateTime GeneratedAt { get; private set; }
+    
+    /// <summary>
+    /// Date d'échéance du paiement
+    /// </summary>
+    public DateTime DueDate { get; private set; }
+
+    private RentInvoice() { } // EF Core
+
+    public static RentInvoice Create(
+        Guid contractId,
+        Guid tenantId,
+        Guid propertyId,
+        int month,
+        int year,
+        decimal amount,
+        DateTime dueDate)
+    {
+        return new RentInvoice
+        {
+            Id = Guid.NewGuid(),
+            ContractId = contractId,
+            TenantId = tenantId,
+            PropertyId = propertyId,
+            Month = month,
+            Year = year,
+            Amount = amount,
+            Status = InvoiceStatus.Pending,
+            GeneratedAt = DateTime.UtcNow,
+            DueDate = dueDate
+        };
+    }
+
+    public void MarkAsPaid(Guid paymentId)
+    {
+        Status = InvoiceStatus.Paid;
+        PaymentId = paymentId;
+    }
+
+    public void MarkAsPartial(Guid paymentId)
+    {
+        Status = InvoiceStatus.Partial;
+        PaymentId = paymentId;
+    }
+
+    public void MarkAsLate()
+    {
+        if (Status == InvoiceStatus.Pending)
+            Status = InvoiceStatus.Late;
+    }
+
+    public void UpdateStatus(PaymentStatus paymentStatus)
+    {
+        Status = paymentStatus switch
+        {
+            PaymentStatus.Paid or PaymentStatus.PaidLate => InvoiceStatus.Paid,
+            PaymentStatus.Partial => InvoiceStatus.Partial,
+            PaymentStatus.Late => InvoiceStatus.Late,
+            PaymentStatus.Pending => InvoiceStatus.Pending,
+            _ => Status
+        };
+    }
+
+    public bool IsOverdue()
+    {
+        return DateTime.UtcNow.Date > DueDate.Date && Status != InvoiceStatus.Paid;
+    }
+}
+
+public enum InvoiceStatus
+{
+    Pending,  // En attente de paiement
+    Paid,     // Payé
+    Partial,  // Paiement partiel
+    Late,     // En retard
+    Cancelled // Annulé
+}

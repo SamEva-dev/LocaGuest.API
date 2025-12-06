@@ -7,6 +7,7 @@ using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
 using LocaGuest.Domain.Aggregates.InventoryAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Entities;
 using LocaGuest.Domain.Analytics;
 using LocaGuest.Domain.Common;
@@ -46,7 +47,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Addendum> Addendums => Set<Addendum>();
     public DbSet<Document> Documents => Set<Document>();
-    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Domain.Aggregates.PaymentAggregate.Payment> Payments => Set<Domain.Aggregates.PaymentAggregate.Payment>();
+    public DbSet<RentInvoice> RentInvoices => Set<RentInvoice>();
     public DbSet<InventoryEntry> InventoryEntries => Set<InventoryEntry>();
     public DbSet<InventoryExit> InventoryExits => Set<InventoryExit>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
@@ -199,10 +201,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Ignore(c => c.DomainEvents);
         });
 
-        // Payment
-        modelBuilder.Entity<Payment>(entity =>
+        // ContractPayment (old/deprecated - use PaymentAggregate.Payment instead)
+        modelBuilder.Entity<ContractPayment>(entity =>
         {
-            entity.ToTable("payments");
+            entity.ToTable("contract_payments");
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
             entity.Ignore(p => p.DomainEvents);
@@ -515,6 +517,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             
             entity.Ignore(ie => ie.DomainEvents);
         });
+
+        // Apply custom entity configurations
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.PaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceConfiguration());
     }
     
     /// <summary>

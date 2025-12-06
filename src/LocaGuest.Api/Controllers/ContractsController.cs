@@ -13,6 +13,7 @@ using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 using LocaGuest.Application.Features.Contracts.Queries.GetContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContract;
+using LocaGuest.Application.Features.Contracts.Queries.GetContractsByTenant;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -93,6 +94,27 @@ public class ContractsController : ControllerBase
     public async Task<IActionResult> GetContract(Guid id)
     {
         var query = new GetContractQuery(id);
+        var result = await _mediator.Send(query);
+        
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get all contracts for a specific tenant
+    /// </summary>
+    [HttpGet("tenant/{tenantId}")]
+    [ProducesResponseType(typeof(List<LocaGuest.Application.DTOs.Contracts.ContractDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetContractsByTenant(string tenantId)
+    {
+        var query = new GetContractsByTenantQuery { TenantId = tenantId };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)

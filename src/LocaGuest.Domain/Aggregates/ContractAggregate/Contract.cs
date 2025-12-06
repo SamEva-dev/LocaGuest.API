@@ -60,8 +60,8 @@ public class Contract : AuditableEntity
     /// </summary>
     public decimal? CurrentIRL { get; private set; }
 
-    private readonly List<Payment> _payments = new();
-    public IReadOnlyCollection<Payment> Payments => _payments.AsReadOnly();
+    private readonly List<ContractPayment> _payments = new();
+    public IReadOnlyCollection<ContractPayment> Payments => _payments.AsReadOnly();
     
     private readonly List<RequiredDocument> _requiredDocuments = new();
     public IReadOnlyCollection<RequiredDocument> RequiredDocuments => _requiredDocuments.AsReadOnly();
@@ -313,12 +313,12 @@ public class Contract : AuditableEntity
         AddDomainEvent(new ContractActivated(Id, PropertyId, RenterTenantId));
     }
 
-    public Payment RecordPayment(decimal amount, DateTime paymentDate, PaymentMethod method)
+    public ContractPayment RecordPayment(decimal amount, DateTime paymentDate, ContractPaymentMethod method)
     {
         if (amount <= 0)
             throw new ValidationException("PAYMENT_INVALID_AMOUNT", "Payment amount must be positive");
 
-        var payment = Payment.Create(Id, amount, paymentDate, method);
+        var payment = ContractPayment.Create(Id, amount, paymentDate, method);
         _payments.Add(payment);
 
         AddDomainEvent(new PaymentRecorded(payment.Id, Id, PropertyId, RenterTenantId, amount, paymentDate));
@@ -543,28 +543,33 @@ public class RequiredDocument
     public void MarkAsSigned() => IsSigned = true;
 }
 
-public class Payment : Entity
+/// <summary>
+/// DEPRECATED: Use LocaGuest.Domain.Aggregates.PaymentAggregate.Payment instead
+/// This class is kept for backward compatibility
+/// </summary>
+[Obsolete("Use PaymentAggregate.Payment instead")]
+public class ContractPayment : Entity
 {
     public string Code { get; private set; } = string.Empty;  // T0001-PAY0001
     
     public Guid ContractId { get; private set; }
     public decimal Amount { get; private set; }
     public DateTime PaymentDate { get; private set; }
-    public PaymentMethod Method { get; private set; }
-    public PaymentStatus Status { get; private set; }
+    public ContractPaymentMethod Method { get; private set; }
+    public ContractPaymentStatus Status { get; private set; }
 
-    private Payment() { } // EF
+    private ContractPayment() { } // EF
 
-    internal static Payment Create(Guid contractId, decimal amount, DateTime paymentDate, PaymentMethod method)
+    internal static ContractPayment Create(Guid contractId, decimal amount, DateTime paymentDate, ContractPaymentMethod method)
     {
-        return new Payment
+        return new ContractPayment
         {
             Id = Guid.NewGuid(),
             ContractId = contractId,
             Amount = amount,
             PaymentDate = paymentDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(paymentDate, DateTimeKind.Utc) : paymentDate.ToUniversalTime(),
             Method = method,
-            Status = PaymentStatus.Completed
+            Status = ContractPaymentStatus.Completed
         };
     }
 
@@ -577,11 +582,12 @@ public class Payment : Entity
 
     internal void MarkAsLate()
     {
-        Status = PaymentStatus.Late;
+        Status = ContractPaymentStatus.Late;
     }
 }
 
-public enum PaymentMethod
+[Obsolete("Use PaymentAggregate.PaymentMethod instead")]
+public enum ContractPaymentMethod
 {
     BankTransfer,
     Check,
@@ -589,7 +595,8 @@ public enum PaymentMethod
     CreditCard
 }
 
-public enum PaymentStatus
+[Obsolete("Use PaymentAggregate.PaymentStatus instead")]
+public enum ContractPaymentStatus
 {
     Pending,
     Completed,

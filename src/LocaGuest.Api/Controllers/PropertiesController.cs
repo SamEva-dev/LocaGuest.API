@@ -244,12 +244,13 @@ public class PropertiesController : ControllerBase
 
             foreach (var contract in allContracts)
             {
-                // Supprimer les paiements
-                if (contract.Payments.Any())
-                {
-                    _context.Payments.RemoveRange(contract.Payments);
-                    deletedPayments += contract.Payments.Count;
-                }
+                // TODO: Migrate to new PaymentAggregate system
+                // Old ContractPayment system is deprecated
+                // Supprimer les paiements (temporarily disabled - use new payment system)
+                // if (contract.Payments.Any())
+                // {
+                //     deletedPayments += contract.Payments.Count;
+                // }
 
                 // Supprimer les documents du contrat
                 var contractDocuments = await _context.Documents

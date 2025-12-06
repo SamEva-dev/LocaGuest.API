@@ -26,8 +26,8 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
             if (contract == null)
                 return Result.Failure<Guid>("Contract not found");
 
-            var paymentMethod = Enum.TryParse<Domain.Aggregates.ContractAggregate.PaymentMethod>(
-                request.Method, true, out var parsed) ? parsed : Domain.Aggregates.ContractAggregate.PaymentMethod.Cash;
+            var paymentMethod = Enum.TryParse<Domain.Aggregates.ContractAggregate.ContractPaymentMethod>(
+                request.Method, true, out var parsed) ? parsed : Domain.Aggregates.ContractAggregate.ContractPaymentMethod.Cash;
             
             var payment = contract.RecordPayment(
                 request.Amount,

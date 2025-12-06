@@ -12,6 +12,7 @@ public class ContractDto
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public decimal Rent { get; set; }
+    public decimal Charges { get; set; }
     public decimal? Deposit { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Notes { get; set; }

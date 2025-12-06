@@ -17,6 +17,8 @@ public class UnitOfWork : IUnitOfWork
     private IDocumentRepository? _documents;
     private ISubscriptionRepository? _subscriptions;
     private IOrganizationRepository? _organizations;
+    private IPaymentRepository? _payments;
+    private IRentInvoiceRepository? _rentInvoices;
 
     public UnitOfWork(LocaGuestDbContext context)
     {
@@ -40,6 +42,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IOrganizationRepository Organizations => 
         _organizations ??= new OrganizationRepository(_context);
+
+    public IPaymentRepository Payments => 
+        _payments ??= new PaymentRepository(_context);
+
+    public IRentInvoiceRepository RentInvoices => 
+        _rentInvoices ??= new RentInvoiceRepository(_context);
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {

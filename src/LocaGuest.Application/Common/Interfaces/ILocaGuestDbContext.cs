@@ -7,6 +7,7 @@ using LocaGuest.Domain.Aggregates.RentabilityAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
 using LocaGuest.Domain.Aggregates.InventoryAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -21,6 +22,7 @@ public interface ILocaGuestDbContext
     DbSet<Contract> Contracts { get; }
     DbSet<Document> Documents { get; }
     DbSet<Payment> Payments { get; }
+    DbSet<RentInvoice> RentInvoices { get; }
     DbSet<InventoryEntry> InventoryEntries { get; }
     DbSet<InventoryExit> InventoryExits { get; }
     DbSet<RentabilityScenario> RentabilityScenarios { get; }

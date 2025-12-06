@@ -32,6 +32,14 @@ public class ContractRepository : Repository<Contract>, IContractRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Contract>> GetContractsByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Where(c => c.RenterTenantId == tenantId)
+            .OrderByDescending(c => c.StartDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Contract>> GetByStatusAsync(ContractStatus status, CancellationToken cancellationToken = default)
     {
         return await _dbSet

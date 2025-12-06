@@ -154,7 +154,7 @@ public static class DbSeeder
             for (int i = 0; i < paymentsToCreate; i++)
             {
                 var paymentDate = DateTime.UtcNow.AddMonths(-i).AddDays(-random.Next(0, 5));
-                var method = (PaymentMethod)random.Next(0, 4);
+                var method = (ContractPaymentMethod)random.Next(0, 4);
                 
                 contract.RecordPayment(contract.Rent, paymentDate, method);
             }

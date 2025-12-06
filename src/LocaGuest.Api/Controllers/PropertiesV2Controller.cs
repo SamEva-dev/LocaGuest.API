@@ -107,42 +107,23 @@ public class PropertiesV2Controller : ControllerBase
         return Ok(property);
     }
 
+    /// <summary>
+    /// DEPRECATED: Use PaymentsController instead
+    /// </summary>
     [HttpGet("{id:guid}/payments")]
+    [Obsolete("Use GET /api/payments/property/{id} instead")]
     public async Task<IActionResult> GetPropertyPayments(
         Guid id,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null)
     {
-        var property = await _context.Properties.FindAsync(id);
-        if (property == null)
-            return NotFound(new { message = "Property not found" });
-
-        var query = _context.Payments
-            .Where(p => _context.Contracts
-                .Any(c => c.PropertyId == id && c.Payments.Any(pay => pay.Id == p.Id)));
-
-        if (from.HasValue)
-            query = query.Where(p => p.PaymentDate >= from.Value);
-
-        if (to.HasValue)
-            query = query.Where(p => p.PaymentDate <= to.Value);
-
-        var payments = await query
-            .OrderByDescending(p => p.PaymentDate)
-            .Select(p => new
-            {
-                p.Id,
-                p.Amount,
-                p.PaymentDate,
-                p.Method,
-                p.Status,
-                p.ContractId
-            })
-            .ToListAsync();
-
-        return Ok(payments);
+        // TODO: Migrate to new PaymentAggregate system
+        return BadRequest(new { message = "This endpoint is deprecated. Use GET /api/payments/property/{id} instead" });
     }
 
+    /// <summary>
+    /// Get contracts for property - UPDATED: PaymentsCount removed (use new payment system)
+    /// </summary>
     [HttpGet("{id:guid}/contracts")]
     public async Task<IActionResult> GetPropertyContracts(Guid id)
     {
@@ -152,51 +133,32 @@ public class PropertiesV2Controller : ControllerBase
 
         var contracts = await _context.Contracts
             .Where(c => c.PropertyId == id)
-            .Include(c => c.Payments)
             .OrderByDescending(c => c.StartDate)
             .Select(c => new
             {
                 c.Id,
-                TenantId = c.RenterTenantId,
-                TenantName = _context.Tenants.Where(t => t.Id == c.RenterTenantId).Select(t => t.FullName).FirstOrDefault(),
-                c.Type,
+                c.PropertyId,
+                c.RenterTenantId,
                 c.StartDate,
                 c.EndDate,
                 c.Rent,
                 c.Deposit,
-                c.Status,
-                PaymentsCount = c.Payments.Count
+                c.Status
             })
             .ToListAsync();
 
         return Ok(contracts);
     }
 
+    /// <summary>
+    /// DEPRECATED: Use GET /api/payments/stats?propertyId={id} instead
+    /// </summary>
     [HttpGet("{id:guid}/financial-summary")]
+    [Obsolete("Use GET /api/payments/stats?propertyId={id} instead")]
     public async Task<IActionResult> GetPropertyFinancialSummary(Guid id)
     {
-        var property = await _context.Properties.FindAsync(id);
-        if (property == null)
-            return NotFound(new { message = "Property not found" });
-
-        var totalPayments = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.PropertyId == id && c.Payments.Any(pay => pay.Id == p.Id)))
-            .SumAsync(p => p.Amount);
-
-        var lastPayment = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.PropertyId == id && c.Payments.Any(pay => pay.Id == p.Id)))
-            .OrderByDescending(p => p.PaymentDate)
-            .Select(p => new { p.Amount, p.PaymentDate })
-            .FirstOrDefaultAsync();
-
-        return Ok(new
-        {
-            propertyId = id,
-            totalRevenue = totalPayments,
-            monthlyRent = property.Rent,
-            lastPayment = lastPayment,
-            occupancyRate = property.Status == Domain.Aggregates.PropertyAggregate.PropertyStatus.Occupied ? 1.0m : 0.0m
-        });
+        // TODO: Migrate to new PaymentAggregate system
+        return BadRequest(new { message = "This endpoint is deprecated. Use GET /api/payments/stats?propertyId={id} instead" });
     }
 
     [HttpPost]

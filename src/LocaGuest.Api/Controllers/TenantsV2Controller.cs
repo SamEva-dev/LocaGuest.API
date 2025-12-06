@@ -86,46 +86,18 @@ public class TenantsV2Controller : ControllerBase
         return Ok(tenant);
     }
 
+    /// <summary>
+    /// DEPRECATED: Use PaymentsController instead
+    /// </summary>
     [HttpGet("{id:guid}/payments")]
+    [Obsolete("Use GET /api/payments/tenant/{id} instead")]
     public async Task<IActionResult> GetTenantPayments(
         Guid id,
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to = null)
     {
-        var tenant = await _context.Tenants.FindAsync(id);
-        if (tenant == null)
-            return NotFound(new { message = "Tenant not found" });
-
-        var query = _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)));
-
-        if (from.HasValue)
-            query = query.Where(p => p.PaymentDate >= from.Value);
-
-        if (to.HasValue)
-            query = query.Where(p => p.PaymentDate <= to.Value);
-
-        var payments = await query
-            .OrderByDescending(p => p.PaymentDate)
-            .Select(p => new
-            {
-                p.Id,
-                p.Amount,
-                p.PaymentDate,
-                p.Method,
-                p.Status,
-                p.ContractId,
-                PropertyName = _context.Contracts
-                    .Where(c => c.Id == p.ContractId)
-                    .Join(_context.Properties,
-                        c => c.PropertyId,
-                        prop => prop.Id,
-                        (c, prop) => prop.Name)
-                    .FirstOrDefault()
-            })
-            .ToListAsync();
-
-        return Ok(payments);
+        // TODO: Migrate to new PaymentAggregate system
+        return BadRequest(new { message = "This endpoint is deprecated. Use GET /api/payments/tenant/{id} instead" });
     }
 
     [HttpGet("{id:guid}/contracts")]
@@ -156,41 +128,15 @@ public class TenantsV2Controller : ControllerBase
         return Ok(contracts);
     }
 
+    /// <summary>
+    /// DEPRECATED: Use GET /api/payments/stats?tenantId={id} instead
+    /// </summary>
     [HttpGet("{id:guid}/payment-stats")]
+    [Obsolete("Use GET /api/payments/stats?tenantId={id} instead")]
     public async Task<IActionResult> GetTenantPaymentStats(Guid id)
     {
-        var tenant = await _context.Tenants.FindAsync(id);
-        if (tenant == null)
-            return NotFound(new { message = "Tenant not found" });
-
-        var totalPaid = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
-            .SumAsync(p => p.Amount);
-
-        var totalPayments = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
-            .CountAsync();
-
-        var latePayments = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id))
-                        && p.Status == Domain.Aggregates.ContractAggregate.PaymentStatus.Late)
-            .CountAsync();
-
-        var lastPayment = await _context.Payments
-            .Where(p => _context.Contracts.Any(c => c.RenterTenantId == id && c.Payments.Any(pay => pay.Id == p.Id)))
-            .OrderByDescending(p => p.PaymentDate)
-            .Select(p => new { p.Amount, p.PaymentDate, p.Status })
-            .FirstOrDefaultAsync();
-
-        return Ok(new
-        {
-            tenantId = id,
-            totalPaid,
-            totalPayments,
-            latePayments,
-            onTimeRate = totalPayments > 0 ? (decimal)(totalPayments - latePayments) / totalPayments : 1.0m,
-            lastPayment
-        });
+        // TODO: Migrate to new PaymentAggregate system
+        return BadRequest(new { message = "This endpoint is deprecated. Use GET /api/payments/stats?tenantId={id} instead" });
     }
 
     [HttpPost]
