@@ -106,7 +106,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("Addendums");
+                    b.ToTable("Addendums", (string)null);
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
@@ -299,7 +299,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", (string)null);
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryEntry", b =>
@@ -898,7 +898,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("PropertyImages");
+                    b.ToTable("PropertyImages", (string)null);
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.PropertyRoom", b =>
@@ -1246,7 +1246,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("RentabilityScenarioId");
 
-                    b.ToTable("ScenarioComment");
+                    b.ToTable("ScenarioComment", (string)null);
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioShare", b =>
@@ -2158,6 +2158,41 @@ namespace LocaGuest.Infrastructure.Migrations
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryExit", b =>
                 {
+                    b.OwnsMany("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryComparison", "Comparisons", b1 =>
+                        {
+                            b1.Property<Guid>("InventoryExitId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("RoomName")
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("ElementName")
+                                .HasMaxLength(100)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Comment")
+                                .HasMaxLength(500)
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("EntryCondition")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("ExitCondition")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("PhotoUrls")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("InventoryExitId", "RoomName", "ElementName");
+
+                            b1.ToTable("inventory_comparisons", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("InventoryExitId");
+                        });
+
                     b.OwnsMany("LocaGuest.Domain.Aggregates.InventoryAggregate.Degradation", "Degradations", b1 =>
                         {
                             b1.Property<Guid>("InventoryExitId")
@@ -2189,41 +2224,6 @@ namespace LocaGuest.Infrastructure.Migrations
                             b1.HasKey("InventoryExitId", "RoomName", "ElementName");
 
                             b1.ToTable("inventory_degradations", (string)null);
-
-                            b1.WithOwner()
-                                .HasForeignKey("InventoryExitId");
-                        });
-
-                    b.OwnsMany("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryComparison", "Comparisons", b1 =>
-                        {
-                            b1.Property<Guid>("InventoryExitId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("RoomName")
-                                .HasMaxLength(100)
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("ElementName")
-                                .HasMaxLength(100)
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("Comment")
-                                .HasMaxLength(500)
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("EntryCondition")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<int>("ExitCondition")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<string>("PhotoUrls")
-                                .IsRequired()
-                                .HasColumnType("TEXT");
-
-                            b1.HasKey("InventoryExitId", "RoomName", "ElementName");
-
-                            b1.ToTable("inventory_comparisons", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("InventoryExitId");
