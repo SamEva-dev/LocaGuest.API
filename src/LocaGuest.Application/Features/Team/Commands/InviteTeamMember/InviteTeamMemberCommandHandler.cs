@@ -13,17 +13,20 @@ public class InviteTeamMemberCommandHandler : IRequestHandler<InviteTeamMemberCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<InviteTeamMemberCommandHandler> _logger;
 
     public InviteTeamMemberCommandHandler(
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
         ICurrentUserService currentUserService,
+        IEmailService emailService,
         ILogger<InviteTeamMemberCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _currentUserService = currentUserService;
+        _emailService = emailService;
         _logger = logger;
     }
 
@@ -70,13 +73,45 @@ public class InviteTeamMemberCommandHandler : IRequestHandler<InviteTeamMemberCo
         );
 
         await _unitOfWork.TeamMembers.AddAsync(teamMember, cancellationToken);
+
+        // Créer un token d'invitation sécurisé
+        var invitationToken = new InvitationToken(
+            teamMemberId: teamMember.Id,
+            email: request.Email,
+            organizationId: organizationId.Value,
+            expirationHours: 72 // 3 jours
+        );
+
+        await _unitOfWork.InvitationTokens.AddAsync(invitationToken, cancellationToken);
         await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation("Team member {UserId} invited to organization {OrganizationId} with role {Role}", 
             userId, organizationId.Value, request.Role);
 
-        // TODO: Envoyer email d'invitation avec token
-        // await _emailService.SendTeamInvitationEmail(request.Email, teamMember.Id, tenantName);
+        // Récupérer l'organization pour le nom
+        var organization = await _unitOfWork.Organizations.GetByIdAsync(organizationId.Value, cancellationToken);
+        var organizationName = organization?.Name ?? "LocaGuest";
+        var inviterName = _currentUserService.UserEmail ?? "Administrateur";
+
+        // Envoyer email d'invitation avec token
+        try
+        {
+            await _emailService.SendTeamInvitationEmailAsync(
+                toEmail: request.Email,
+                invitationToken: invitationToken.Token,
+                organizationName: organizationName,
+                inviterName: inviterName,
+                role: request.Role,
+                cancellationToken: cancellationToken
+            );
+            
+            _logger.LogInformation("Invitation email sent to {Email}", request.Email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send invitation email to {Email}", request.Email);
+            // Continue - l'invitation est créée même si l'email échoue
+        }
 
         return Result.Success(new InviteTeamMemberResponse
         {

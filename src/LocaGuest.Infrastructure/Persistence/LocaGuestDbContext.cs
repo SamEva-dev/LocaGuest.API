@@ -41,6 +41,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<TenantSequence> TenantSequences => Set<TenantSequence>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<InvitationToken> InvitationTokens => Set<InvitationToken>();
 
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
@@ -130,6 +131,30 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                   .OnDelete(DeleteBehavior.Cascade);
                   
             entity.Ignore(tm => tm.DomainEvents);
+        });
+
+        // InvitationToken (Secure tokens for team invitations)
+        modelBuilder.Entity<InvitationToken>(entity =>
+        {
+            entity.ToTable("invitation_tokens");
+            entity.HasKey(it => it.Id);
+            entity.Property(it => it.TeamMemberId).IsRequired();
+            entity.Property(it => it.Token).IsRequired().HasMaxLength(64);
+            entity.Property(it => it.Email).IsRequired().HasMaxLength(200);
+            entity.Property(it => it.OrganizationId).IsRequired();
+            entity.Property(it => it.ExpiresAt).IsRequired();
+            entity.Property(it => it.IsUsed).IsRequired();
+            entity.Property(it => it.UsedAt);
+            
+            entity.HasIndex(it => it.Token).IsUnique();
+            entity.HasIndex(it => it.TeamMemberId);
+            entity.HasIndex(it => it.Email);
+            entity.HasIndex(it => it.OrganizationId);
+            
+            entity.HasOne(it => it.TeamMember)
+                  .WithMany()
+                  .HasForeignKey(it => it.TeamMemberId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Property

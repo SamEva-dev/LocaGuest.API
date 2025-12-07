@@ -1,3 +1,4 @@
+using LocaGuest.Application.Features.Team.Commands.AcceptInvitation;
 using LocaGuest.Application.Features.Team.Commands.InviteTeamMember;
 using LocaGuest.Application.Features.Team.Commands.RemoveTeamMember;
 using LocaGuest.Application.Features.Team.Commands.UpdateTeamMemberRole;
@@ -87,6 +88,23 @@ public class TeamController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Accepter une invitation d'équipe (public, pas d'auth requise)
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("accept-invitation")]
+    public async Task<IActionResult> AcceptInvitation([FromBody] AcceptInvitationRequest request)
+    {
+        var command = new AcceptInvitationCommand { Token = request.Token };
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
 }
 
 public record UpdateTeamMemberRoleRequest(string NewRole);
+public record AcceptInvitationRequest(string Token);

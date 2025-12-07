@@ -10,4 +10,18 @@ public interface IEmailService
         string body,
         List<EmailAttachment>? attachments = null,
         CancellationToken cancellationToken = default);
+
+    Task SendTeamInvitationEmailAsync(
+        string toEmail,
+        string invitationToken,
+        string organizationName,
+        string inviterName,
+        string role,
+        CancellationToken cancellationToken = default);
+
+    Task SendTeamInvitationAcceptedEmailAsync(
+        string toEmail,
+        string memberName,
+        string organizationName,
+        CancellationToken cancellationToken = default);
 }
