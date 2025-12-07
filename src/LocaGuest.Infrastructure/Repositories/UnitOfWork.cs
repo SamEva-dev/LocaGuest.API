@@ -15,6 +15,7 @@ public class UnitOfWork : IUnitOfWork
     private IPropertyImageRepository? _propertyImages;
     private IContractRepository? _contracts;
     private ITenantRepository? _tenants;
+    private ITeamMemberRepository? _teamMembers;
     private IDocumentRepository? _documents;
     private ISubscriptionRepository? _subscriptions;
     private IOrganizationRepository? _organizations;
@@ -37,6 +38,9 @@ public class UnitOfWork : IUnitOfWork
 
     public ITenantRepository Tenants => 
         _tenants ??= new TenantRepository(_context);
+
+    public ITeamMemberRepository TeamMembers => 
+        _teamMembers ??= new TeamMemberRepository(_context);
 
     public IDocumentRepository Documents => 
         _documents ??= new DocumentRepository(_context);

@@ -40,6 +40,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     // Multi-tenant Organizations
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<TenantSequence> TenantSequences => Set<TenantSequence>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
 
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
@@ -102,6 +103,33 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(ts => ts.LastNumber).IsRequired();
             entity.Property(ts => ts.Description).HasMaxLength(200);
             entity.HasIndex(ts => ts.TenantId);
+        });
+
+        // TeamMember (Members of an organization)
+        modelBuilder.Entity<TeamMember>(entity =>
+        {
+            entity.ToTable("team_members");
+            entity.HasKey(tm => tm.Id);
+            entity.Property(tm => tm.UserId).IsRequired();
+            entity.Property(tm => tm.OrganizationId).IsRequired();
+            entity.Property(tm => tm.Role).IsRequired().HasMaxLength(50);
+            entity.Property(tm => tm.UserEmail).IsRequired().HasMaxLength(200);
+            entity.Property(tm => tm.InvitedBy);
+            entity.Property(tm => tm.InvitedAt).IsRequired();
+            entity.Property(tm => tm.AcceptedAt);
+            entity.Property(tm => tm.IsActive).IsRequired();
+            entity.Property(tm => tm.RemovedAt);
+            
+            entity.HasIndex(tm => tm.OrganizationId);
+            entity.HasIndex(tm => new { tm.UserId, tm.OrganizationId }).IsUnique();
+            entity.HasIndex(tm => tm.UserEmail);
+            
+            entity.HasOne(tm => tm.Organization)
+                  .WithMany()
+                  .HasForeignKey(tm => tm.OrganizationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            entity.Ignore(tm => tm.DomainEvents);
         });
 
         // Property

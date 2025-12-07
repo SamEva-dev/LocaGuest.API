@@ -8,6 +8,7 @@ public interface IUnitOfWork : IDisposable
     IPropertyRepository Properties { get; }
     IPropertyImageRepository PropertyImages { get; }
     ITenantRepository Tenants { get; }
+    ITeamMemberRepository TeamMembers { get; }
     IContractRepository Contracts { get; }
     IDocumentRepository Documents { get; }
     ISubscriptionRepository Subscriptions { get; }
