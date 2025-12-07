@@ -6,6 +6,7 @@ namespace LocaGuest.Domain.Repositories;
 public interface IUnitOfWork : IDisposable
 {
     IPropertyRepository Properties { get; }
+    IPropertyImageRepository PropertyImages { get; }
     ITenantRepository Tenants { get; }
     IContractRepository Contracts { get; }
     IDocumentRepository Documents { get; }

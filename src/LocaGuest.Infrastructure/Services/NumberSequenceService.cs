@@ -124,6 +124,17 @@ public class NumberSequenceService : INumberSequenceService
         return sequence?.LastNumber ?? 0;
     }
 
+    public async Task<string> GetTenantNumberAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var organisation = await _context.Organizations
+            .Where(o => o.Id == tenantId)
+            .AsNoTracking()
+            .Select(o => new { o.Code })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return organisation?.Code ?? throw new Exception($"Organisation with tenant id {tenantId} not found");
+    }
+
     public async Task ResetSequenceAsync(
         Guid tenantId,
         string entityPrefix,

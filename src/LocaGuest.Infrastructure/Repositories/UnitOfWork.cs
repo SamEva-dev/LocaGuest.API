@@ -12,6 +12,7 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly LocaGuestDbContext _context;
     private IPropertyRepository? _properties;
+    private IPropertyImageRepository? _propertyImages;
     private IContractRepository? _contracts;
     private ITenantRepository? _tenants;
     private IDocumentRepository? _documents;
@@ -27,6 +28,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IPropertyRepository Properties => 
         _properties ??= new PropertyRepository(_context);
+
+    public IPropertyImageRepository PropertyImages => 
+        _propertyImages ??= new PropertyImageRepository(_context);
 
     public IContractRepository Contracts => 
         _contracts ??= new ContractRepository(_context);

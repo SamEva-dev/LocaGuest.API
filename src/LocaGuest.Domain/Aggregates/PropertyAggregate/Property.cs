@@ -32,6 +32,12 @@ public class Property : AuditableEntity
     private readonly List<PropertyRoom> _rooms = new();
     public IReadOnlyCollection<PropertyRoom> Rooms => _rooms.AsReadOnly();
     
+    /// <summary>
+    /// Liste des images/documents associés à la propriété
+    /// </summary>
+    private readonly List<PropertyImage> _images = new();
+    public IReadOnlyCollection<PropertyImage> Images => _images.AsReadOnly();
+    
     // Pour Airbnb
     public int? MinimumStay { get; private set; }
     public int? MaximumStay { get; private set; }
@@ -558,6 +564,14 @@ public class Property : AuditableEntity
     {
         var room = GetRoom(roomId);
         return room?.IsAvailable() ?? false;
+    }
+    
+    /// <summary>
+    /// Mettre à jour la liste des URLs/IDs d'images
+    /// </summary>
+    public void UpdateImageUrls(List<string> imageUrls)
+    {
+        ImageUrls = imageUrls ?? new List<string>();
     }
     
     #endregion

@@ -1,4 +1,5 @@
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
+using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Repositories;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -74,5 +75,16 @@ public class OrganizationRepository : IOrganizationRepository
             .OrderByDescending(o => o.Number)
             .Select(o => o.Number)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<string> GetTenantNumberAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        var organisation = await _context.Organizations
+            .Where(o => o.Id == tenantId)
+            .AsNoTracking()
+            .Select(o => new { o.Code })
+        .FirstOrDefaultAsync(cancellationToken);
+
+        return organisation?.Code ?? throw new Exception($"Organisation with tenant id {tenantId} not found");
     }
 }

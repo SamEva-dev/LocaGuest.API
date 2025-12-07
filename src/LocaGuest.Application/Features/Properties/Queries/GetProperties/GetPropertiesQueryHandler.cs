@@ -106,6 +106,7 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 PricePerNight = p.PricePerNight,
                 GesRating = p.GesRating,
                 PropertyUsageType = p.UsageType.ToString(),
+                ImageUrls = p.ImageUrls,
                 Rooms = p.Rooms?.Select(r => new PropertyRoomDto  // ✅ Mapper les rooms
                 {
                     Id = r.Id,

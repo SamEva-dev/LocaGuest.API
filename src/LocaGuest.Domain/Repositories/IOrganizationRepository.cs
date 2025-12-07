@@ -17,4 +17,5 @@ public interface IOrganizationRepository
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
     Task<int> GetLastNumberAsync(CancellationToken cancellationToken = default);
+    Task<string> GetTenantNumberAsync(Guid id, CancellationToken cancellationToken = default);
 }

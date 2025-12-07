@@ -26,6 +26,14 @@ public interface INumberSequenceService
     Task<int> GetLastNumberAsync(Guid tenantId, string entityPrefix, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets the tenant number for organisation (tenant) specific sequences
+    /// </summary>
+    /// <param name="tenantId">Organization (Tenant) ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Last number or 0 if no sequences exist</returns>
+    Task<string> GetTenantNumberAsync(Guid tenantId,  CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Resets a sequence to a specific number (admin/maintenance only)
     /// </summary>
     /// <param name="tenantId">Organization (Tenant) ID</param>

@@ -108,6 +108,13 @@ public class AdminController : ControllerBase
                     _logger.LogInformation("✅ Properties deleted");
                 }
 
+                if (_context.PropertyImages.Any())
+                {
+                    _context.Properties.RemoveRange(_context.Properties);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Images deleted");
+                }
+
                 // 6. Tenants
                 if (_context.Tenants.Any())
                 {

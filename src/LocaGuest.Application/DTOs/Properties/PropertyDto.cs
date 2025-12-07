@@ -56,6 +56,7 @@ public class PropertyDto
     
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public List<string> ImageUrls { get; set; } = new();  // URLs des images
 }
 
 public class PropertyDetailDto : PropertyDto

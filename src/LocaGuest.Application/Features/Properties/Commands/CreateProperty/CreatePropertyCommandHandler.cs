@@ -207,6 +207,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 TotalWorksAmount = property.TotalWorksAmount,
                 // ✅ Timestamps
                 CreatedAt = property.CreatedAt,
+                ImageUrls = property.ImageUrls,
                 UpdatedAt = property.UpdatedAt,
                 // ✅ Other fields
                 Description = property.Notes,

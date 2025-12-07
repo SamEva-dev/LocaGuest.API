@@ -97,6 +97,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 TotalWorksAmount = property.TotalWorksAmount,
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt,
+                ImageUrls = property.ImageUrls,
                 Rooms = roomDtos  // ✅ Inclure les rooms
             };
 
