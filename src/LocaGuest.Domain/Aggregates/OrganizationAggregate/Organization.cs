@@ -54,6 +54,32 @@ public class Organization : AuditableEntity
     /// </summary>
     public string? Notes { get; private set; }
 
+    // 🎨 Branding Settings
+    /// <summary>
+    /// Organization logo URL (can be local path or cloud storage URL)
+    /// </summary>
+    public string? LogoUrl { get; private set; }
+
+    /// <summary>
+    /// Primary brand color (hex format: #FF0000)
+    /// </summary>
+    public string? PrimaryColor { get; private set; }
+
+    /// <summary>
+    /// Secondary brand color (hex format: #0000FF)
+    /// </summary>
+    public string? SecondaryColor { get; private set; }
+
+    /// <summary>
+    /// Accent brand color (hex format: #00FF00)
+    /// </summary>
+    public string? AccentColor { get; private set; }
+
+    /// <summary>
+    /// Company website URL
+    /// </summary>
+    public string? Website { get; private set; }
+
     private Organization() { } // EF Core
 
     public static Organization Create(int number, string name, string email, string? phone = null)
@@ -117,6 +143,20 @@ public class Organization : AuditableEntity
     public bool IsSubscriptionActive()
     {
         return SubscriptionExpiryDate.HasValue && SubscriptionExpiryDate.Value > DateTime.UtcNow;
+    }
+
+    public void UpdateBrandingSettings(
+        string? logoUrl = null,
+        string? primaryColor = null,
+        string? secondaryColor = null,
+        string? accentColor = null,
+        string? website = null)
+    {
+        if (logoUrl != null) LogoUrl = logoUrl;
+        if (primaryColor != null) PrimaryColor = primaryColor;
+        if (secondaryColor != null) SecondaryColor = secondaryColor;
+        if (accentColor != null) AccentColor = accentColor;
+        if (website != null) Website = website;
     }
 }
 

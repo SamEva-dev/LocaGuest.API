@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 
 namespace LocaGuest.Infrastructure.Services;
 
@@ -7,12 +8,28 @@ public class FileStorageService : IFileStorageService
 {
     private readonly string _rootPath;
     private readonly ILogger<FileStorageService> _logger;
-
-    public FileStorageService(ILogger<FileStorageService> logger)
+    private const long MaxFileSize = 2 * 1024 * 1024; // 2 MB
+    private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".svg", ".webp" };
+    private static readonly string[] AllowedImageContentTypes =
     {
-        // Utiliser le répertoire courant par défaut
-        _rootPath = Directory.GetCurrentDirectory();
+        "image/jpeg",
+        "image/png",
+        "image/svg+xml",
+        "image/webp"
+    };
+
+    public FileStorageService(IHostEnvironment environment, ILogger<FileStorageService> logger)
+    {
+        // Use wwwroot directory for static files
+        _rootPath = Path.Combine(environment.ContentRootPath, "wwwroot");
         _logger = logger;
+        
+        // Create wwwroot if it doesn't exist
+        if (!Directory.Exists(_rootPath))
+        {
+            Directory.CreateDirectory(_rootPath);
+            _logger.LogInformation("Created wwwroot directory at {RootPath}", _rootPath);
+        }
     }
 
     public async Task<string> SaveFileAsync(Stream fileStream, string fileName, string contentType, string subPath, CancellationToken cancellationToken = default)
@@ -67,5 +84,38 @@ public class FileStorageService : IFileStorageService
     {
         var fullPath = Path.Combine(_rootPath, relativePath);
         return Task.FromResult(File.Exists(fullPath));
+    }
+
+    public bool ValidateFile(string fileName, string contentType, long fileSize)
+    {
+        // Check file size
+        if (fileSize > MaxFileSize)
+        {
+            _logger.LogWarning("File size exceeds limit: {FileSize} bytes (max: {MaxSize})", fileSize, MaxFileSize);
+            return false;
+        }
+
+        if (fileSize <= 0)
+        {
+            _logger.LogWarning("File size is zero or negative: {FileSize}", fileSize);
+            return false;
+        }
+
+        // Check content type
+        if (string.IsNullOrWhiteSpace(contentType) || !AllowedImageContentTypes.Contains(contentType.ToLower()))
+        {
+            _logger.LogWarning("Invalid content type: {ContentType}", contentType);
+            return false;
+        }
+
+        // Check file extension
+        var extension = Path.GetExtension(fileName)?.ToLower();
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedImageExtensions.Contains(extension))
+        {
+            _logger.LogWarning("Invalid file extension: {Extension}", extension);
+            return false;
+        }
+
+        return true;
     }
 }

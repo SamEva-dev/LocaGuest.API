@@ -21,6 +21,11 @@ public interface IFileStorageService
     /// Vérifier si un fichier existe
     /// </summary>
     Task<bool> FileExistsAsync(string relativePath, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Valider un fichier (type, taille)
+    /// </summary>
+    bool ValidateFile(string fileName, string contentType, long fileSize);
 }
 
 public class UploadedFileInfo

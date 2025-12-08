@@ -309,6 +309,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Static files (for uploaded logos, etc.)
+app.UseStaticFiles();
+
 app.UseCors("AllowAngular");
 
 app.UseAuthentication();
