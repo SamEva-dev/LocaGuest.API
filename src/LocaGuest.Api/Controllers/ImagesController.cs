@@ -62,7 +62,7 @@ public class ImagesController : ControllerBase
     /// Récupère une image par son ID
     /// </summary>
     [HttpGet("{imageId:guid}")]
-    [ResponseCache(Duration = 86400)] // Cache 24h
+   // [ResponseCache(Duration = 86400)] // Cache 24h
     public async Task<IActionResult> GetImage(Guid imageId)
     {
         var query = new GetImageQuery { ImageId = imageId };

@@ -55,6 +55,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<InventoryEntry> InventoryEntries => Set<InventoryEntry>();
     public DbSet<InventoryExit> InventoryExits => Set<InventoryExit>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
+    public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<RentabilityScenario> RentabilityScenarios => Set<RentabilityScenario>();
     public DbSet<ScenarioVersion> ScenarioVersions => Set<ScenarioVersion>();
     public DbSet<ScenarioShare> ScenarioShares => Set<ScenarioShare>();

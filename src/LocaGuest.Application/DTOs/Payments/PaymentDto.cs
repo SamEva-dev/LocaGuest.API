@@ -30,9 +30,20 @@ public class PaymentDto
     public string? PropertyName { get; set; }
     
     /// <summary>
+    /// Jour limite de paiement du contrat (1-31)
+    /// </summary>
+    public int PaymentDueDay { get; set; }
+    
+    /// <summary>
     /// Nombre de jours de retard (si applicable)
+    /// Positif = en retard, Négatif = en avance/à venir
     /// </summary>
     public int? DaysLate { get; set; }
+    
+    /// <summary>
+    /// Date limite réelle de paiement calculée (ExpectedDate + PaymentDueDay)
+    /// </summary>
+    public DateTime? DueDate { get; set; }
 }
 
 public class CreatePaymentDto

@@ -25,9 +25,13 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary()
+    public async Task<IActionResult> GetSummary([FromQuery] int? month, [FromQuery] int? year)
     {
-        var query = new GetDashboardSummaryQuery();
+        var query = new GetDashboardSummaryQuery 
+        { 
+            Month = month, 
+            Year = year 
+        };
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)

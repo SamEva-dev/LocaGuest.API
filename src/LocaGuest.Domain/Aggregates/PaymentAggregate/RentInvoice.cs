@@ -46,6 +46,16 @@ public class RentInvoice : AuditableEntity
     /// Date d'échéance du paiement
     /// </summary>
     public DateTime DueDate { get; private set; }
+    
+    /// <summary>
+    /// Date de paiement effective
+    /// </summary>
+    public DateTime? PaidDate { get; private set; }
+    
+    /// <summary>
+    /// Notes sur la facture
+    /// </summary>
+    public string? Notes { get; private set; }
 
     private RentInvoice() { } // EF Core
 
@@ -77,6 +87,14 @@ public class RentInvoice : AuditableEntity
     {
         Status = InvoiceStatus.Paid;
         PaymentId = paymentId;
+        PaidDate = DateTime.UtcNow;
+    }
+    
+    public void MarkAsPaid(DateTime paidDate, string? notes = null)
+    {
+        Status = InvoiceStatus.Paid;
+        PaidDate = paidDate;
+        Notes = notes;
     }
 
     public void MarkAsPartial(Guid paymentId)

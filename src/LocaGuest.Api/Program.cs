@@ -96,11 +96,17 @@ builder.Services.AddScoped<LocaGuest.Application.Services.IAuditService, LocaGue
 // Tracking Service (Analytics)
 builder.Services.AddScoped<LocaGuest.Application.Services.ITrackingService, LocaGuest.Infrastructure.Services.TrackingService>();
 
+// Email Service
+builder.Services.Configure<LocaGuest.Infrastructure.Email.EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<LocaGuest.Application.Common.Interfaces.IEmailService, LocaGuest.Infrastructure.Email.EmailService>();
+
 // Application Layer (includes MediatR)
 builder.Services.AddApplication();
 
 // Background Services
 builder.Services.AddHostedService<LocaGuest.Api.Services.BackgroundJobs.ContractActivationBackgroundService>();
+builder.Services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.EmailNotificationBackgroundService>();
+builder.Services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.InvoiceGenerationBackgroundService>();
 
 // JWT Authentication with AuthGate (RSA via JWKS)
 var jwtSettings = builder.Configuration.GetSection("Jwt");

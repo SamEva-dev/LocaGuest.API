@@ -62,6 +62,7 @@ public class DeleteImageCommandHandler : IRequestHandler<DeleteImageCommand, Res
         
         // Supprimer l'entité de la DB
         _unitOfWork.PropertyImages.Remove(image);
+        _unitOfWork.Properties.Update(property);
         await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogInformation("Image supprimée: {ImageId}", request.ImageId);

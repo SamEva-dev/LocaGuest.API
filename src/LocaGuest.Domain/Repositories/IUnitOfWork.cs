@@ -16,6 +16,10 @@ public interface IUnitOfWork : IDisposable
     IOrganizationRepository Organizations { get; }
     IPaymentRepository Payments { get; }
     IRentInvoiceRepository RentInvoices { get; }
+    IUserProfileRepository UserProfiles { get; }
+    IUserPreferencesRepository UserPreferences { get; }
+    INotificationSettingsRepository NotificationSettings { get; }
+    IUserSessionRepository UserSessions { get; }
     Task<int> CommitAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync();
     bool HasActiveTransaction { get; }

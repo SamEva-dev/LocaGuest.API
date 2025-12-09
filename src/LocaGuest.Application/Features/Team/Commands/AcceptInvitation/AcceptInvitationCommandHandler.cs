@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Services;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;

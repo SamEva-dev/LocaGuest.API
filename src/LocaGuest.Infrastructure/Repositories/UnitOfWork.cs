@@ -22,6 +22,10 @@ public class UnitOfWork : IUnitOfWork
     private IOrganizationRepository? _organizations;
     private IPaymentRepository? _payments;
     private IRentInvoiceRepository? _rentInvoices;
+    private IUserProfileRepository? _userProfiles;
+    private IUserPreferencesRepository? _userPreferences;
+    private INotificationSettingsRepository? _notificationSettings;
+    private IUserSessionRepository? _userSessions;
 
     public UnitOfWork(LocaGuestDbContext context)
     {
@@ -60,6 +64,18 @@ public class UnitOfWork : IUnitOfWork
 
     public IRentInvoiceRepository RentInvoices => 
         _rentInvoices ??= new RentInvoiceRepository(_context);
+
+    public IUserProfileRepository UserProfiles => 
+        _userProfiles ??= new UserProfileRepository(_context);
+
+    public IUserPreferencesRepository UserPreferences => 
+        _userPreferences ??= new UserPreferencesRepository(_context);
+
+    public INotificationSettingsRepository NotificationSettings => 
+        _notificationSettings ??= new NotificationSettingsRepository(_context);
+
+    public IUserSessionRepository UserSessions => 
+        _userSessions ??= new UserSessionRepository(_context);
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {

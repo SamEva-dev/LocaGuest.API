@@ -35,28 +35,54 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
             }
 
             var payments = await _unitOfWork.Payments.GetByTenantIdAsync(tenantId, cancellationToken);
+            var paymentDtos = new List<PaymentDto>();
 
-            var paymentDtos = payments.Select(p => new PaymentDto
+            foreach (var payment in payments)
             {
-                Id = p.Id,
-                TenantId = p.TenantId,
-                PropertyId = p.PropertyId,
-                ContractId = p.ContractId,
-                AmountDue = p.AmountDue,
-                AmountPaid = p.AmountPaid,
-                RemainingAmount = p.GetRemainingAmount(),
-                PaymentDate = p.PaymentDate,
-                ExpectedDate = p.ExpectedDate,
-                Status = p.Status.ToString(),
-                PaymentMethod = p.PaymentMethod.ToString(),
-                Note = p.Note,
-                Month = p.Month,
-                Year = p.Year,
-                ReceiptId = p.ReceiptId,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.LastModifiedAt,
-                TenantName = tenant.FullName
-            }).ToList();
+                // Récupérer le contrat pour avoir PaymentDueDay
+                var contract = await _unitOfWork.Contracts.GetByIdAsync(payment.ContractId, cancellationToken);
+                var paymentDueDay = contract?.PaymentDueDay ?? 5;
+
+                // Calculer la date limite réelle de paiement
+                var dueDate = new DateTime(
+                    payment.ExpectedDate.Year,
+                    payment.ExpectedDate.Month,
+                    Math.Min(paymentDueDay, DateTime.DaysInMonth(payment.ExpectedDate.Year, payment.ExpectedDate.Month)),
+                    0, 0, 0, DateTimeKind.Utc);
+
+                // Calculer les jours de retard
+                int? daysLate = null;
+                if (payment.Status != Domain.Aggregates.PaymentAggregate.PaymentStatus.Paid)
+                {
+                    var today = DateTime.UtcNow.Date;
+                    daysLate = (int)(today - dueDate).TotalDays;
+                }
+
+                paymentDtos.Add(new PaymentDto
+                {
+                    Id = payment.Id,
+                    TenantId = payment.TenantId,
+                    PropertyId = payment.PropertyId,
+                    ContractId = payment.ContractId,
+                    AmountDue = payment.AmountDue,
+                    AmountPaid = payment.AmountPaid,
+                    RemainingAmount = payment.GetRemainingAmount(),
+                    PaymentDate = payment.PaymentDate,
+                    ExpectedDate = payment.ExpectedDate,
+                    Status = payment.Status.ToString(),
+                    PaymentMethod = payment.PaymentMethod.ToString(),
+                    Note = payment.Note,
+                    Month = payment.Month,
+                    Year = payment.Year,
+                    ReceiptId = payment.ReceiptId,
+                    CreatedAt = payment.CreatedAt,
+                    UpdatedAt = payment.LastModifiedAt,
+                    TenantName = tenant.FullName,
+                    PaymentDueDay = paymentDueDay,
+                    DueDate = dueDate,
+                    DaysLate = daysLate
+                });
+            }
 
             return Result.Success(paymentDtos);
         }

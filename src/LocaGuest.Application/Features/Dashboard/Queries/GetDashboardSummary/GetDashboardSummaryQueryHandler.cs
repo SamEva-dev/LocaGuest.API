@@ -25,29 +25,34 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
     {
         try
         {
+            // Determine period to filter
+            var targetMonth = request.Month ?? DateTime.UtcNow.Month;
+            var targetYear = request.Year ?? DateTime.UtcNow.Year;
+            var startDate = new DateTime(targetYear, targetMonth, 1);
+            var endDate = startDate.AddMonths(1).AddDays(-1);
+
             // Count total properties (all statuses)
             var propertiesCount = await _unitOfWork.Properties.Query()
                 .CountAsync(cancellationToken);
 
-            // Count all tenants (active or not)
-            var tenantsCount = await _unitOfWork.Tenants.Query()
-                .CountAsync(cancellationToken);
-
-            // Active contracts used for revenue and occupancy-related metrics
+            // Count active contracts during the period
             var activeContracts = await _unitOfWork.Contracts.Query()
-                .Where(c => c.Status == ContractStatus.Active)
+                .Where(c => c.Status == ContractStatus.Active &&
+                           c.StartDate <= endDate &&
+                           (c.EndDate == null || c.EndDate >= startDate))
                 .ToListAsync(cancellationToken);
 
-            // Calculate monthly revenue (sum of rent from active contracts)
+            var tenantsCount = activeContracts.Count;
+
+            // Calculate monthly revenue (sum of rent from active contracts in period)
             var monthlyRevenue = activeContracts.Sum(c => c.Rent);
 
-            // Calculate occupancy rate
-            // Total properties that can be rented (Vacant or Occupied)
+            // Calculate occupancy rate for the period
             var totalProperties = propertiesCount;
-
-            var occupiedProperties = await _unitOfWork.Properties.Query()
-                .Where(p => p.Status == PropertyStatus.Occupied)
-                .CountAsync(cancellationToken);
+            var occupiedProperties = activeContracts
+                .Select(c => c.PropertyId)
+                .Distinct()
+                .Count();
 
             var occupancyRate = totalProperties > 0 
                 ? (decimal)occupiedProperties / totalProperties 

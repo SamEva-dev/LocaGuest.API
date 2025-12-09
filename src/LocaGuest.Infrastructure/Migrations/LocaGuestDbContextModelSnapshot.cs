@@ -674,6 +674,12 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<int>("Month")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("PaymentId")
                         .HasColumnType("TEXT");
 
@@ -1761,6 +1767,234 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("tenants", (string)null);
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.NotificationSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("ContractExpiring")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ContractRenewal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ContractSigned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("MaintenanceCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("MaintenanceRequest")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("MarketingEmails")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("NewTenantRequest")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("PaymentOverdue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("PaymentReceived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("PaymentReminder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SystemUpdates")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TenantCheckout")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NotificationSettings");
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserPreferences", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("DarkMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DateFormat")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("HeaderNavigation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("SidebarNavigation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Timezone")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserPreferences");
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Company")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserProfiles");
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Browser")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSessions");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserSettings", b =>

@@ -411,3 +411,5 @@ FodyWeavers.xsd
 *.pdf
 *.db-shm
 *.db-wal
+*.png
+*.md

@@ -75,7 +75,7 @@ public static class DependencyInjection
         services.AddScoped<IQuittanceGeneratorService, QuittanceGeneratorService>();
         
         // Email Service
-        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailService, LocaGuest.Infrastructure.Email.EmailService>();
         
         // File Storage Service
         services.AddScoped<IFileStorageService, FileStorageService>();

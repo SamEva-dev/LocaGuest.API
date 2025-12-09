@@ -1,0 +1,51 @@
+using LocaGuest.Application.Common;
+using LocaGuest.Application.Features.Invoices.Queries.GetInvoicesByTenant;
+using LocaGuest.Domain.Repositories;
+using MediatR;
+using Microsoft.Extensions.Logging;
+
+namespace LocaGuest.Application.Features.Invoices.Queries.GetOverdueInvoices;
+
+public class GetOverdueInvoicesQueryHandler : IRequestHandler<GetOverdueInvoicesQuery, Result<List<InvoiceDto>>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<GetOverdueInvoicesQueryHandler> _logger;
+
+    public GetOverdueInvoicesQueryHandler(
+        IUnitOfWork unitOfWork,
+        ILogger<GetOverdueInvoicesQueryHandler> logger)
+    {
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+
+    public async Task<Result<List<InvoiceDto>>> Handle(GetOverdueInvoicesQuery request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var invoices = await _unitOfWork.RentInvoices.GetOverdueInvoicesAsync(cancellationToken);
+
+            var invoiceDtos = invoices.Select(i => new InvoiceDto(
+                i.Id,
+                i.ContractId,
+                i.TenantId,
+                i.PropertyId,
+                i.Month,
+                i.Year,
+                i.Amount,
+                i.DueDate,
+                i.PaidDate,
+                i.Status.ToString(),
+                i.GeneratedAt,
+                i.Notes
+            )).ToList();
+
+            return Result<List<InvoiceDto>>.Success(invoiceDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving overdue invoices");
+            return Result<List<InvoiceDto>>.Failure<List<InvoiceDto>>("Erreur lors de la récupération des factures en retard");
+        }
+    }
+}

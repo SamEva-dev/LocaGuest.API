@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Payments;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
@@ -11,13 +12,16 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdatePaymentCommandHandler> _logger;
+    private readonly IEmailService _emailService;
 
     public UpdatePaymentCommandHandler(
         IUnitOfWork unitOfWork,
-        ILogger<UpdatePaymentCommandHandler> logger)
+        ILogger<UpdatePaymentCommandHandler> logger,
+        IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _emailService = emailService;
     }
 
     public async Task<Result<PaymentDto>> Handle(UpdatePaymentCommand request, CancellationToken cancellationToken)
@@ -80,6 +84,33 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
 
             // Récupérer le tenant pour enrichir le DTO
             var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.TenantId, cancellationToken);
+
+            // Send email notification if payment is fully paid
+            if (payment.IsPaid() && tenant?.Email != null && payment.PaymentDate.HasValue)
+            {
+                try
+                {
+                    // Check if tenant has PaymentReceived notification enabled
+                    var notificationSettings = await _unitOfWork.NotificationSettings
+                        .GetByUserIdAsync(tenant.Id.ToString(), cancellationToken);
+
+                    if (notificationSettings?.PaymentReceived == true)
+                    {
+                        await _emailService.SendPaymentReceivedEmailAsync(
+                            tenant.Email,
+                            tenant.FullName,
+                            payment.AmountPaid,
+                            payment.PaymentDate.Value);
+
+                        _logger.LogInformation("Payment received email sent to {Email}", tenant.Email);
+                    }
+                }
+                catch (Exception emailEx)
+                {
+                    _logger.LogError(emailEx, "Failed to send payment received email");
+                    // Don't fail the payment update if email fails
+                }
+            }
 
             var dto = new PaymentDto
             {

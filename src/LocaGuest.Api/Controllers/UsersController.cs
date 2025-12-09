@@ -2,6 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
+using LocaGuest.Application.Features.Users.Queries.GetUserProfile;
+using LocaGuest.Application.Features.Users.Commands.UpdateUserProfile;
+using LocaGuest.Application.Features.Users.Queries.GetPreferences;
+using LocaGuest.Application.Features.Users.Commands.UpdatePreferences;
+using LocaGuest.Application.Features.Users.Queries.GetNotifications;
+using LocaGuest.Application.Features.Users.Commands.UpdateNotifications;
+using LocaGuest.Application.Features.Users.Commands.UpdateUserPhoto;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -11,10 +19,12 @@ namespace LocaGuest.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly ILogger<UsersController> _logger;
+    private readonly IMediator _mediator;
 
-    public UsersController(ILogger<UsersController> logger)
+    public UsersController(ILogger<UsersController> logger, IMediator mediator)
     {
         _logger = logger;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -76,6 +86,158 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error deleting user {UserId} from AuthGate", userId);
             return StatusCode(500, new { error = "An error occurred while deleting the user" });
+        }
+    }
+
+    // ========================
+    // USER SETTINGS ENDPOINTS
+    // ========================
+
+    /// <summary>
+    /// Get current user profile
+    /// </summary>
+    [HttpGet("profile")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfile()
+    {
+        var query = new GetUserProfileQuery();
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Update current user profile
+    /// </summary>
+    [HttpPut("profile")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get current user preferences
+    /// </summary>
+    [HttpGet("preferences")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPreferences()
+    {
+        var query = new GetPreferencesQuery();
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Update current user preferences
+    /// </summary>
+    [HttpPut("preferences")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get current user notification settings
+    /// </summary>
+    [HttpGet("notifications")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetNotifications()
+    {
+        var query = new GetNotificationsQuery();
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Update current user notification settings
+    /// </summary>
+    [HttpPut("notifications")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateNotifications([FromBody] UpdateNotificationsCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Upload user profile photo
+    /// </summary>
+    [HttpPost("profile/photo")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UploadPhoto(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { error = "No file uploaded" });
+
+        // Validate file type
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { error = "Invalid file type. Only images are allowed." });
+
+        // Validate file size (max 5MB)
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { error = "File size exceeds 5MB limit." });
+
+        try
+        {
+            // Create uploads directory if it doesn't exist
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+            Directory.CreateDirectory(uploadsDir);
+
+            // Generate unique filename
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            // Save file
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // Generate URL
+            var photoUrl = $"/uploads/profiles/{fileName}";
+
+            // Update profile
+            var command = new UpdateUserPhotoCommand { PhotoUrl = photoUrl };
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.ErrorMessage });
+
+            return Ok(result.Data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading photo");
+            return StatusCode(500, new { error = "Error uploading photo" });
         }
     }
 }

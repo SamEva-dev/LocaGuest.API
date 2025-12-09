@@ -5,6 +5,8 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
 
 public record GetDashboardSummaryQuery : IRequest<Result<DashboardSummaryDto>>
 {
+    public int? Month { get; init; }
+    public int? Year { get; init; }
 }
 
 public class DashboardSummaryDto

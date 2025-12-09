@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Inventories.Queries.GenerateInventoryPdf;
-using LocaGuest.Application.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
