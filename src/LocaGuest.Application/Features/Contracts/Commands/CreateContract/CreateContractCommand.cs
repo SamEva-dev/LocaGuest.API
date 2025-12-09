@@ -14,6 +14,7 @@ public record CreateContractCommand : IRequest<Result<ContractDto>>
     public decimal Rent { get; init; }
     public decimal Charges { get; init; } = 0;
     public decimal? Deposit { get; init; }
+    public int PaymentDueDay { get; init; } = 5; // Jour limite de paiement (1-31)
     public Guid? RoomId { get; init; }
     public string? Notes { get; init; }
 }

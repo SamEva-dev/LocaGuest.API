@@ -1,5 +1,9 @@
 using LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
 using LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
+using LocaGuest.Application.Features.Dashboard.Queries.GetDeadlines;
+using LocaGuest.Application.Features.Dashboard.Queries.GetOccupancyChart;
+using LocaGuest.Application.Features.Dashboard.Queries.GetRevenueChart;
+using LocaGuest.Application.Features.Dashboard.Queries.GetAvailableYears;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,42 +53,64 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("deadlines")]
-    public IActionResult GetDeadlines()
+    public async Task<IActionResult> GetDeadlines()
     {
-        // TODO: Implement real logic
-        var deadlines = new
-        {
-            lateRent = new[] { new { propertyName = "T3 Centre Ville", amount = 850m, dayslate = 5 } },
-            nextDue = new[] { new { propertyName = "Studio Quartier Gare", amount = 450m, daysUntil = 3 } },
-            renewals = new[] { new { propertyName = "T2 Quartier Nord", daysUntil = 45 } }
-        };
+        var query = new GetDeadlinesQuery();
+        var result = await _mediator.Send(query);
 
-        return Ok(deadlines);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpGet("charts/occupancy")]
-    public IActionResult GetOccupancyChart([FromQuery] int year = 2025)
+    public async Task<IActionResult> GetOccupancyChart([FromQuery] int year)
     {
-        // TODO: Implement real logic
-        var series = Enumerable.Range(1, 12).Select(month => new
-        {
-            month,
-            rate = 0.85m + (month % 3) * 0.05m
-        });
+        if (year == 0)
+            year = DateTime.UtcNow.Year;
 
-        return Ok(series);
+        var query = new GetOccupancyChartQuery(year);
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpGet("charts/revenue")]
-    public IActionResult GetRevenueChart([FromQuery] int year = 2025)
+    public async Task<IActionResult> GetRevenueChart([FromQuery] int year)
     {
-        // TODO: Implement real logic
-        var series = Enumerable.Range(1, 12).Select(month => new
-        {
-            month,
-            revenue = 12000m + (month * 500)
-        });
+        if (year == 0)
+            year = DateTime.UtcNow.Year;
 
-        return Ok(series);
+        var query = new GetRevenueChartQuery(year);
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("available-years")]
+    public async Task<IActionResult> GetAvailableYears()
+    {
+        var query = new GetAvailableYearsQuery();
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(result.Data);
     }
 }

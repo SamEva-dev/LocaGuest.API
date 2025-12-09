@@ -28,6 +28,11 @@ public class PaymentDto
     // Navigation properties (optional enrichment)
     public string? TenantName { get; set; }
     public string? PropertyName { get; set; }
+    
+    /// <summary>
+    /// Nombre de jours de retard (si applicable)
+    /// </summary>
+    public int? DaysLate { get; set; }
 }
 
 public class CreatePaymentDto

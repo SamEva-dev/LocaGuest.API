@@ -26,6 +26,13 @@ public class Contract : AuditableEntity
     public decimal Rent { get; private set; }
     public decimal Charges { get; private set; }
     public decimal? Deposit { get; private set; }
+    
+    /// <summary>
+    /// Jour du mois limite pour le paiement (1-31). Par défaut: 5
+    /// Utilisé pour calculer les retards de paiement
+    /// </summary>
+    public int PaymentDueDay { get; private set; } = 5;
+    
     public ContractStatus Status { get; private set; }
     public string? Notes { get; private set; }
     
@@ -83,6 +90,7 @@ public class Contract : AuditableEntity
         decimal rent,
         decimal charges = 0,
         decimal? deposit = null,
+        int paymentDueDay = 5,
         Guid? roomId = null)
     {
         // Validations dates
@@ -96,6 +104,10 @@ public class Contract : AuditableEntity
         if (charges < 0)
             throw new ValidationException("CONTRACT_INVALID_CHARGES", "Charges cannot be negative");
 
+        // Validation PaymentDueDay
+        if (paymentDueDay < 1 || paymentDueDay > 31)
+            throw new ValidationException("CONTRACT_INVALID_PAYMENT_DUE_DAY", "Payment due day must be between 1 and 31");
+
         var contract = new Contract
         {
             Id = Guid.NewGuid(),
@@ -107,6 +119,7 @@ public class Contract : AuditableEntity
             Rent = rent,
             Charges = charges,
             Deposit = deposit,
+            PaymentDueDay = paymentDueDay,
             RoomId = roomId,
             Status = ContractStatus.Draft,
             IsConflict = false

@@ -1,9 +1,12 @@
 using LocaGuest.Application.DTOs.Payments;
 using LocaGuest.Application.Features.Payments.Commands.CreatePayment;
 using LocaGuest.Application.Features.Payments.Commands.UpdatePayment;
+using LocaGuest.Application.Features.Payments.Commands.VoidPayment;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentsByTenant;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentsByProperty;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentStats;
+using LocaGuest.Application.Features.Payments.Queries.GetOverduePayments;
+using LocaGuest.Application.Features.Payments.Queries.GetPaymentsDashboard;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -157,10 +160,70 @@ public class PaymentsController : ControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeletePayment(string id)
+    public async Task<IActionResult> DeletePayment(Guid id)
     {
-        // TODO: Implement DeletePaymentCommand
-        _logger.LogWarning("Delete payment not yet implemented: {PaymentId}", id);
+        var command = new VoidPaymentCommand { PaymentId = id };
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            return NotFound(new { message = result.ErrorMessage });
+        }
+
         return NoContent();
+    }
+
+    /// <summary>
+    /// Get all overdue payments
+    /// </summary>
+    [HttpGet("overdue")]
+    [ProducesResponseType(typeof(List<PaymentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetOverduePayments(
+        [FromQuery] Guid? propertyId = null,
+        [FromQuery] Guid? tenantId = null,
+        [FromQuery] int? maxDaysLate = null)
+    {
+        var query = new GetOverduePaymentsQuery
+        {
+            PropertyId = propertyId,
+            TenantId = tenantId,
+            MaxDaysLate = maxDaysLate
+        };
+
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get payments dashboard with KPIs
+    /// </summary>
+    [HttpGet("dashboard")]
+    [ProducesResponseType(typeof(PaymentsDashboardDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetPaymentsDashboard(
+        [FromQuery] int? month = null,
+        [FromQuery] int? year = null)
+    {
+        var query = new GetPaymentsDashboardQuery
+        {
+            Month = month,
+            Year = year
+        };
+
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
     }
 }

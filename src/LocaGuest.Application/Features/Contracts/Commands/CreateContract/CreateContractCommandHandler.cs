@@ -121,6 +121,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 request.Rent,
                 request.Charges,
                 request.Deposit,
+                request.PaymentDueDay,
                 request.RoomId
             );
 
