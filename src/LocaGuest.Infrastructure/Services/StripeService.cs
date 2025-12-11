@@ -30,21 +30,27 @@ public class StripeService : IStripeService
         StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
     }
 
-    public async Task<(string SessionId, string Url)> CreateCheckoutSessionAsync(
-        Guid userId, 
-        Guid planId, 
-        bool isAnnual, 
-        string userEmail,
+    public async Task<Application.Services.StripeCheckoutSession> CreateCheckoutSessionAsync(
+        string userId, 
+        string planId, 
+        bool isAnnual,
+        string successUrl,
+        string cancelUrl,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var plan = await _unitOfWork.Properties.GetByIdAsync(planId, cancellationToken);
+            // Get plan from database to retrieve Stripe Price ID
+            var plan = await _unitOfWork.Plans.GetByIdAsync(Guid.Parse(planId), cancellationToken);
+            
             if (plan == null)
-                throw new ArgumentException($"Plan {planId} not found");
+                throw new InvalidOperationException($"Plan {planId} not found");
 
-            // NOTE: Temporaire - utiliser _unitOfWork.Plans quand le repository sera créé
-            var priceId = isAnnual ? "stripe_annual_price_id" : "stripe_monthly_price_id";
+            var priceId = isAnnual ? plan.StripeAnnualPriceId : plan.StripeMonthlyPriceId;
+            
+            if (string.IsNullOrEmpty(priceId))
+                throw new InvalidOperationException(
+                    $"Stripe Price ID not configured for plan {plan.Code} ({(isAnnual ? "annual" : "monthly")})");
 
             var options = new SessionCreateOptions
             {
@@ -58,23 +64,22 @@ public class StripeService : IStripeService
                     },
                 },
                 Mode = "subscription",
-                SuccessUrl = _configuration["Stripe:SuccessUrl"] + "?session_id={CHECKOUT_SESSION_ID}",
-                CancelUrl = _configuration["Stripe:CancelUrl"],
-                CustomerEmail = userEmail,
-                ClientReferenceId = userId.ToString(),
+                SuccessUrl = successUrl + "?session_id={CHECKOUT_SESSION_ID}",
+                CancelUrl = cancelUrl,
+                ClientReferenceId = userId,
                 SubscriptionData = new SessionSubscriptionDataOptions
                 {
                     Metadata = new Dictionary<string, string>
                     {
-                        { "user_id", userId.ToString() },
-                        { "plan_id", planId.ToString() }
+                        { "user_id", userId },
+                        { "plan_id", planId }
                     },
                     TrialPeriodDays = 14,
                 },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "user_id", userId.ToString() },
-                    { "plan_id", planId.ToString() }
+                    { "user_id", userId },
+                    { "plan_id", planId }
                 }
             };
 
@@ -84,7 +89,7 @@ public class StripeService : IStripeService
             _logger.LogInformation("Checkout session created: {SessionId} for user {UserId}", 
                 session.Id, userId);
 
-            return (session.Id, session.Url);
+            return new Application.Services.StripeCheckoutSession(session.Id, session.Url);
         }
         catch (StripeException ex)
         {
@@ -93,19 +98,14 @@ public class StripeService : IStripeService
         }
     }
 
-    public async Task<string> CreatePortalSessionAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<string> CreatePortalSessionAsync(string customerId, string returnUrl, CancellationToken cancellationToken = default)
     {
         try
         {
-            var subscription = await _unitOfWork.Subscriptions.GetByUserIdAsync(userId, cancellationToken);
-            
-            if (subscription == null || string.IsNullOrEmpty(subscription.StripeCustomerId))
-                throw new InvalidOperationException("No active subscription found");
-
             var options = new Stripe.BillingPortal.SessionCreateOptions
             {
-                Customer = subscription.StripeCustomerId,
-                ReturnUrl = _configuration["Stripe:CancelUrl"],
+                Customer = customerId,
+                ReturnUrl = returnUrl,
             };
 
             var service = new Stripe.BillingPortal.SessionService();
@@ -115,7 +115,84 @@ public class StripeService : IStripeService
         }
         catch (StripeException ex)
         {
-            _logger.LogError(ex, "Stripe error creating portal session for user {UserId}", userId);
+            _logger.LogError(ex, "Stripe error creating portal session for customer {CustomerId}", customerId);
+            throw;
+        }
+    }
+
+    public async Task CancelSubscriptionAsync(string subscriptionId, bool immediately, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var service = new Stripe.SubscriptionService();
+            var options = new SubscriptionCancelOptions
+            {
+                InvoiceNow = immediately,
+                Prorate = immediately
+            };
+
+            await service.CancelAsync(subscriptionId, options, cancellationToken: cancellationToken);
+            _logger.LogInformation("Subscription {SubscriptionId} canceled", subscriptionId);
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Stripe error canceling subscription {SubscriptionId}", subscriptionId);
+            throw;
+        }
+    }
+
+    public async Task<List<Application.Services.StripeInvoice>> GetInvoicesAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var service = new InvoiceService();
+            var options = new InvoiceListOptions
+            {
+                Customer = customerId,
+                Limit = 100
+            };
+
+            var invoices = await service.ListAsync(options, cancellationToken: cancellationToken);
+            return invoices.Data.Select(inv => new Application.Services.StripeInvoice(
+                inv.Id,
+                inv.Created,
+                inv.Description,
+                inv.AmountPaid,
+                inv.Currency,
+                inv.Status,
+                inv.InvoicePdf
+            )).ToList();
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Stripe error getting invoices for customer {CustomerId}", customerId);
+            throw;
+        }
+    }
+
+    public async Task<List<Application.Services.StripePaymentMethod>> GetPaymentMethodsAsync(string customerId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var service = new PaymentMethodService();
+            var options = new PaymentMethodListOptions
+            {
+                Customer = customerId,
+                Type = "card"
+            };
+
+            var paymentMethods = await service.ListAsync(options, cancellationToken: cancellationToken);
+            return paymentMethods.Data.Select(pm => new Application.Services.StripePaymentMethod(
+                pm.Id,
+                pm.Card.Brand,
+                pm.Card.Last4,
+                pm.Card.ExpMonth,
+                pm.Card.ExpYear
+            )).ToList();
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Stripe error getting payment methods for customer {CustomerId}", customerId);
             throw;
         }
     }

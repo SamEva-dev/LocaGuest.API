@@ -2,7 +2,11 @@ using LocaGuest.Domain.Common;
 
 namespace LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 
-public class Plan : AuditableEntity
+/// <summary>
+/// Plans are GLOBAL resources, not tenant-specific.
+/// All customers share the same plan catalog.
+/// </summary>
+public class Plan : Entity
 {
     public string Code { get; private set; } = string.Empty; // free, pro, business, enterprise
     public string Name { get; private set; } = string.Empty;
@@ -40,6 +44,12 @@ public class Plan : AuditableEntity
     // Stripe IDs
     public string? StripeMonthlyPriceId { get; private set; }
     public string? StripeAnnualPriceId { get; private set; }
+    
+    // Audit fields (manual since not using AuditableEntity)
+    public string CreatedBy { get; private set; } = "System";
+    public DateTime CreatedAt { get; private set; }
+    public string? LastModifiedBy { get; private set; }
+    public DateTime? LastModifiedAt { get; private set; }
     
     private Plan() { }
     

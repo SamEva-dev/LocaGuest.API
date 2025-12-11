@@ -18,6 +18,7 @@ public class UnitOfWork : IUnitOfWork
     private ITeamMemberRepository? _teamMembers;
     private IInvitationTokenRepository? _invitationTokens;
     private IDocumentRepository? _documents;
+    private IPlanRepository? _plans;
     private ISubscriptionRepository? _subscriptions;
     private IOrganizationRepository? _organizations;
     private IPaymentRepository? _payments;
@@ -52,6 +53,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IDocumentRepository Documents => 
         _documents ??= new DocumentRepository(_context);
+
+    public IPlanRepository Plans => 
+        _plans ??= new PlanRepository(_context);
 
     public ISubscriptionRepository Subscriptions => 
         _subscriptions ??= new SubscriptionRepository(_context);

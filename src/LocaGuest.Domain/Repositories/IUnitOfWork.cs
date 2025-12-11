@@ -12,6 +12,7 @@ public interface IUnitOfWork : IDisposable
     IInvitationTokenRepository InvitationTokens { get; }
     IContractRepository Contracts { get; }
     IDocumentRepository Documents { get; }
+    IPlanRepository Plans { get; }
     ISubscriptionRepository Subscriptions { get; }
     IOrganizationRepository Organizations { get; }
     IPaymentRepository Payments { get; }
