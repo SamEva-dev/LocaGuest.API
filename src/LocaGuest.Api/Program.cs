@@ -272,7 +272,8 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<LocaGuestDbContext>();
+    .AddDbContextCheck<LocaGuestDbContext>("database", tags: new[] { "ready" })
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "live" });
 
 var app = builder.Build();
 
@@ -328,7 +329,41 @@ app.UseAuthorization();
 app.UseTracking();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+
+// Health Check Endpoints (pour Kubernetes/Fly.io)
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.TotalMilliseconds
+            })
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
+
+// Readiness probe - vérifie que l'app peut traiter des requêtes (DB connectée)
+app.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+// Liveness probe - vérifie que l'app est vivante (pas de deadlock)
+app.MapHealthChecks("/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
 
 // SignalR Hubs
 app.MapHub<NotificationsHub>("/hubs/notifications");
