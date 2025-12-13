@@ -55,7 +55,7 @@ public class ContractActivationBackgroundService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
 
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
         // Récupérer les contrats Signed dont la date de début est aujourd'hui ou passée
         var contractsToActivate = await context.Contracts
@@ -145,7 +145,7 @@ public class ContractActivationBackgroundService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
 
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
         // Récupérer les contrats Active dont la date de fin est passée
         var contractsToExpire = await context.Contracts

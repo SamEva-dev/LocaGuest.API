@@ -52,13 +52,13 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
                     continue;
 
                 // Prochaine date de paiement basée sur PaymentDueDay
-                var nextPaymentDate = new DateTime(today.Year, today.Month, Math.Min(contract.PaymentDueDay, DateTime.DaysInMonth(today.Year, today.Month)));
+                var nextPaymentDate = new DateTime(today.Year, today.Month, Math.Min(contract.PaymentDueDay, DateTime.DaysInMonth(today.Year, today.Month)), 0, 0, 0, DateTimeKind.Utc);
                 
                 if (nextPaymentDate < today)
                 {
                     // Si date dépassée ce mois, prendre le mois prochain
                     var followingMonth = today.AddMonths(1);
-                    nextPaymentDate = new DateTime(followingMonth.Year, followingMonth.Month, Math.Min(contract.PaymentDueDay, DateTime.DaysInMonth(followingMonth.Year, followingMonth.Month)));
+                    nextPaymentDate = new DateTime(followingMonth.Year, followingMonth.Month, Math.Min(contract.PaymentDueDay, DateTime.DaysInMonth(followingMonth.Year, followingMonth.Month)), 0, 0, 0, DateTimeKind.Utc);
                 }
 
                 if (nextPaymentDate <= nextMonth)

@@ -12,12 +12,13 @@ using OrganizationDto = LocaGuest.Application.Features.Organizations.Commands.Up
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LocaGuest.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-///[Authorize]
+[Authorize]
 public class OrganizationsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -74,13 +75,13 @@ public class OrganizationsController : ControllerBase
     /// Get current user's organization (with branding settings)
     /// </summary>
     [HttpGet("current")]
-    [ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+   // [ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
+   // [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCurrentOrganization()
     {
         // Get user ID from claims (placeholder for now)
-        var userId = Guid.Empty; // TODO: Get from HttpContext.User claims
-        
+        var userId = GetUserId(); // TODO: Get from HttpContext.User claims
+
         var query = new GetCurrentOrganizationQuery { UserId = userId };
         var result = await _mediator.Send(query);
 
@@ -132,16 +133,16 @@ public class OrganizationsController : ControllerBase
             // Validate file using service
             if (!_fileStorageService.ValidateFile(file.FileName, file.ContentType, file.Length))
             {
-                return BadRequest(new 
-                { 
-                    error = "Invalid file. Only JPEG, PNG, SVG, and WebP images under 2MB are allowed." 
+                return BadRequest(new
+                {
+                    error = "Invalid file. Only JPEG, PNG, SVG, and WebP images under 2MB are allowed."
                 });
             }
 
             // Upload file with unique name
             var extension = Path.GetExtension(file.FileName);
             var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-            
+
             string logoUrl;
             using (var stream = file.OpenReadStream())
             {
@@ -151,7 +152,7 @@ public class OrganizationsController : ControllerBase
                     file.ContentType,
                     "logos" // subPath for organization logos
                 );
-                
+
                 // Convert to web URL (remove wwwroot prefix)
                 logoUrl = "/" + relativePath.Replace("\\", "/");
             }
@@ -182,24 +183,24 @@ public class OrganizationsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Update organization settings (name, branding, etc.)
-    /// </summary>
-    [HttpPut("settings")]
-    [ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrganizationSettingsCommand command)
-    {
-        var result = await _mediator.Send(command);
+    ///// <summary>
+    ///// Update organization settings (name, branding, etc.)
+    ///// </summary>
+    //[HttpPut("settings")]
+    //[ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
+    //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+    //[ProducesResponseType(StatusCodes.Status404NotFound)]
+    //public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrganizationSettingsCommand command)
+    //{
+    //    var result = await _mediator.Send(command);
 
-        if (result.IsFailure)
-        {
-            return BadRequest(new { error = result.ErrorMessage });
-        }
+    //    if (result.IsFailure)
+    //    {
+    //        return BadRequest(new { error = result.ErrorMessage });
+    //    }
 
-        return Ok(result.Data);
-    }
+    //    return Ok(result.Data);
+    //}
 
     /// <summary>
     /// Create a new organization (called by AuthGate during registration)
@@ -211,12 +212,12 @@ public class OrganizationsController : ControllerBase
     public async Task<IActionResult> CreateOrganization([FromBody] CreateOrganizationCommand command)
     {
         var result = await _mediator.Send(command);
-        
+
         if (result.IsFailure)
         {
             return BadRequest(new { error = result.ErrorMessage });
         }
-        
+
         return Ok(result);
     }
 
@@ -258,5 +259,15 @@ public class OrganizationsController : ControllerBase
 
         _logger.LogWarning("Organization {OrganizationId} PERMANENTLY deleted", id);
         return NoContent();
+    }
+
+    private Guid GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            throw new UnauthorizedAccessException("User ID not found in claims");
+        }
+        return userId;
     }
 }

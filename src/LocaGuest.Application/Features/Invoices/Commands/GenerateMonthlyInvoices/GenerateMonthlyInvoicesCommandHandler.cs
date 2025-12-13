@@ -30,7 +30,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
         try
         {
             // Get all active contracts for the specified month
-            var targetDate = new DateTime(request.Year, request.Month, 1);
+            var targetDate = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             
             var activeContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active &&
@@ -55,7 +55,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                     }
 
                     // Calculate due date (5th of the month)
-                    var dueDate = new DateTime(request.Year, request.Month, 5);
+                    var dueDate = new DateTime(request.Year, request.Month, 5, 0, 0, 0, DateTimeKind.Utc);
 
                     // Create new invoice
                     var invoice = RentInvoice.Create(

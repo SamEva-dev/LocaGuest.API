@@ -32,7 +32,7 @@ public class TrackingMiddleware
 
     public async Task InvokeAsync(
         HttpContext context,
-        ITrackingService trackingService,
+        IServiceScopeFactory serviceScopeFactory,
         ICurrentUserService currentUserService,
         ITenantContext tenantContext)
     {
@@ -76,8 +76,20 @@ public class TrackingMiddleware
                         statusCode: context.Response.StatusCode
                     );
 
-                    // Fire and forget - don't await to avoid slowing down requests
-                    _ = trackingService.TrackAsync(trackingEvent);
+                    // Fire and forget with a new scope to avoid ObjectDisposedException
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using var scope = serviceScopeFactory.CreateScope();
+                            var trackingServiceScoped = scope.ServiceProvider.GetRequiredService<ITrackingService>();
+                            await trackingServiceScoped.TrackAsync(trackingEvent);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Background tracking failed for: {Path}", path);
+                        }
+                    });
                 }
             }
             catch (Exception ex)

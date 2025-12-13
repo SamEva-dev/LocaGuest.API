@@ -68,7 +68,7 @@ public class EmailNotificationBackgroundService : BackgroundService
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
             var reminderDate = today.AddDays(3);
 
             // Get payments due in 3 days that are pending
@@ -112,7 +112,7 @@ public class EmailNotificationBackgroundService : BackgroundService
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
             // Get overdue payments (due date < today and status = Pending)
             var overduePayments = await unitOfWork.Payments.Query()
@@ -161,7 +161,7 @@ public class EmailNotificationBackgroundService : BackgroundService
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
             var expiryCheckDate = today.AddDays(30);
 
             // Get contracts expiring in 30 days

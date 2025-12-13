@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    [Migration("20251211220155_SeedSaaSPlans")]
+    [Migration("20251212205931_SeedSaaSPlans")]
     partial class SeedSaaSPlans
     {
         /// <inheritdoc />
