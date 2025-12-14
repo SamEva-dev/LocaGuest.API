@@ -104,7 +104,8 @@ public class Startup
         {
             options.AddPolicy("AllowAngular", policy =>
             {
-                policy.WithOrigins("http://localhost:4200")
+                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:4200" };
+                policy.WithOrigins(allowedOrigins)
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
@@ -279,13 +280,12 @@ public class Startup
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-        if (env.IsDevelopment())
+        if (env.IsDevelopment() || env.EnvironmentName == "Testing")
         {
+            app.UseDeveloperExceptionPage();
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-
-        app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         app.UseRouting();
