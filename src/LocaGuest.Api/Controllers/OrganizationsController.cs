@@ -183,24 +183,24 @@ public class OrganizationsController : ControllerBase
         }
     }
 
-    ///// <summary>
-    ///// Update organization settings (name, branding, etc.)
-    ///// </summary>
-    //[HttpPut("settings")]
-    //[ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
-    //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-    //[ProducesResponseType(StatusCodes.Status404NotFound)]
-    //public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrganizationSettingsCommand command)
-    //{
-    //    var result = await _mediator.Send(command);
+    /// <summary>
+    /// Update organization settings (name, branding, etc.)
+    /// </summary>
+    [HttpPut("settings")]
+    [ProducesResponseType(typeof(OrganizationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrganizationSettingsCommand command)
+    {
+        var result = await _mediator.Send(command);
 
-    //    if (result.IsFailure)
-    //    {
-    //        return BadRequest(new { error = result.ErrorMessage });
-    //    }
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.ErrorMessage });
+        }
 
-    //    return Ok(result.Data);
-    //}
+        return Ok(result.Data);
+    }
 
     /// <summary>
     /// Create a new organization (called by AuthGate during registration)

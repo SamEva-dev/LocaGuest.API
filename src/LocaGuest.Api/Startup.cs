@@ -6,6 +6,7 @@ using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
@@ -250,6 +251,19 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        };
+        forwardedHeadersOptions.KnownNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
+
+        if (env.IsDevelopment() || env.EnvironmentName == "Testing")
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
         // Apply migrations in Development and Production
         if (env.IsDevelopment() || env.IsProduction())
         {
@@ -278,11 +292,13 @@ public class Startup
 
         // Middleware
         app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        if (!env.IsDevelopment() && env.EnvironmentName != "Testing")
+        {
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+        }
 
         if (env.IsDevelopment() || env.EnvironmentName == "Testing")
         {
-            app.UseDeveloperExceptionPage();
             app.UseSwagger();
             app.UseSwaggerUI();
         }

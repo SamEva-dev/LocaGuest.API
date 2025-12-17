@@ -1,30 +1,46 @@
 using LocaGuest.Api;
+using Serilog;
+using Serilog.Events;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Serilog Configuration
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
     .Enrich.FromLogContext()
-    .Enrich.WithProperty("Application", "LocaGuest.Api")
     .WriteTo.Console()
-    .WriteTo.File("logs/locaguest-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
+try
+{
+    Log.Information("*** STARTUP ***");
 
-builder.Host.UseSerilog();
+    var builder = WebApplication.CreateBuilder(args);
 
-// Use Startup class for service configuration
-var startup = new Startup(builder.Configuration);
-startup.ConfigureServices(builder.Services);
+    // Serilog (from appsettings + env)
+    builder.Host.UseSerilog();
 
-var app = builder.Build();
+    // Use Startup class for service configuration
+    var startup = new Startup(builder.Configuration);
+    startup.ConfigureServices(builder.Services);
 
-// Use Startup class for middleware configuration
-startup.Configure(app, app.Environment);
+    var app = builder.Build();
 
-Log.Information("LocaGuest API starting...");
+    // Use Startup class for middleware configuration
+    startup.Configure(app, app.Environment);
 
-app.Run();
+    Log.Information("LocaGuest API starting...");
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 // Make Program class accessible for integration tests
 public partial class Program { }

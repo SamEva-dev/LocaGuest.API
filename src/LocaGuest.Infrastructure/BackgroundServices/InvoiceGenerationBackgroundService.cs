@@ -42,6 +42,11 @@ public class InvoiceGenerationBackgroundService : BackgroundService
                 // Wait for 1 hour before checking again
                 await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Normal shutdown
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Invoice Generation Background Service");
@@ -49,6 +54,8 @@ public class InvoiceGenerationBackgroundService : BackgroundService
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }
+
+        _logger.LogInformation("Invoice Generation Background Service stopped");
     }
 
     private async Task GenerateMonthlyInvoicesAsync(CancellationToken cancellationToken)

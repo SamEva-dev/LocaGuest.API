@@ -14,6 +14,7 @@ using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
 using LocaGuest.Application.Services;
 
@@ -75,6 +76,12 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        var stringListComparer = new ValueComparer<List<string>>(
+            (l1, l2) => (l1 ?? new List<string>()).SequenceEqual(l2 ?? new List<string>()),
+            l => (l ?? new List<string>()).Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)),
+            l => (l ?? new List<string>()).ToList()
+        );
 
         // Configuration Global Query Filters pour isolation multi-tenant
         ConfigureMultiTenantFilters(modelBuilder);
@@ -182,6 +189,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                     v => string.Join(",", v),
                     v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                 );
+
+            entity.Property(p => p.ImageUrls).Metadata.SetValueComparer(stringListComparer);
             
             entity.Ignore(p => p.DomainEvents);
             
@@ -478,6 +487,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                     v => string.Join(",", v),
                     v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                 );
+
+            entity.Property(ie => ie.PhotoUrls).Metadata.SetValueComparer(stringListComparer);
             
             // Items as owned entities
             entity.OwnsMany(ie => ie.Items, item =>
@@ -496,6 +507,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                         v => string.Join(",", v),
                         v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                     );
+
+                item.Property(i => i.PhotoUrls).Metadata.SetValueComparer(stringListComparer);
             });
             
             entity.Ignore(ie => ie.DomainEvents);
@@ -552,6 +565,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                         v => string.Join(",", v),
                         v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                     );
+
+                comp.Property(c => c.PhotoUrls).Metadata.SetValueComparer(stringListComparer);
             });
             
             // Degradations as owned entities
@@ -571,6 +586,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                         v => string.Join(",", v),
                         v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                     );
+
+                deg.Property(d => d.PhotoUrls).Metadata.SetValueComparer(stringListComparer);
             });
             
             entity.Ignore(ie => ie.DomainEvents);
@@ -623,7 +640,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             _tenantContext == null || 
             !_tenantContext.IsAuthenticated || 
             _tenantContext.TenantId == null ||
-            e.TenantId == _tenantContext.TenantId.Value.ToString());
+            e.TenantId == _tenantContext.TenantId.ToString());
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
