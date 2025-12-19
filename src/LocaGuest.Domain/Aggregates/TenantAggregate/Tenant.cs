@@ -79,7 +79,7 @@ public class Tenant : AuditableEntity
 
     public void SetMoveInDate(DateTime moveInDate)
     {
-        MoveInDate = moveInDate;
+        MoveInDate = EnsureUtc(moveInDate);
     }
 
     public void Deactivate()
@@ -118,7 +118,7 @@ public class Tenant : AuditableEntity
         decimal? monthlyIncome = null,
         string? notes = null)
     {
-        if (dateOfBirth.HasValue) DateOfBirth = dateOfBirth;
+        if (dateOfBirth.HasValue) DateOfBirth = EnsureUtc(dateOfBirth.Value);
         if (address != null) Address = address;
         if (city != null) City = city;
         if (postalCode != null) PostalCode = postalCode;
@@ -130,6 +130,16 @@ public class Tenant : AuditableEntity
         if (occupation != null) Occupation = occupation;
         if (monthlyIncome.HasValue) MonthlyIncome = monthlyIncome;
         if (notes != null) Notes = notes;
+    }
+
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
     
     /// <summary>

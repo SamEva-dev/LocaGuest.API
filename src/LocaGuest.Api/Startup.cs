@@ -41,6 +41,7 @@ public class Startup
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new() { Title = "LocaGuest API", Version = "v1" });
+            c.CustomSchemaIds(type => type.FullName);
             c.AddSecurityDefinition("Bearer", new()
             {
                 Description = "JWT Authorization header using the Bearer scheme",
@@ -297,7 +298,8 @@ public class Startup
             app.UseMiddleware<ExceptionHandlingMiddleware>();
         }
 
-        if (env.IsDevelopment() || env.EnvironmentName == "Testing")
+        var swaggerEnabled = Configuration.GetValue<bool>("Swagger:Enabled");
+        if (swaggerEnabled || env.IsDevelopment() || env.EnvironmentName == "Testing")
         {
             app.UseSwagger();
             app.UseSwaggerUI();

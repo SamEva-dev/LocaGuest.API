@@ -110,7 +110,7 @@ public class AdminController : ControllerBase
 
                 if (_context.PropertyImages.Any())
                 {
-                    _context.Properties.RemoveRange(_context.Properties);
+                    _context.PropertyImages.RemoveRange(_context.PropertyImages);
                     await _context.SaveChangesAsync();
                     _logger.LogInformation("✅ Images deleted");
                 }
@@ -131,6 +131,34 @@ public class AdminController : ControllerBase
                     _logger.LogInformation("✅ Rentability scenarios deleted");
                 }
 
+                // 8. Organization / tenant root data
+                if (_context.InvitationTokens.Any())
+                {
+                    _context.InvitationTokens.RemoveRange(_context.InvitationTokens);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Invitation tokens deleted");
+                }
+
+                if (_context.TeamMembers.Any())
+                {
+                    _context.TeamMembers.RemoveRange(_context.TeamMembers);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Team members deleted");
+                }
+
+                if (_context.TenantSequences.Any())
+                {
+                    _context.TenantSequences.RemoveRange(_context.TenantSequences);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Tenant sequences deleted");
+                }
+
+                if (_context.Organizations.Any())
+                {
+                    _context.Organizations.RemoveRange(_context.Organizations);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Organizations deleted");
+                }
                 // 9. User settings (optionnel)
                 // await _context.Database.ExecuteSqlRawAsync($"DELETE FROM UserSettings WHERE UserId != '{userId}'");
 
@@ -145,7 +173,8 @@ public class AdminController : ControllerBase
                     deletedTables = new[] 
                     { 
                         "InventoryExits", "InventoryEntries", "Payments", "Contracts", 
-                        "Documents", "Properties", "Tenants", "NumberSequences", "RentabilityScenarios" 
+                        "Documents", "Properties", "PropertyRooms", "PropertyImages", "Tenants", "RentabilityScenarios",
+                        "InvitationTokens", "TeamMembers", "TenantSequences", "Organizations"
                     }
                 });
             }
@@ -174,6 +203,7 @@ public class AdminController : ControllerBase
         {
             var stats = new
             {
+                Organizations = await _context.Organizations.CountAsync(),
                 Properties = await _context.Properties.CountAsync(),
                 Tenants = await _context.Tenants.CountAsync(),
                 Contracts = await _context.Contracts.CountAsync(),
@@ -181,7 +211,8 @@ public class AdminController : ControllerBase
                 Documents = await _context.Documents.CountAsync(),
                 InventoryEntries = await _context.InventoryEntries.CountAsync(),
                 InventoryExits = await _context.InventoryExits.CountAsync(),
-                RentabilityScenarios = await _context.RentabilityScenarios.CountAsync()
+                RentabilityScenarios = await _context.RentabilityScenarios.CountAsync(),
+                
             };
 
             return Ok(stats);
