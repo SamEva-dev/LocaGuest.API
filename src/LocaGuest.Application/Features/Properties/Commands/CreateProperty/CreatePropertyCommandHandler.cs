@@ -112,6 +112,22 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     propertyTax: request.PropertyTax,
                     condominiumCharges: request.CondominiumCharges);
             }
+
+            // ✅ Purchase + rentability fields
+            if (request.PurchasePrice.HasValue)
+            {
+                property.UpdatePurchaseInfo(purchasePrice: request.PurchasePrice);
+            }
+
+            if (request.Insurance.HasValue || request.ManagementFeesRate.HasValue || request.MaintenanceRate.HasValue || request.VacancyRate.HasValue || request.NightsBookedPerMonth.HasValue)
+            {
+                property.UpdateRentabilityInfo(
+                    insurance: request.Insurance,
+                    managementFeesRate: request.ManagementFeesRate,
+                    maintenanceRate: request.MaintenanceRate,
+                    vacancyRate: request.VacancyRate,
+                    nightsBookedPerMonth: request.NightsBookedPerMonth);
+            }
             
             // ✅ Update administrative info if provided
             if (!string.IsNullOrEmpty(request.CadastralReference) || request.AcquisitionDate.HasValue)
@@ -200,6 +216,11 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 // ✅ Financial info
                 PropertyTax = property.PropertyTax,
                 CondominiumCharges = property.CondominiumCharges,
+                Insurance = property.Insurance,
+                ManagementFeesRate = property.ManagementFeesRate,
+                MaintenanceRate = property.MaintenanceRate,
+                VacancyRate = property.VacancyRate,
+                NightsBookedPerMonth = property.NightsBookedPerMonth,
                 // ✅ Administrative info
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
@@ -212,7 +233,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 // ✅ Other fields
                 Description = property.Notes,
                 PurchaseDate = property.AcquisitionDate,
-                PurchasePrice = request.PurchasePrice,
+                PurchasePrice = property.PurchasePrice,
                 EnergyClass = request.EnergyClass,
                 ConstructionYear = request.ConstructionYear,
                 // ✅ Rooms (for colocation)

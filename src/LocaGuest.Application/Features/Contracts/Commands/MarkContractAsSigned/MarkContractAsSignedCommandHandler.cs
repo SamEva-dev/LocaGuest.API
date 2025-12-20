@@ -31,6 +31,7 @@ public class MarkContractAsSignedCommandHandler : IRequestHandler<MarkContractAs
 
             // Marquer comme signé
             contract.MarkAsSigned(request.SignedDate ?? DateTime.UtcNow);
+            //contract.Activate();
 
             // TODO: Update property, tenant status and cancel other drafts via domain events
 

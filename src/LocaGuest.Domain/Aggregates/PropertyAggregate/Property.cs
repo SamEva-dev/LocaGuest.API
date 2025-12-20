@@ -70,6 +70,16 @@ public class Property : AuditableEntity
     // Informations financières complémentaires
     public decimal? PropertyTax { get; private set; }  // Taxe foncière annuelle
     public decimal? CondominiumCharges { get; private set; }  // Charges de copropriété annuelles
+
+    public decimal? PurchasePrice { get; private set; }
+
+    public decimal? Insurance { get; private set; }
+    public decimal? ManagementFeesRate { get; private set; }
+    public decimal? MaintenanceRate { get; private set; }
+    public decimal? VacancyRate { get; private set; }
+
+    // Airbnb
+    public int? NightsBookedPerMonth { get; private set; }
     
     // Informations administratives
     public string? CadastralReference { get; private set; }  // Référence cadastrale
@@ -238,9 +248,77 @@ public class Property : AuditableEntity
         decimal? propertyTax = null,
         decimal? condominiumCharges = null)
     {
-        if (propertyTax.HasValue) PropertyTax = propertyTax;
-        if (condominiumCharges.HasValue) CondominiumCharges = condominiumCharges;
+        if (propertyTax.HasValue)
+        {
+            if (propertyTax.Value < 0)
+                throw new ValidationException("PROPERTY_INVALID_TAX", "Property tax cannot be negative");
+            PropertyTax = propertyTax;
+        }
+
+        if (condominiumCharges.HasValue)
+        {
+            if (condominiumCharges.Value < 0)
+                throw new ValidationException("PROPERTY_INVALID_CONDO_CHARGES", "Condominium charges cannot be negative");
+            CondominiumCharges = condominiumCharges;
+        }
         
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdatePurchaseInfo(decimal? purchasePrice = null)
+    {
+        if (purchasePrice.HasValue)
+        {
+            if (purchasePrice.Value < 0)
+                throw new ValidationException("PROPERTY_INVALID_PURCHASE_PRICE", "Purchase price cannot be negative");
+            PurchasePrice = purchasePrice.Value;
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateRentabilityInfo(
+        decimal? insurance = null,
+        decimal? managementFeesRate = null,
+        decimal? maintenanceRate = null,
+        decimal? vacancyRate = null,
+        int? nightsBookedPerMonth = null)
+    {
+        if (insurance.HasValue)
+        {
+            if (insurance.Value < 0)
+                throw new ValidationException("PROPERTY_INVALID_INSURANCE", "Insurance cannot be negative");
+            Insurance = insurance.Value;
+        }
+
+        if (managementFeesRate.HasValue)
+        {
+            if (managementFeesRate.Value < 0 || managementFeesRate.Value > 100)
+                throw new ValidationException("PROPERTY_INVALID_MANAGEMENT_FEES_RATE", "Management fees rate must be between 0 and 100");
+            ManagementFeesRate = managementFeesRate.Value;
+        }
+
+        if (maintenanceRate.HasValue)
+        {
+            if (maintenanceRate.Value < 0 || maintenanceRate.Value > 100)
+                throw new ValidationException("PROPERTY_INVALID_MAINTENANCE_RATE", "Maintenance rate must be between 0 and 100");
+            MaintenanceRate = maintenanceRate.Value;
+        }
+
+        if (vacancyRate.HasValue)
+        {
+            if (vacancyRate.Value < 0 || vacancyRate.Value > 100)
+                throw new ValidationException("PROPERTY_INVALID_VACANCY_RATE", "Vacancy rate must be between 0 and 100");
+            VacancyRate = vacancyRate.Value;
+        }
+
+        if (nightsBookedPerMonth.HasValue)
+        {
+            if (nightsBookedPerMonth.Value < 0 || nightsBookedPerMonth.Value > 31)
+                throw new ValidationException("PROPERTY_INVALID_NIGHTS_BOOKED", "Nights booked per month must be between 0 and 31");
+            NightsBookedPerMonth = nightsBookedPerMonth.Value;
+        }
+
         UpdatedAt = DateTime.UtcNow;
     }
     

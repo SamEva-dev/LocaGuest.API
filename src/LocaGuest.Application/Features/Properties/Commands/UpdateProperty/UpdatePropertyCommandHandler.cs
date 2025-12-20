@@ -95,6 +95,15 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 lotNumber: request.LotNumber,
                 acquisitionDate: request.AcquisitionDate,
                 totalWorksAmount: request.TotalWorksAmount);
+
+            // ✅ Purchase + rentability fields
+            property.UpdatePurchaseInfo(purchasePrice: request.PurchasePrice);
+            property.UpdateRentabilityInfo(
+                insurance: request.Insurance,
+                managementFeesRate: request.ManagementFeesRate,
+                maintenanceRate: request.MaintenanceRate,
+                vacancyRate: request.VacancyRate,
+                nightsBookedPerMonth: request.NightsBookedPerMonth);
             
             // ✅ Update rooms for colocation if provided
             if (request.Rooms != null)
@@ -203,6 +212,12 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 ErpZone = property.ErpZone,
                 PropertyTax = property.PropertyTax,
                 CondominiumCharges = property.CondominiumCharges,
+                PurchasePrice = property.PurchasePrice,
+                Insurance = property.Insurance,
+                ManagementFeesRate = property.ManagementFeesRate,
+                MaintenanceRate = property.MaintenanceRate,
+                VacancyRate = property.VacancyRate,
+                NightsBookedPerMonth = property.NightsBookedPerMonth,
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
                 AcquisitionDate = property.AcquisitionDate,

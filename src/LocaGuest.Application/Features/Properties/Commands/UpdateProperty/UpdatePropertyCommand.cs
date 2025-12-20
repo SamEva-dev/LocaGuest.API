@@ -28,6 +28,13 @@ public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public decimal? Deposit { get; init; }
     public string? Notes { get; init; }
     public List<string>? ImageUrls { get; init; }
+
+    public decimal? PurchasePrice { get; init; }
+    public decimal? Insurance { get; init; }
+    public decimal? ManagementFeesRate { get; init; }
+    public decimal? MaintenanceRate { get; init; }
+    public decimal? VacancyRate { get; init; }
+    public int? NightsBookedPerMonth { get; init; }
     
     // PropertyUsageType specific
     public string? PropertyUsageType { get; init; }

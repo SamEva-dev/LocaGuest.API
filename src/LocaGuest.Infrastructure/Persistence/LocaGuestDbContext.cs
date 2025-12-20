@@ -182,6 +182,13 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(p => p.Surface).HasColumnType("decimal(18,2)");
             entity.Property(p => p.Charges).HasColumnType("decimal(18,2)");
             entity.Property(p => p.Deposit).HasColumnType("decimal(18,2)");
+
+            entity.Property(p => p.PurchasePrice).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.Insurance).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.ManagementFeesRate).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.MaintenanceRate).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.VacancyRate).HasColumnType("decimal(18,2)");
+            entity.Property(p => p.NightsBookedPerMonth);
             
             // Store list as JSON (not JSONB for simplicity)
             entity.Property(p => p.ImageUrls)

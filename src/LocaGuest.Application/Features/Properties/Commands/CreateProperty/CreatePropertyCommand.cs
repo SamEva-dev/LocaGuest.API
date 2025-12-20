@@ -57,6 +57,13 @@ public record CreatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     // Informations financières complémentaires
     public decimal? PropertyTax { get; init; }  // Taxe foncière annuelle
     public decimal? CondominiumCharges { get; init; }  // Charges de copropriété annuelles
+
+    public decimal? Insurance { get; init; }
+    public decimal? ManagementFeesRate { get; init; }
+    public decimal? MaintenanceRate { get; init; }
+    public decimal? VacancyRate { get; init; }
+
+    public int? NightsBookedPerMonth { get; init; }
     
     // Informations administratives
     public string? CadastralReference { get; init; }  // Référence cadastrale

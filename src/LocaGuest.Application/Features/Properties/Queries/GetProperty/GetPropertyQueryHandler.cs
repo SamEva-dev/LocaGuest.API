@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetProperty;
 
-public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<PropertyDto>>
+public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<PropertyDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<GetPropertyQueryHandler> _logger;
@@ -20,13 +20,13 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
         _logger = logger;
     }
 
-    public async Task<Result<PropertyDto>> Handle(GetPropertyQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PropertyDetailDto>> Handle(GetPropertyQuery request, CancellationToken cancellationToken)
     {
         try
         {
             if (!Guid.TryParse(request.Id, out var propertyId))
             {
-                return Result.Failure<PropertyDto>($"Invalid property ID format: {request.Id}");
+                return Result.Failure<PropertyDetailDto>($"Invalid property ID format: {request.Id}");
             }
 
             // ✅ Charger la propriété avec ses rooms (pour les colocations)
@@ -36,7 +36,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
 
             if (property == null)
             {
-                return Result.Failure<PropertyDto>($"Property with ID {request.Id} not found");
+                return Result.Failure<PropertyDetailDto>($"Property with ID {request.Id} not found");
             }
 
             // ✅ Mapper les rooms pour les colocations
@@ -53,7 +53,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 CurrentContractId = r.CurrentContractId
             }).ToList() ?? new List<PropertyRoomDto>();
 
-            var propertyDto = new PropertyDto
+            var propertyDto = new PropertyDetailDto
             {
                 Id = property.Id,
                 Code = property.Code,
@@ -91,6 +91,12 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 ErpZone = property.ErpZone,
                 PropertyTax = property.PropertyTax,
                 CondominiumCharges = property.CondominiumCharges,
+                PurchasePrice = property.PurchasePrice,
+                Insurance = property.Insurance,
+                ManagementFeesRate = property.ManagementFeesRate,
+                MaintenanceRate = property.MaintenanceRate,
+                VacancyRate = property.VacancyRate,
+                NightsBookedPerMonth = property.NightsBookedPerMonth,
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
                 AcquisitionDate = property.AcquisitionDate,
@@ -98,7 +104,9 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt,
                 ImageUrls = property.ImageUrls,
-                Rooms = roomDtos  // ✅ Inclure les rooms
+                Rooms = roomDtos,  // ✅ Inclure les rooms
+                Description = property.Notes,
+                PurchaseDate = property.AcquisitionDate
             };
 
             return Result.Success(propertyDto);
@@ -106,7 +114,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving property with ID {PropertyId}", request.Id);
-            return Result.Failure<PropertyDto>("Error retrieving property");
+            return Result.Failure<PropertyDetailDto>("Error retrieving property");
         }
     }
 }

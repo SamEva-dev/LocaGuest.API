@@ -15,7 +15,7 @@ public class ContractActivationBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ContractActivationBackgroundService> _logger;
-    private readonly TimeSpan _interval = TimeSpan.FromHours(1); // Toutes les heures
+    private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Toutes les heures
 
     public ContractActivationBackgroundService(
         IServiceProvider serviceProvider,

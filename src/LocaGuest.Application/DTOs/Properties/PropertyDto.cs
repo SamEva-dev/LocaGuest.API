@@ -47,6 +47,14 @@ public class PropertyDto
     // Informations financières complémentaires
     public decimal? PropertyTax { get; set; }  // Taxe foncière annuelle
     public decimal? CondominiumCharges { get; set; }  // Charges de copropriété annuelles
+
+    // Champs rentabilité (persistés sur l'entité Property)
+    public decimal? PurchasePrice { get; set; }
+    public decimal? Insurance { get; set; }
+    public decimal? ManagementFeesRate { get; set; }
+    public decimal? MaintenanceRate { get; set; }
+    public decimal? VacancyRate { get; set; }
+    public int? NightsBookedPerMonth { get; set; }
     
     // Informations administratives
     public string? CadastralReference { get; set; }  // Référence cadastrale
