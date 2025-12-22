@@ -15,4 +15,8 @@ public class DashboardSummaryDto
     public int ActiveTenants { get; set; }
     public decimal OccupancyRate { get; set; }
     public decimal MonthlyRevenue { get; set; }
+    public int PaidTenantsCount { get; set; }
+    public decimal CollectionRate { get; set; }
+    public int LatePaymentsCount { get; set; }
+    public decimal OverdueCount { get; set; }
 }

@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
             // Count total properties (all statuses)
             var propertiesCount = await _unitOfWork.Properties.Query()
+                .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
                 .CountAsync(cancellationToken);
 
             // Count active contracts during the period
@@ -42,7 +44,9 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                            (c.EndDate == null || c.EndDate >= startDate))
                 .ToListAsync(cancellationToken);
 
-            var tenantsCount = activeContracts.Count;
+            var tenantsCount = await _unitOfWork.Tenants.Query()
+                .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
+                .CountAsync(cancellationToken);
 
             // Calculate monthly revenue (sum of rent from active contracts in period)
             var monthlyRevenue = activeContracts.Sum(c => c.Rent);
@@ -58,12 +62,59 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                 ? (decimal)occupiedProperties / totalProperties 
                 : 0m;
 
+            // Calculate payment statistics
+            // 1. Locataires uniques avec contrats actifs
+            var totalActiveTenants = activeContracts
+                .Select(c => c.RenterTenantId)
+                .Distinct()
+                .Count();
+
+            // 2. Paiements pour la période (payés ou payés en retard)
+            var periodPayments = await _unitOfWork.Payments.Query()
+                .Where(p => p.Month == targetMonth && 
+                           p.Year == targetYear &&
+                           (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate))
+                .ToListAsync(cancellationToken);
+
+            // 3. Locataires ayant payé (uniques)
+            var paidTenantsCount = periodPayments
+                .Select(p => p.TenantId)
+                .Distinct()
+                .Count();
+
+            // 4. Taux de paiement
+            var paymentRate = totalActiveTenants > 0 
+                ? (decimal)paidTenantsCount / totalActiveTenants 
+                : 0m;
+
+            // 5. Paiements en retard pour la période
+            var latePayments = await _unitOfWork.Payments.Query()
+                .Where(p => p.Month == targetMonth && 
+                           p.Year == targetYear &&
+                           (p.Status == PaymentStatus.Late || p.Status == PaymentStatus.Partial))
+                .ToListAsync(cancellationToken);
+
+            // 6. Locataires avec paiements en retard (uniques)
+            var latePaymentsCount = latePayments
+                .Select(p => p.TenantId)
+                .Distinct()
+                .Count();
+
+            // 7. Taux de retard
+            var latePaymentRate = totalActiveTenants > 0 
+                ? (decimal)latePaymentsCount / totalActiveTenants 
+                : 0m;
+
             var summary = new DashboardSummaryDto
             {
                 PropertiesCount = propertiesCount,
                 ActiveTenants = tenantsCount,
                 OccupancyRate = occupancyRate,
-                MonthlyRevenue = monthlyRevenue
+                MonthlyRevenue = monthlyRevenue,
+                PaidTenantsCount = paidTenantsCount,
+                CollectionRate = paymentRate,
+                LatePaymentsCount = latePaymentsCount,
+                OverdueCount = latePaymentRate
             };
 
             return Result.Success(summary);
