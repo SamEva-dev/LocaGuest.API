@@ -91,16 +91,19 @@ public class ContractActivationBackgroundService : BackgroundService
                         
                         if (property.OccupiedRooms >= (property.TotalRooms ?? 0))
                         {
+                            property.SetStatus(PropertyStatus.Active);
                             property.SetStatus(PropertyStatus.Occupied);
                         }
                         else
                         {
+                            property.SetStatus(PropertyStatus.PartialActive);
                             property.SetStatus(PropertyStatus.PartiallyOccupied);
                         }
                     }
                     else
                     {
                         // Location complète ou colocation solidaire
+                        property.SetStatus(PropertyStatus.Active);
                         property.SetStatus(PropertyStatus.Occupied);
                     }
                     
@@ -185,7 +188,7 @@ public class ContractActivationBackgroundService : BackgroundService
                         }
                         else
                         {
-                            property.SetStatus(PropertyStatus.PartiallyOccupied);
+                            property.SetStatus(PropertyStatus.PartialActive);
                         }
                     }
                     else

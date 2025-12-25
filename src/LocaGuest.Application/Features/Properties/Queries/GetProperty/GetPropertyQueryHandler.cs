@@ -76,6 +76,7 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 Status = property.Status.ToString(),
                 TotalRooms = property.TotalRooms,
                 OccupiedRooms = property.OccupiedRooms,
+                ReservedRooms = property.ReservedRooms,
                 MinimumStay = property.MinimumStay,
                 MaximumStay = property.MaximumStay,
                 PricePerNight = property.PricePerNight,

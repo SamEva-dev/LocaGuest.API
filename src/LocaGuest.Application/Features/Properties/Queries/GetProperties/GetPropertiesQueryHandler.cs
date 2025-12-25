@@ -82,6 +82,7 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 Charges = p.Charges,
                 TotalRooms = p.TotalRooms,
                 OccupiedRooms = p.OccupiedRooms,
+                ReservedRooms = p.ReservedRooms,
                 Status = p.Status.ToString(),
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,

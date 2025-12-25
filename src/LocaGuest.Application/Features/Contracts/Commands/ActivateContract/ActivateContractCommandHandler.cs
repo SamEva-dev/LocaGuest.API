@@ -31,7 +31,28 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
             // Activer le contrat
             contract.Activate();
 
-            // TODO: Update property and tenant status via domain events
+            // Mettre à jour le bien (Active / PartialActive) et le locataire (Active)
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            if (property == null)
+                return Result.Failure("Property not found");
+
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            if (tenant == null)
+                return Result.Failure("Tenant not found");
+
+            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
+                && contract.RoomId.HasValue)
+            {
+                // Colocation individuelle: marquer la chambre comme occupée
+                property.OccupyRoom(contract.RoomId.Value, contract.Id);
+            }
+            else
+            {
+                // Location complète / Airbnb / colocation solidaire
+                property.SetStatus(PropertyStatus.Active);
+            }
+
+            tenant.SetActive();
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

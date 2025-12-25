@@ -37,27 +37,29 @@ public class PropertiesControllerIntegrationTests : IClassFixture<LocaGuestWebAp
         await context.SaveChangesAsync();
 
         // Add test properties
-        //var property1 = Property.Create(
-        //    "Test Apartment 1",
-        //    "123 Test Street",
-        //    "Paris",
-        //    PropertyType.Apartment,
-        //    1500m,
-        //    2,
-        //    1
-        //);
+        var property1 = Property.Create(
+            "Test Apartment 1",
+            "123 Test Street",
+            "Paris",
+            PropertyType.Apartment,
+            PropertyUsageType.Complete,
+            1500m,
+            2,
+            1
+        );
 
-        //var property2 = Property.Create(
-        //    "Test House 1",
-        //    "456 Test Avenue",
-        //    "Lyon",
-        //    PropertyType.House,
-        //    2500m,
-        //    3,
-        //    2
-        //);
+        var property2 = Property.Create(
+            "Test House 1",
+            "456 Test Avenue",
+            "Lyon",
+            PropertyType.House,
+            PropertyUsageType.Complete,
+            2500m,
+            3,
+            2
+        );
 
-        //context.Properties.AddRange(property1, property2);
+        context.Properties.AddRange(property1, property2);
         await context.SaveChangesAsync();
     }
 

@@ -1,9 +1,11 @@
 using LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
+using LocaGuest.Application.Features.Tenants.Commands.ChangeTenantStatus;
 using LocaGuest.Application.Features.Tenants.Commands.DeleteTenant;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenants;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenant;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenantContracts;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenantPaymentStats;
+using LocaGuest.Domain.Aggregates.TenantAggregate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -138,5 +140,33 @@ public class TenantsController : ControllerBase
             deletedPayments = result.Data.DeletedPayments,
             deletedDocuments = result.Data.DeletedDocuments
         });
+    }
+
+    public record ChangeStatusRequest(string Status);
+
+    [HttpPost("{id}/change-status")]
+    public async Task<IActionResult> ChangeStatus(string id, [FromBody] ChangeStatusRequest request)
+    {
+        if (!Guid.TryParse(id, out var tenantGuid))
+            return BadRequest(new { message = "Invalid tenant ID format" });
+
+        if (string.IsNullOrWhiteSpace(request.Status) ||
+            !Enum.TryParse<TenantStatus>(request.Status, true, out var statusEnum))
+        {
+            return BadRequest(new { message = "Invalid status" });
+        }
+
+        var command = new ChangeTenantStatusCommand
+        {
+            TenantId = tenantGuid,
+            Status = statusEnum
+        };
+
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { success = true });
     }
 }

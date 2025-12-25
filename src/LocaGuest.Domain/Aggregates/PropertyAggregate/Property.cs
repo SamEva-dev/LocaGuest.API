@@ -25,6 +25,7 @@ public class Property : AuditableEntity
     // Pour les colocations
     public int? TotalRooms { get; private set; }
     public int OccupiedRooms { get; private set; } = 0;
+    public int ReservedRooms { get; private set; } = 0;
     
     /// <summary>
     /// Liste des chambres pour les colocations individuelles
@@ -127,7 +128,8 @@ public class Property : AuditableEntity
             Bathrooms = bathrooms,
             Status = PropertyStatus.Vacant,
             TotalRooms = (usageType == PropertyUsageType.Colocation || usageType == PropertyUsageType.ColocationIndividual || usageType == PropertyUsageType.ColocationSolidaire) ? totalRooms : null,
-            OccupiedRooms = 0
+            OccupiedRooms = 0,
+            ReservedRooms = 0
         };
 
         property.AddDomainEvent(new PropertyCreated(property.Id, property.Name));
@@ -371,35 +373,25 @@ public class Property : AuditableEntity
     /// </summary>
     public void UpdateOccupancyStatus()
     {
-        OccupiedRooms = AssociatedTenantCodes.Count;
-        
         if (UsageType == PropertyUsageType.Colocation || UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.ColocationSolidaire)
         {
-            // Pour une colocation
-            if (OccupiedRooms == 0)
-            {
-                SetStatus(PropertyStatus.Vacant);
-            }
-            else if (OccupiedRooms < TotalRooms)
-            {
-                SetStatus(PropertyStatus.PartiallyOccupied);
-            }
-            else
-            {
-                SetStatus(PropertyStatus.Occupied);
-            }
+            // Pour la colocation, les compteurs doivent venir de l'état des chambres (Reserved/Occupied)
+            UpdateOccupancyStatusFromRooms();
+            return;
+        }
+
+        // Pour une location complète ou Airbnb
+        OccupiedRooms = AssociatedTenantCodes.Count;
+        ReservedRooms = 0;
+
+        if (OccupiedRooms > 0)
+        {
+            SetStatus(PropertyStatus.Active);
+            SetStatus(PropertyStatus.Occupied);
         }
         else
         {
-            // Pour une location complète ou Airbnb
-            if (OccupiedRooms > 0)
-            {
-                SetStatus(PropertyStatus.Occupied);
-            }
-            else
-            {
-                SetStatus(PropertyStatus.Vacant);
-            }
+            SetStatus(PropertyStatus.Vacant);
         }
     }
     
@@ -432,29 +424,12 @@ public class Property : AuditableEntity
     }
     
     /// <summary>
-    /// Vérifier si le bien est disponible pour un nouveau contrat
+    /// Vérifier si une chambre spécifique est disponible
     /// </summary>
-    public bool IsAvailableForNewContract()
+    public bool IsRoomAvailable(Guid roomId)
     {
-        // Location complète: doit être Vacant ou ne pas avoir de contrat Signed/Active
-        if (UsageType == PropertyUsageType.Complete)
-        {
-            return Status == PropertyStatus.Vacant;
-        }
-        
-        // Colocation solidaire: même règle que location complète
-        if (UsageType == PropertyUsageType.ColocationSolidaire)
-        {
-            return Status == PropertyStatus.Vacant;
-        }
-        
-        // Colocation individuelle: vérifier s'il reste des chambres
-        if (UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.Colocation)
-        {
-            return OccupiedRooms < (TotalRooms ?? 0);
-        }
-        
-        return false;
+        var room = GetRoom(roomId);
+        return room?.IsAvailable() ?? false;
     }
     
     /// <summary>
@@ -470,13 +445,23 @@ public class Property : AuditableEntity
         
         return Status == PropertyStatus.Vacant;
     }
+
+    public bool IsAvailableForNewContract()
+    {
+        if (UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.Colocation)
+        {
+            return _rooms.Any(r => r.Status == PropertyRoomStatus.Available);
+        }
+
+        return Status == PropertyStatus.Vacant;
+    }
     
     /// <summary>
     /// Marquer le bien comme réservé (contrat signé, début futur)
     /// </summary>
     public void SetReserved(Guid contractId, DateTime startDate)
     {
-        if (Status == PropertyStatus.Occupied)
+        if (Status == PropertyStatus.Active)
             throw new ValidationException("PROPERTY_ALREADY_OCCUPIED", "Property is already occupied");
         
         var oldStatus = Status;
@@ -611,37 +596,29 @@ public class Property : AuditableEntity
     {
         if (UsageType != PropertyUsageType.ColocationIndividual && UsageType != PropertyUsageType.Colocation)
             return;
-            
+             
         var occupiedCount = _rooms.Count(r => r.Status == PropertyRoomStatus.Occupied);
         var reservedCount = _rooms.Count(r => r.Status == PropertyRoomStatus.Reserved);
-        
+         
         OccupiedRooms = occupiedCount;
-        
+        ReservedRooms = reservedCount;
+         
         if (occupiedCount == 0 && reservedCount == 0)
         {
             SetStatus(PropertyStatus.Vacant);
         }
         else if (occupiedCount > 0 && occupiedCount < (TotalRooms ?? 0))
         {
-            SetStatus(PropertyStatus.PartiallyOccupied);
+            SetStatus(PropertyStatus.PartialActive);
         }
         else if (occupiedCount >= (TotalRooms ?? 0))
         {
-            SetStatus(PropertyStatus.Occupied);
+            SetStatus(PropertyStatus.Active);
         }
         else if (reservedCount > 0 && occupiedCount == 0)
         {
             SetStatus(PropertyStatus.Reserved);
         }
-    }
-    
-    /// <summary>
-    /// Vérifier si une chambre spécifique est disponible
-    /// </summary>
-    public bool IsRoomAvailable(Guid roomId)
-    {
-        var room = GetRoom(roomId);
-        return room?.IsAvailable() ?? false;
     }
     
     /// <summary>
@@ -669,8 +646,10 @@ public enum PropertyStatus
 {
     Vacant,              // Libre, disponible à la location
     Reserved,            // Réservé (contrat signé, début futur)
-    PartiallyOccupied,   // Pour les colocations partiellement occupées
-    Occupied             // Occupé (au moins un contrat actif)
+    PartialActive,       // Pour les colocations: au moins 1 chambre occupée, mais pas toutes
+    Active,               // Occupé (contrat actif) / toutes chambres occupées
+    PartiallyOccupied,
+    Occupied// Occupé (contrat actif) / toutes chambres occupées
 }
 
 public enum PropertyUsageType

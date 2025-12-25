@@ -251,6 +251,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasIndex(c => c.RenterTenantId);
             entity.Property(c => c.Rent).HasColumnType("decimal(18,2)");
             entity.Property(c => c.Deposit).HasColumnType("decimal(18,2)");
+
+            entity.Property(c => c.TerminationDate);
+            entity.Property(c => c.TerminationReason).HasColumnType("text");
             
             entity.HasMany(c => c.Payments)
                   .WithOne()

@@ -152,7 +152,9 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             }
             
             // ✅ Create rooms for colocation if provided
-            if ((usageType == PropertyUsageType.Colocation || usageType == PropertyUsageType.ColocationIndividual) && 
+            if ((
+                usageType == PropertyUsageType.Colocation || 
+                usageType == PropertyUsageType.ColocationIndividual) && 
                 request.Rooms != null && request.Rooms.Any())
             {
                 foreach (var roomDto in request.Rooms)

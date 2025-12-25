@@ -11,6 +11,13 @@ public class PropertyRepository : Repository<Property>, IPropertyRepository
     {
     }
 
+    public async Task<Property?> GetByIdWithRoomsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(p => p.Rooms)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
     public async Task<IEnumerable<Property>> GetByStatusAsync(PropertyStatus status, CancellationToken cancellationToken = default)
     {
         return await _dbSet

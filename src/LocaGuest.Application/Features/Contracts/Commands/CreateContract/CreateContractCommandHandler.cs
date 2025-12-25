@@ -4,6 +4,7 @@ using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Constants;
+using LocaGuest.Domain.Exceptions;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 return Result.Failure<ContractDto>("User not authenticated");
 
             // Vérifier que la propriété existe
-            var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(request.PropertyId, cancellationToken);
             
             if (property == null)
                 return Result.Failure<ContractDto>("Property not found");
@@ -94,9 +95,18 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                     return Result.Failure<ContractDto>(
                         "Pour une colocation individuelle, l'identifiant de la chambre (RoomId) est obligatoire.");
                 }
-                
-                // TODO: Vérifier que la chambre est disponible (nécessite une entité Room)
-                // Pour l'instant, on suppose que la validation est faite côté UI
+
+                var room = property.GetRoom(request.RoomId.Value);
+                if (room == null)
+                {
+                    return Result.Failure<ContractDto>("Chambre introuvable pour ce bien.");
+                }
+
+                if (!room.IsAvailable())
+                {
+                    return Result.Failure<ContractDto>(
+                        $"Chambre indisponible: la chambre '{room.Name}' est {room.Status}.");
+                }
             }
 
             // Parser le type de contrat
@@ -132,8 +142,16 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             tenant.AssociateToProperty(property.Id, property.Code);
             property.AddTenant(tenant.Code);
 
-            // ⭐ Reactivate tenant (tenant becomes active when associated to a property)
-            tenant.Reactivate();
+            // ⭐ Reserve tenant (tenant becomes active when associated to a property)
+            tenant.SetReserved();
+
+            // ⭐ Reserve room for colocations
+            if ((property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.ColocationIndividual ||
+                 property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation) &&
+                request.RoomId.HasValue)
+            {
+                property.ReserveRoom(request.RoomId.Value, contract.Id);
+            }
 
             _logger.LogInformation(
                 "Associated tenant {TenantCode} to property {PropertyCode} and reactivated tenant",
@@ -166,6 +184,12 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 contract.Id, request.PropertyId, request.TenantId);
 
             return Result.Success(contractDto);
+        }
+        catch (ValidationException vex)
+        {
+            _logger.LogWarning(vex, "Validation error creating contract for Property {PropertyId} and Tenant {TenantId}",
+                request.PropertyId, request.TenantId);
+            return Result.Failure<ContractDto>(vex.Message);
         }
         catch (Exception ex)
         {

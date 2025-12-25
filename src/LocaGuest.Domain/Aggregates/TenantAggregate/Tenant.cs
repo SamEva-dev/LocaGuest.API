@@ -164,7 +164,7 @@ public class Tenant : AuditableEntity
     /// Marquer le locataire comme réservé (contrat signé, début futur)
     /// Transition: Inactive → Reserved
     /// </summary>
-    public void SetReserved(Guid contractId, DateTime startDate)
+    public void SetReserved()
     {
         if (Status == TenantStatus.Active)
             throw new InvalidOperationException("Cannot reserve an active tenant");

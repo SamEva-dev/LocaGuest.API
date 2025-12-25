@@ -29,9 +29,21 @@ public class MarkContractAsSignedCommandHandler : IRequestHandler<MarkContractAs
             if (contract == null)
                 return Result.Failure("Contract not found");
 
+            // ✅ Charger la propriété avec ses rooms pour mettre à jour les compteurs colocation
+            var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(contract.PropertyId, cancellationToken);
+            if (property == null)
+                return Result.Failure("Property not found");
+
             // Marquer comme signé
             contract.MarkAsSigned(request.SignedDate ?? DateTime.UtcNow);
             //contract.Activate();
+
+            // ✅ Pour colocation: passer la chambre de Reserved -> Occupied (met à jour OccupiedRooms/ReservedRooms)
+            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation) &&
+                contract.RoomId.HasValue)
+            {
+                property.OccupyRoom(contract.RoomId.Value, contract.Id);
+            }
 
             // TODO: Update property, tenant status and cancel other drafts via domain events
 

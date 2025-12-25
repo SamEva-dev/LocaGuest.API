@@ -35,6 +35,9 @@ public class Contract : AuditableEntity
     
     public ContractStatus Status { get; private set; }
     public string? Notes { get; private set; }
+
+    public DateTime? TerminationDate { get; private set; }
+    public string? TerminationReason { get; private set; }
     
     /// <summary>
     /// Identifiant de la chambre pour les colocations individuelles
@@ -193,11 +196,15 @@ public class Contract : AuditableEntity
         AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterTenantId, EndDate));
     }
 
-    public void Terminate(DateTime terminationDate)
+    public void Terminate(DateTime terminationDate, string? reason = null)
     {
         if (Status == ContractStatus.Terminated) return;
 
         Status = ContractStatus.Terminated;
+        TerminationDate = terminationDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(terminationDate, DateTimeKind.Utc)
+            : terminationDate.ToUniversalTime();
+        TerminationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
         AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
     }
     

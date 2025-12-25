@@ -25,6 +25,7 @@ public class PropertyDto
     // Pour les colocations
     public int? TotalRooms { get; set; }
     public int? OccupiedRooms { get; set; }
+    public int? ReservedRooms { get; set; }
     public List<PropertyRoomDto> Rooms { get; set; } = new();  // ✅ Liste des chambres
     
     // Pour Airbnb

@@ -84,11 +84,12 @@ public class DocumentSignedEventHandler : INotificationHandler<DocumentSigned>
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
             if (property != null)
             {
+                property.SetStatus(PropertyStatus.Active);
                 property.SetStatus(PropertyStatus.Occupied);
                 await _unitOfWork.CommitAsync(cancellationToken);
 
                 _logger.LogInformation(
-                    "Property {PropertyId} marked as Occupied due to contract {ContractId} being Active",
+                    "Property {PropertyId} marked as Active due to contract {ContractId} being Active",
                     property.Id, contract.Id);
             }
         }

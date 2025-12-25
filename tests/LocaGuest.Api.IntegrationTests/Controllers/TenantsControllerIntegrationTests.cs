@@ -31,19 +31,19 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
         context.Tenants.RemoveRange(context.Tenants);
         await context.SaveChangesAsync();
 
-        //var tenant1 = Tenant.Create(
-        //    "John Doe",
-        //    "john.doe@test.com",
-        //    "0612345678"
-        //);
+        var tenant1 = Tenant.Create(
+            "John Doe",
+            "john.doe@test.com",
+            "0612345678"
+        );
 
-        //var tenant2 = Tenant.Create(
-        //    "Jane Smith",
-        //    "jane.smith@test.com",
-        //    "0623456789"
-        //);
+        var tenant2 = Tenant.Create(
+            "Jane Smith",
+            "jane.smith@test.com",
+            "0623456789"
+        );
 
-        //context.Tenants.AddRange(tenant1, tenant2);
+        context.Tenants.AddRange(tenant1, tenant2);
         await context.SaveChangesAsync();
     }
 
