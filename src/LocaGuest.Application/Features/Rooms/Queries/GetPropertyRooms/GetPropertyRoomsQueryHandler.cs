@@ -23,7 +23,7 @@ public class GetPropertyRoomsQueryHandler : IRequestHandler<GetPropertyRoomsQuer
     {
         try
         {
-            var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(request.PropertyId, cancellationToken);
             if (property == null)
                 return Result.Failure<List<PropertyRoomDto>>("Property not found");
 

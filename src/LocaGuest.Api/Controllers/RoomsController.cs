@@ -1,6 +1,7 @@
 using LocaGuest.Application.Features.Rooms.Commands.CreateRoom;
 using LocaGuest.Application.Features.Rooms.Commands.UpdateRoom;
 using LocaGuest.Application.Features.Rooms.Commands.DeleteRoom;
+using LocaGuest.Application.Features.Rooms.Commands.ReleaseRoom;
 using LocaGuest.Application.Features.Rooms.Queries.GetPropertyRooms;
 using LocaGuest.Application.Features.Rooms.Queries.GetRoom;
 using LocaGuest.Application.Features.Rooms.Queries.GetAvailableRooms;
@@ -182,6 +183,30 @@ public class RoomsController : ControllerBase
         _logger.LogInformation("Room deleted: {RoomId} from Property {PropertyId}", roomId, propertyId);
 
         return Ok(new { message = "Room deleted successfully" });
+    }
+
+    /// <summary>
+    /// Libérer une chambre (retour à Available)
+    /// POST /api/properties/{propertyId}/rooms/{roomId}/release
+    /// </summary>
+    [HttpPost("{roomId:guid}/release")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReleaseRoom(Guid propertyId, Guid roomId)
+    {
+        var command = new ReleaseRoomCommand(propertyId, roomId);
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        _logger.LogInformation("Room released: {RoomId} from Property {PropertyId}", roomId, propertyId);
+        return Ok(new { message = "Room released successfully" });
     }
 }
 

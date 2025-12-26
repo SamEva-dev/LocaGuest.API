@@ -24,7 +24,7 @@ public class UpdateRoomCommandHandler : IRequestHandler<UpdateRoomCommand, Resul
         try
         {
             // Vérifier que la propriété existe
-            var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(request.PropertyId, cancellationToken);
             if (property == null)
                 return Result.Failure<PropertyRoomDto>("Property not found");
 
