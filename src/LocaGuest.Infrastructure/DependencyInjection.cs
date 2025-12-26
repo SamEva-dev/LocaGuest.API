@@ -8,6 +8,7 @@ using LocaGuest.Infrastructure.Services.ContractGenerator;
 using LocaGuest.Infrastructure.Services.PropertySheetGenerator;
 using LocaGuest.Infrastructure.Services.QuittanceGenerator;
 using LocaGuest.Infrastructure.Services.TenantSheetGenerator;
+using LocaGuest.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +21,10 @@ public static class DependencyInjection
     {
         var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
 
+        services.AddScoped<AuditSaveChangesInterceptor>();
+
         // Main Database (LocaGuest)
-        services.AddDbContext<LocaGuestDbContext>(options =>
+        services.AddDbContext<LocaGuestDbContext>((sp, options) =>
         {
             if (provider == "sqlite")
             {
@@ -53,6 +56,8 @@ public static class DependencyInjection
                     b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName))
                     .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             }
+
+            options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
         // Audit Database

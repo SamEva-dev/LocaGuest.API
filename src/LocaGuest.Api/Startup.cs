@@ -6,10 +6,11 @@ using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using LocaGuest.Infrastructure.Jobs;
 
 namespace LocaGuest.Api;
 
@@ -69,9 +70,6 @@ public class Startup
         // Infrastructure Layer
         services.AddInfrastructure(Configuration);
 
-        // Audit Interceptor
-        services.AddScoped<LocaGuest.Infrastructure.Persistence.Interceptors.AuditSaveChangesInterceptor>();
-
         // Repositories and UnitOfWork
         services.AddScoped<LocaGuest.Domain.Repositories.IUnitOfWork, LocaGuest.Infrastructure.Repositories.UnitOfWork>();
         services.AddScoped<LocaGuest.Domain.Repositories.IPropertyRepository, LocaGuest.Infrastructure.Repositories.PropertyRepository>();
@@ -95,6 +93,9 @@ public class Startup
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.EmailNotificationBackgroundService>();
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.InvoiceGenerationBackgroundService>();
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.ContractActivationBackgroundService>();
+
+        services.Configure<AuditRetentionOptions>(Configuration.GetSection("AuditRetention"));
+        services.AddHostedService<AuditRetentionHostedService>();
 
         // JWT Authentication with AuthGate (RSA via JWKS)
         ConfigureJwtAuthentication(services);
