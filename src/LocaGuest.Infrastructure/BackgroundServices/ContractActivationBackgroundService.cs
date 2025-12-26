@@ -3,8 +3,11 @@ using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace LocaGuest.Api.Services.BackgroundJobs;
+namespace LocaGuest.Infrastructure.BackgroundServices;
 
 /// <summary>
 /// Service d'arrière-plan pour activer automatiquement les contrats signés

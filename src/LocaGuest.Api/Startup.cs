@@ -92,9 +92,9 @@ public class Startup
         services.AddApplication();
 
         // Background Services
-        services.AddHostedService<LocaGuest.Api.Services.BackgroundJobs.ContractActivationBackgroundService>();
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.EmailNotificationBackgroundService>();
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.InvoiceGenerationBackgroundService>();
+        services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.ContractActivationBackgroundService>();
 
         // JWT Authentication with AuthGate (RSA via JWKS)
         ConfigureJwtAuthentication(services);

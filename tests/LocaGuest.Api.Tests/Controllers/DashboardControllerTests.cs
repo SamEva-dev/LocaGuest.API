@@ -42,7 +42,7 @@ public class DashboardControllerTests : BaseTestFixture
             .ReturnsAsync(Result.Success(summaryDto));
 
         // Act
-        var result = await _controller.GetSummary();
+        var result = await _controller.GetSummary(12,2024);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -65,7 +65,7 @@ public class DashboardControllerTests : BaseTestFixture
             .ReturnsAsync(Result.Success(summaryDto));
 
         // Act
-        var result = await _controller.GetSummary();
+        var result = await _controller.GetSummary(12,2024);
 
         // Assert
         var okResult = result as OkObjectResult;
@@ -86,7 +86,7 @@ public class DashboardControllerTests : BaseTestFixture
             .ReturnsAsync(Result.Failure<DashboardSummaryDto>("Error"));
 
         // Act
-        var result = await _controller.GetSummary();
+        var result = await _controller.GetSummary(12,2024);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();

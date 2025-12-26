@@ -31,7 +31,6 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
 
         _handler = new UpdateOrganizationSettingsCommandHandler(
             _unitOfWorkMock.Object,
-            _tenantContextMock.Object,
             _loggerMock.Object);
     }
 
@@ -41,7 +40,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         // Arrange
         var organizationId = Guid.NewGuid();
         var organization = Organization.Create(
-            "ORG-001",
+            001,
             "Test Organization",
             "test@org.com");
 
@@ -90,7 +89,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         // Arrange
         var organizationId = Guid.NewGuid();
         var organization = Organization.Create(
-            "ORG-001",
+           001,
             "Test Organization",
             "test@org.com");
 
@@ -179,7 +178,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         // Arrange
         var organizationId = Guid.NewGuid();
         var organization = Organization.Create(
-            "ORG-001",
+            0001,
             "Test Organization",
             "test@org.com");
 

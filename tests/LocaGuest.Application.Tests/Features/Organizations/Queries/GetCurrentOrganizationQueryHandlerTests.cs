@@ -31,7 +31,6 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
 
         _handler = new GetCurrentOrganizationQueryHandler(
             _unitOfWorkMock.Object,
-            _tenantContextMock.Object,
             _loggerMock.Object);
     }
 
@@ -40,7 +39,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
     {
         // Arrange
         var organization = Organization.Create(
-            "ORG-001",
+            001,
             "Test Organization",
             "test@org.com",
             "+1234567890");
@@ -80,8 +79,8 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
     public async Task Handle_WithMultipleOrganizations_ReturnsFirstOrganization()
     {
         // Arrange
-        var organization1 = Organization.Create("ORG-001", "Organization 1", "org1@test.com");
-        var organization2 = Organization.Create("ORG-002", "Organization 2", "org2@test.com");
+        var organization1 = Organization.Create(0001, "Organization 1", "org1@test.com");
+        var organization2 = Organization.Create(0002, "Organization 2", "org2@test.com");
 
         _organizationRepositoryMock
             .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -103,7 +102,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
     {
         // Arrange
         var organization = Organization.Create(
-            "ORG-001",
+            001,
             "Test Organization",
             "test@org.com");
         // Don't set branding
