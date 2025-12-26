@@ -2,9 +2,12 @@ using LocaGuest.Application.Common;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.InventoryAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace LocaGuest.Application.Features.Contracts.Commands.TerminateContract;
@@ -30,8 +33,36 @@ public class TerminateContractCommandHandler : IRequestHandler<TerminateContract
             if (contract == null)
                 return Result.Failure("Contract not found");
 
+            if (contract.Status != ContractStatus.Active)
+                return Result.Failure("Only Active contracts can be terminated");
+
+            if (string.IsNullOrWhiteSpace(request.Reason))
+                return Result.Failure("TERMINATION_REASON_REQUIRED");
+
+            var inventoryExit = await _unitOfWork.InventoryExits.Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(ix => ix.ContractId == contract.Id, cancellationToken);
+
+            if (inventoryExit == null || inventoryExit.Status != InventoryStatus.Completed)
+            {
+                return Result.Failure("INVENTORY_EXIT_REQUIRED");
+            }
+
+            var payments = await _unitOfWork.Payments.GetByContractIdAsync(contract.Id, cancellationToken);
+            var now = DateTime.UtcNow.Date;
+            var overdue = payments.Where(p =>
+                p.Status == PaymentStatus.Late ||
+                (p.Status == PaymentStatus.Partial && p.ExpectedDate.Date < now) ||
+                (p.Status == PaymentStatus.Pending && p.ExpectedDate.Date < now));
+
+            var outstanding = overdue.Sum(p => p.GetRemainingAmount());
+            if (outstanding > 0)
+            {
+                return Result.Failure("PAYMENTS_NOT_UP_TO_DATE");
+            }
+
             // Terminer le contrat
-            contract.Terminate(request.TerminationDate, request.Reason);
+            contract.Terminate(request.TerminationDate, request.Reason.Trim());
 
             
             var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(contract.PropertyId, cancellationToken);

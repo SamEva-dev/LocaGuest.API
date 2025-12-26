@@ -207,7 +207,7 @@ public class Contract : AuditableEntity
         TerminationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
         AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
     }
-    
+
     /// <summary>
     /// Annuler un contrat non signé (Draft ou Pending)
     /// Utilisé quand un autre contrat est choisi comme contrat principal
@@ -216,6 +216,15 @@ public class Contract : AuditableEntity
     {
         if (Status != ContractStatus.Draft && Status != ContractStatus.Pending)
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft or pending contracts can be cancelled");
+
+        Status = ContractStatus.Cancelled;
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+    }
+
+    public void CancelSigned()
+    {
+        if (Status != ContractStatus.Signed)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only signed contracts can be cancelled");
 
         Status = ContractStatus.Cancelled;
         AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));

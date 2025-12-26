@@ -27,6 +27,8 @@ public class UnitOfWork : IUnitOfWork
     private IUserPreferencesRepository? _userPreferences;
     private INotificationSettingsRepository? _notificationSettings;
     private IUserSessionRepository? _userSessions;
+    private IInventoryEntryRepository? _inventoryEntries;
+    private IInventoryExitRepository? _inventoryExits;
 
     public UnitOfWork(LocaGuestDbContext context)
     {
@@ -41,6 +43,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IContractRepository Contracts => 
         _contracts ??= new ContractRepository(_context);
+
+    public IInventoryEntryRepository InventoryEntries =>
+        _inventoryEntries ??= new InventoryEntryRepository(_context);
+
+    public IInventoryExitRepository InventoryExits =>
+        _inventoryExits ??= new InventoryExitRepository(_context);
 
     public ITenantRepository Tenants => 
         _tenants ??= new TenantRepository(_context);

@@ -1,10 +1,13 @@
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Interfaces;
 using LocaGuest.Application.Services;
+using LocaGuest.Infrastructure.Email;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Infrastructure.Services;
 using LocaGuest.Infrastructure.Services.ContractGenerator;
+using LocaGuest.Infrastructure.Services.PropertySheetGenerator;
 using LocaGuest.Infrastructure.Services.QuittanceGenerator;
+using LocaGuest.Infrastructure.Services.TenantSheetGenerator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -106,6 +109,8 @@ public static class DependencyInjection
         // Document Services
         services.AddScoped<IContractGeneratorService, ContractGeneratorService>();
         services.AddScoped<IQuittanceGeneratorService, QuittanceGeneratorService>();
+        services.AddScoped<IPropertySheetGeneratorService, PropertySheetGeneratorService>();
+        services.AddScoped<ITenantSheetGeneratorService, TenantSheetGeneratorService>();
         
         // Email Service
         services.AddScoped<IEmailService, LocaGuest.Infrastructure.Email.EmailService>();

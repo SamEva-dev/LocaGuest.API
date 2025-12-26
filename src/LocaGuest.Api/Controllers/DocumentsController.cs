@@ -13,6 +13,7 @@ using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LocaGuest.Domain.Aggregates.ContractAggregate;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -24,6 +25,8 @@ public class DocumentsController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<DocumentsController> _logger;
     private readonly IContractGeneratorService _contractGenerator;
+    private readonly IPropertySheetGeneratorService _propertySheetGenerator;
+    private readonly ITenantSheetGeneratorService _tenantSheetGenerator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly IWebHostEnvironment _environment;
@@ -32,6 +35,8 @@ public class DocumentsController : ControllerBase
         IMediator mediator, 
         ILogger<DocumentsController> logger,
         IContractGeneratorService contractGenerator,
+        IPropertySheetGeneratorService propertySheetGenerator,
+        ITenantSheetGeneratorService tenantSheetGenerator,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
         IWebHostEnvironment environment)
@@ -39,9 +44,100 @@ public class DocumentsController : ControllerBase
         _mediator = mediator;
         _logger = logger;
         _contractGenerator = contractGenerator;
+        _propertySheetGenerator = propertySheetGenerator;
+        _tenantSheetGenerator = tenantSheetGenerator;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _environment = environment;
+    }
+
+    [HttpGet("property/{propertyId:guid}/sheet")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GeneratePropertySheet(
+        Guid propertyId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
+            if (property == null)
+                return NotFound(new { message = "Property not found" });
+
+            var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
+            var lastName = User.FindFirst("family_name")?.Value ?? User.FindFirst("LastName")?.Value ?? "";
+            var email = User.FindFirst("email")?.Value ?? "";
+            var phone = User.FindFirst("phone_number")?.Value ?? User.FindFirst("PhoneNumber")?.Value;
+            var currentUserFullName = $"{firstName} {lastName}".Trim();
+            if (string.IsNullOrEmpty(currentUserFullName))
+                currentUserFullName = email;
+
+            var pdfBytes = await _propertySheetGenerator.GeneratePropertySheetPdfAsync(
+                property,
+                currentUserFullName,
+                email,
+                phone,
+                cancellationToken);
+
+            var fileName = $"Fiche_Bien_{property.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating property sheet for {PropertyId}", propertyId);
+            return StatusCode(500, new { message = "Error generating property sheet", error = ex.Message });
+        }
+    }
+
+    [HttpGet("tenant/{tenantId:guid}/sheet")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GenerateTenantSheet(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            if (tenant == null)
+                return NotFound(new { message = "Tenant not found" });
+
+            var property = tenant.PropertyId.HasValue
+                ? await _unitOfWork.Properties.GetByIdAsync(tenant.PropertyId.Value, cancellationToken)
+                : null;
+
+            var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
+            var lastName = User.FindFirst("family_name")?.Value ?? User.FindFirst("LastName")?.Value ?? "";
+            var email = User.FindFirst("email")?.Value ?? "";
+            var phone = User.FindFirst("phone_number")?.Value ?? User.FindFirst("PhoneNumber")?.Value;
+            var currentUserFullName = $"{firstName} {lastName}".Trim();
+            if (string.IsNullOrEmpty(currentUserFullName))
+                currentUserFullName = email;
+
+            var pdfBytes = await _tenantSheetGenerator.GenerateTenantSheetPdfAsync(
+                tenant,
+                property,
+                currentUserFullName,
+                email,
+                phone,
+                cancellationToken);
+
+            var fileName = $"Fiche_Locataire_{tenant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating tenant sheet for {TenantId}", tenantId);
+            return StatusCode(500, new { message = "Error generating tenant sheet", error = ex.Message });
+        }
     }
 
     [HttpGet("stats")]
@@ -411,6 +507,41 @@ public class DocumentsController : ControllerBase
         }
     }
 
+    [HttpGet("view/{documentId}")]
+    public async Task<IActionResult> ViewDocument(string documentId)
+    {
+        try
+        {
+            var document = await _unitOfWork.Documents.GetByIdAsync(Guid.Parse(documentId));
+            if (document == null)
+                return NotFound(new { message = "Document not found" });
+
+            if (!System.IO.File.Exists(document.FilePath))
+                return NotFound(new { message = "File not found on disk" });
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
+
+            var extension = Path.GetExtension(document.FileName).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".webp" => "image/webp",
+                _ => "application/octet-stream"
+            };
+
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{document.FileName}\"";
+            return File(fileBytes, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error viewing document {DocumentId}", documentId);
+            return StatusCode(500, new { message = "Error viewing document", error = ex.Message });
+        }
+    }
+
     [HttpDelete("{documentId}/dissociate")]
     public async Task<IActionResult> DissociateDocument(string documentId)
     {
@@ -554,6 +685,99 @@ public class DocumentsController : ControllerBase
         {
             _logger.LogError(ex, "Error getting contract document status for {ContractId}", contractId);
             return StatusCode(500, new { message = "Error getting contract document status", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Récupérer les informations complètes d'un contrat pour affichage dans un viewer (UI)
+    /// GET /api/documents/contract/{contractId}/viewer
+    /// </summary>
+    [HttpGet("contract/{contractId:guid}/viewer")]
+    public async Task<IActionResult> GetContractViewer(
+        Guid contractId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId, cancellationToken);
+            if (contract == null)
+                return NotFound(new { message = "Contract not found" });
+
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            if (tenant == null)
+                return NotFound(new { message = "Tenant not found" });
+
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            if (property == null)
+                return NotFound(new { message = "Property not found" });
+
+            var documents = await _unitOfWork.Documents.GetByContractIdAsync(contractId, cancellationToken);
+
+            var documentsStatus = new
+            {
+                contractId,
+                contractStatus = contract.Status.ToString(),
+                requiredDocuments = contract.RequiredDocuments.Select(r => new
+                {
+                    type = r.Type.ToString(),
+                    isRequired = r.IsRequired,
+                    isProvided = r.IsProvided,
+                    isSigned = r.IsSigned,
+                    documentInfo = documents.FirstOrDefault(d => d.Type == r.Type) != null ? new
+                    {
+                        id = documents.First(d => d.Type == r.Type).Id,
+                        fileName = documents.First(d => d.Type == r.Type).FileName,
+                        status = documents.First(d => d.Type == r.Type).Status.ToString(),
+                        signedDate = documents.First(d => d.Type == r.Type).SignedDate,
+                        createdAt = documents.First(d => d.Type == r.Type).CreatedAt
+                    } : null
+                }),
+                allRequiredSigned = contract.AreAllRequiredDocumentsSigned()
+            };
+
+            return Ok(new
+            {
+                contract = new
+                {
+                    id = contract.Id,
+                    code = contract.Code,
+                    status = contract.Status.ToString(),
+                    type = contract.Type.ToString(),
+                    startDate = contract.StartDate,
+                    endDate = contract.EndDate,
+                    rent = contract.Rent,
+                    charges = contract.Charges,
+                    deposit = contract.Deposit,
+                    roomId = contract.RoomId,
+                    notes = contract.Notes,
+                    terminationDate = contract.TerminationDate,
+                    terminationReason = contract.TerminationReason,
+                    createdAt = contract.CreatedAt
+                },
+                tenant = new
+                {
+                    id = tenant.Id,
+                    code = tenant.Code,
+                    fullName = tenant.FullName,
+                    email = tenant.Email,
+                    phone = tenant.Phone
+                },
+                property = new
+                {
+                    id = property.Id,
+                    code = property.Code,
+                    name = property.Name,
+                    address = property.Address,
+                    city = property.City,
+                    postalCode = property.PostalCode
+                },
+                documentsStatus
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting contract viewer for {ContractId}", contractId);
+            return StatusCode(500, new { message = "Error getting contract viewer", error = ex.Message });
         }
     }
     

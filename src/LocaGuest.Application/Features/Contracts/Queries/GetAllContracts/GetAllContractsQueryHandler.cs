@@ -55,21 +55,42 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 
+            var contractIds = contracts.Select(c => c.Id).ToList();
+
+            var inventoryEntries = await _unitOfWork.InventoryEntries.Query()
+                .AsNoTracking()
+                .Where(e => contractIds.Contains(e.ContractId))
+                .ToDictionaryAsync(e => e.ContractId, e => e.Id, cancellationToken);
+
+            var inventoryExits = await _unitOfWork.InventoryExits.Query()
+                .AsNoTracking()
+                .Where(e => contractIds.Contains(e.ContractId))
+                .ToDictionaryAsync(e => e.ContractId, e => e.Id, cancellationToken);
+
             var result = contracts.Select(c => new ContractDto
             {
                 Id = c.Id,
+                Code = c.Code,
                 PropertyId = c.PropertyId,
                 TenantId = c.RenterTenantId,
+                RoomId = c.RoomId,
+                IsConflict = c.IsConflict,
                 PropertyName = properties.GetValueOrDefault(c.PropertyId),
                 TenantName = tenants.GetValueOrDefault(c.RenterTenantId),
                 Type = c.Type.ToString(),
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
                 Rent = c.Rent,
+                Charges = c.Charges,
                 Deposit = c.Deposit,
                 Status = c.Status.ToString(),
+                Notes = c.Notes,
                 PaymentsCount = c.Payments.Count,
-                CreatedAt = c.CreatedAt
+                CreatedAt = c.CreatedAt,
+                HasInventoryEntry = inventoryEntries.ContainsKey(c.Id),
+                HasInventoryExit = inventoryExits.ContainsKey(c.Id),
+                InventoryEntryId = inventoryEntries.GetValueOrDefault(c.Id),
+                InventoryExitId = inventoryExits.GetValueOrDefault(c.Id)
             }).ToList();
 
             // Filtrer par terme de recherche après chargement des noms

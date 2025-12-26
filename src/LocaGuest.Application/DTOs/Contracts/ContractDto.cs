@@ -6,6 +6,8 @@ public class ContractDto
     public string Code { get; set; } = string.Empty;  // ✅ T0001-CTR0001
     public Guid PropertyId { get; set; }
     public Guid TenantId { get; set; }
+    public Guid? RoomId { get; set; }
+    public bool IsConflict { get; set; }
     public string? PropertyName { get; set; }
     public string? TenantName { get; set; }
     public string Type { get; set; } = string.Empty;

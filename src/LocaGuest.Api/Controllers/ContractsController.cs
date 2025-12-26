@@ -5,6 +5,8 @@ using LocaGuest.Application.Features.Contracts.Commands.TerminateContract;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsSigned;
 using LocaGuest.Application.Features.Contracts.Commands.ActivateContract;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsExpired;
+using LocaGuest.Application.Features.Contracts.Commands.CancelContract;
+using LocaGuest.Application.Features.Contracts.Queries.GetContractTerminationEligibility;
 using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
 using LocaGuest.Application.Features.Contracts.Commands.RenewContract;
@@ -176,6 +178,32 @@ public class ContractsController : ControllerBase
         return Ok(new { message = "Contract terminated successfully", id });
     }
 
+    [HttpGet("{id:guid}/termination-eligibility")]
+    public async Task<IActionResult> GetTerminationEligibility(Guid id)
+    {
+        var result = await _mediator.Send(new GetContractTerminationEligibilityQuery(id));
+        
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpPut("{id:guid}/cancel")]
+    public async Task<IActionResult> CancelContract(Guid id)
+    {
+        var result = await _mediator.Send(new CancelContractCommand(id));
+        
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(new { message = "Contract cancelled successfully", id });
+    }
+
     [HttpPut("{id:guid}/mark-signed")]
     public async Task<IActionResult> MarkContractAsSigned(Guid id, [FromBody] MarkContractAsSignedCommand command)
     {
@@ -291,7 +319,13 @@ public class ContractsController : ControllerBase
             return BadRequest(new { message = result.ErrorMessage });
         }
 
-        return Ok(new { message = "Contract deleted successfully", id });
+        return Ok(new
+        {
+            message = "Contract deleted successfully",
+            id,
+            deletedPayments = result.Data?.DeletedPayments ?? 0,
+            deletedDocuments = result.Data?.DeletedDocuments ?? 0
+        });
     }
     
     /// <summary>
