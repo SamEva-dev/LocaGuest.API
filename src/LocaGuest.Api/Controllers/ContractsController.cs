@@ -11,6 +11,8 @@ using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
 using LocaGuest.Application.Features.Contracts.Commands.RenewContract;
 using LocaGuest.Application.Features.Contracts.Commands.CreateAddendum;
+using LocaGuest.Application.Features.Contracts.Commands.GiveNotice;
+using LocaGuest.Application.Features.Contracts.Commands.CancelNotice;
 using LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 using LocaGuest.Application.Features.Contracts.Queries.GetContractStats;
 using LocaGuest.Application.Features.Contracts.Queries.GetContracts;
@@ -19,6 +21,7 @@ using LocaGuest.Application.Features.Contracts.Queries.GetContractsByTenant;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -272,14 +275,23 @@ public class ContractsController : ControllerBase
         {
             ContractId = id,
             TenantId = request.TenantId,
+            TenantIdIsSet = request.TenantIdIsSet,
             PropertyId = request.PropertyId,
+            PropertyIdIsSet = request.PropertyIdIsSet,
             RoomId = request.RoomId,
+            RoomIdIsSet = request.RoomIdIsSet,
             Type = request.Type,
+            TypeIsSet = request.TypeIsSet,
             StartDate = request.StartDate,
+            StartDateIsSet = request.StartDateIsSet,
             EndDate = request.EndDate,
+            EndDateIsSet = request.EndDateIsSet,
             Rent = request.Rent,
-            Charges = request.Charges ?? 0,
-            Deposit = request.Deposit
+            RentIsSet = request.RentIsSet,
+            Charges = request.Charges,
+            ChargesIsSet = request.ChargesIsSet,
+            Deposit = request.Deposit,
+            DepositIsSet = request.DepositIsSet
         };
 
         var result = await _mediator.Send(command);
@@ -289,18 +301,54 @@ public class ContractsController : ControllerBase
         
         return Ok(new { message = "Contract updated successfully", id });
     }
-    
-    public record UpdateContractRequest(
-        Guid TenantId,
-        Guid PropertyId,
-        Guid? RoomId,
-        string Type,
-        DateTime StartDate,
-        DateTime EndDate,
-        decimal Rent,
-        decimal? Charges,
-        decimal? Deposit
-    );
+
+    public sealed class UpdateContractRequest
+    {
+        private Guid? _tenantId;
+        public Guid? TenantId { get => _tenantId; set { _tenantId = value; TenantIdIsSet = true; } }
+        [JsonIgnore]
+        public bool TenantIdIsSet { get; private set; }
+
+        private Guid? _propertyId;
+        public Guid? PropertyId { get => _propertyId; set { _propertyId = value; PropertyIdIsSet = true; } }
+        [JsonIgnore]
+        public bool PropertyIdIsSet { get; private set; }
+
+        private Guid? _roomId;
+        public Guid? RoomId { get => _roomId; set { _roomId = value; RoomIdIsSet = true; } }
+        [JsonIgnore]
+        public bool RoomIdIsSet { get; private set; }
+
+        private string? _type;
+        public string? Type { get => _type; set { _type = value; TypeIsSet = true; } }
+        [JsonIgnore]
+        public bool TypeIsSet { get; private set; }
+
+        private DateTime? _startDate;
+        public DateTime? StartDate { get => _startDate; set { _startDate = value; StartDateIsSet = true; } }
+        [JsonIgnore]
+        public bool StartDateIsSet { get; private set; }
+
+        private DateTime? _endDate;
+        public DateTime? EndDate { get => _endDate; set { _endDate = value; EndDateIsSet = true; } }
+        [JsonIgnore]
+        public bool EndDateIsSet { get; private set; }
+
+        private decimal? _rent;
+        public decimal? Rent { get => _rent; set { _rent = value; RentIsSet = true; } }
+        [JsonIgnore]
+        public bool RentIsSet { get; private set; }
+
+        private decimal? _charges;
+        public decimal? Charges { get => _charges; set { _charges = value; ChargesIsSet = true; } }
+        [JsonIgnore]
+        public bool ChargesIsSet { get; private set; }
+
+        private decimal? _deposit;
+        public decimal? Deposit { get => _deposit; set { _deposit = value; DepositIsSet = true; } }
+        [JsonIgnore]
+        public bool DepositIsSet { get; private set; }
+    }
     
     /// <summary>
     /// Supprimer un contrat (uniquement les contrats Draft ou Cancelled)
@@ -408,6 +456,48 @@ public class ContractsController : ControllerBase
 
         return Ok(new { message = "Addendum created successfully", addendumId = result.Data });
     }
+
+    /// <summary>
+    /// Donner un préavis sur un contrat
+    /// PUT /api/contracts/{id}/notice
+    /// </summary>
+    [HttpPut("{id:guid}/notice")]
+    public async Task<IActionResult> GiveNotice(Guid id, [FromBody] GiveNoticeRequest request)
+    {
+        var command = new GiveNoticeCommand
+        {
+            ContractId = id,
+            NoticeDate = request.NoticeDate,
+            NoticeEndDate = request.NoticeEndDate,
+            Reason = request.Reason
+        };
+
+        var result = await _mediator.Send(command);
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { message = "Notice registered successfully", id });
+    }
+
+    /// <summary>
+    /// Annuler le préavis sur un contrat
+    /// PUT /api/contracts/{id}/notice/cancel
+    /// </summary>
+    [HttpPut("{id:guid}/notice/cancel")]
+    public async Task<IActionResult> CancelNotice(Guid id)
+    {
+        var result = await _mediator.Send(new CancelNoticeCommand { ContractId = id });
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { message = "Notice cancelled successfully", id });
+    }
+
+    public record GiveNoticeRequest(
+        DateTime NoticeDate,
+        DateTime NoticeEndDate,
+        string Reason
+    );
     
     public record CreateAddendumRequest(
         string Type,

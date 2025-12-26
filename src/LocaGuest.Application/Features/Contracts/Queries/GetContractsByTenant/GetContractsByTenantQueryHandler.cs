@@ -58,6 +58,7 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
                     Type = contract.Type.ToString(),
                     Status = contract.Status.ToString(),
                     CreatedAt = contract.CreatedAt,
+                    NoticeEndDate = contract.NoticeEndDate,
                     HasInventoryEntry = false,
                     HasInventoryExit = false,
                     PaymentsCount = 0

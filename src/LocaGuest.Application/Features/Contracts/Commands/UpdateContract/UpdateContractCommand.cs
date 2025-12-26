@@ -6,13 +6,31 @@ namespace LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 public record UpdateContractCommand : IRequest<Result>
 {
     public required Guid ContractId { get; init; }
-    public required Guid TenantId { get; init; }
-    public required Guid PropertyId { get; init; }
+
+    public Guid? TenantId { get; init; }
+    public bool TenantIdIsSet { get; init; }
+
+    public Guid? PropertyId { get; init; }
+    public bool PropertyIdIsSet { get; init; }
+
     public Guid? RoomId { get; init; }
-    public required string Type { get; init; }
-    public required DateTime StartDate { get; init; }
-    public required DateTime EndDate { get; init; }
-    public required decimal Rent { get; init; }
+    public bool RoomIdIsSet { get; init; }
+
+    public string? Type { get; init; }
+    public bool TypeIsSet { get; init; }
+
+    public DateTime? StartDate { get; init; }
+    public bool StartDateIsSet { get; init; }
+
+    public DateTime? EndDate { get; init; }
+    public bool EndDateIsSet { get; init; }
+
+    public decimal? Rent { get; init; }
+    public bool RentIsSet { get; init; }
+
     public decimal? Charges { get; init; }
+    public bool ChargesIsSet { get; init; }
+
     public decimal? Deposit { get; init; }
+    public bool DepositIsSet { get; init; }
 }

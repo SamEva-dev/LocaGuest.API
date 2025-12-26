@@ -94,6 +94,9 @@ public static class DependencyInjection
         // Register ILocaGuestDbContext
         services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
 
+        // Register IAuditDbContext
+        services.AddScoped<IAuditDbContext>(sp => sp.GetRequiredService<AuditDbContext>());
+
         // HttpClient for AuthGate
         services.AddHttpClient("AuthGateApi", client =>
         {

@@ -38,6 +38,10 @@ public class Contract : AuditableEntity
 
     public DateTime? TerminationDate { get; private set; }
     public string? TerminationReason { get; private set; }
+
+    public DateTime? NoticeDate { get; private set; }
+    public DateTime? NoticeEndDate { get; private set; }
+    public string? NoticeReason { get; private set; }
     
     /// <summary>
     /// Identifiant de la chambre pour les colocations individuelles
@@ -162,7 +166,7 @@ public class Contract : AuditableEntity
         DateTime endDate,
         decimal rent,
         decimal charges,
-        decimal deposit)
+        decimal? deposit)
     {
         if (Status != ContractStatus.Draft)
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft contracts can be updated");
@@ -175,6 +179,9 @@ public class Contract : AuditableEntity
         
         if (charges < 0)
             throw new ValidationException("CONTRACT_INVALID_CHARGES", "Charges cannot be negative");
+
+        if (deposit is < 0)
+            throw new ValidationException("CONTRACT_INVALID_DEPOSIT", "Deposit cannot be negative");
         
         RenterTenantId = renterTenantId;
         PropertyId = propertyId;
@@ -206,6 +213,37 @@ public class Contract : AuditableEntity
             : terminationDate.ToUniversalTime();
         TerminationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
         AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
+    }
+
+    public void GiveNotice(DateTime noticeDate, DateTime noticeEndDate, string reason)
+    {
+        if (Status != ContractStatus.Active && Status != ContractStatus.Signed)
+            throw new ValidationException("CONTRACT_INVALID_STATUS", "Only Active or Signed contracts can receive a notice");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ValidationException("NOTICE_REASON_REQUIRED", "Reason is required");
+
+        var nDate = noticeDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(noticeDate, DateTimeKind.Utc)
+            : noticeDate.ToUniversalTime();
+
+        var nEnd = noticeEndDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(noticeEndDate, DateTimeKind.Utc)
+            : noticeEndDate.ToUniversalTime();
+
+        if (nEnd <= nDate)
+            throw new ValidationException("NOTICE_INVALID_DATES", "Notice end date must be after notice date");
+
+        NoticeDate = nDate;
+        NoticeEndDate = nEnd;
+        NoticeReason = reason.Trim();
+    }
+
+    public void CancelNotice()
+    {
+        NoticeDate = null;
+        NoticeEndDate = null;
+        NoticeReason = null;
     }
 
     /// <summary>

@@ -26,6 +26,9 @@ public class ContractDto
     public bool HasInventoryExit { get; set; }
     public Guid? InventoryEntryId { get; set; }
     public Guid? InventoryExitId { get; set; }
+
+    // ✅ Préavis
+    public DateTime? NoticeEndDate { get; set; }
 }
 
 public class CreateContractDto

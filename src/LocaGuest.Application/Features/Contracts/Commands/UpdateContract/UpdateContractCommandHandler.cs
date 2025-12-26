@@ -36,36 +36,63 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
                 return Result.Failure($"Only Draft contracts can be updated. Current status: {contract.Status}");
             }
 
+            var tenantId = request.TenantIdIsSet ? request.TenantId : contract.RenterTenantId;
+            var propertyId = request.PropertyIdIsSet ? request.PropertyId : contract.PropertyId;
+            var roomId = request.RoomIdIsSet ? request.RoomId : contract.RoomId;
+            var type = request.TypeIsSet ? request.Type : contract.Type.ToString();
+            var startDate = request.StartDateIsSet ? request.StartDate : contract.StartDate;
+            var endDate = request.EndDateIsSet ? request.EndDate : contract.EndDate;
+            var rent = request.RentIsSet ? request.Rent : contract.Rent;
+            var charges = request.ChargesIsSet ? request.Charges : contract.Charges;
+            var deposit = request.DepositIsSet ? request.Deposit : contract.Deposit;
+
+            if (tenantId is null)
+                return Result.Failure("TenantId is required");
+            if (propertyId is null)
+                return Result.Failure("PropertyId is required");
+            if (string.IsNullOrWhiteSpace(type))
+                return Result.Failure("Type is required");
+            if (startDate is null)
+                return Result.Failure("StartDate is required");
+            if (endDate is null)
+                return Result.Failure("EndDate is required");
+            if (rent is null)
+                return Result.Failure("Rent is required");
+
+            var normalizedType = NormalizeContractType(type);
+            if (normalizedType is null)
+                return Result.Failure($"Invalid contract type: {type}");
+
             // Vérifier que la propriété et le locataire existent
-            var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId.Value, cancellationToken);
             if (property == null)
             {
-                return Result.Failure($"Property with ID {request.PropertyId} not found");
+                return Result.Failure($"Property with ID {propertyId} not found");
             }
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId.Value, cancellationToken);
             if (tenant == null)
             {
-                return Result.Failure($"Tenant with ID {request.TenantId} not found");
+                return Result.Failure($"Tenant with ID {tenantId} not found");
             }
 
             // Valider les dates
-            if (request.EndDate <= request.StartDate)
+            if (endDate.Value <= startDate.Value)
             {
                 return Result.Failure("End date must be after start date");
             }
 
             // Mettre à jour le contrat
             contract.UpdateBasicInfo(
-                request.TenantId,
-                request.PropertyId,
-                request.RoomId,
-                request.Type,
-                request.StartDate,
-                request.EndDate,
-                request.Rent,
-                request.Charges ?? 0,
-                request.Deposit ?? 0
+                tenantId.Value,
+                propertyId.Value,
+                roomId,
+                normalizedType,
+                startDate.Value,
+                endDate.Value,
+                rent.Value,
+                charges ?? 0,
+                deposit
             );
 
             _unitOfWork.Contracts.Update(contract);
@@ -80,5 +107,25 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
             _logger.LogError(ex, "Error updating contract {ContractId}", request.ContractId);
             return Result.Failure($"Error updating contract: {ex.Message}");
         }
+    }
+
+    private static string? NormalizeContractType(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var s = raw.Trim();
+
+        if (s.Equals("Furnished", StringComparison.OrdinalIgnoreCase))
+            return "Furnished";
+        if (s.Equals("Unfurnished", StringComparison.OrdinalIgnoreCase))
+            return "Unfurnished";
+
+        if (s.Equals("Meublé", StringComparison.OrdinalIgnoreCase) || s.Equals("Meuble", StringComparison.OrdinalIgnoreCase))
+            return "Furnished";
+        if (s.Equals("Non meublé", StringComparison.OrdinalIgnoreCase) || s.Equals("Non meuble", StringComparison.OrdinalIgnoreCase))
+            return "Unfurnished";
+
+        return null;
     }
 }

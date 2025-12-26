@@ -9,6 +9,7 @@ using LocaGuest.Domain.Aggregates.OrganizationAggregate;
 using LocaGuest.Domain.Aggregates.InventoryAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Entities;
+using LocaGuest.Domain.Analytics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -40,6 +41,9 @@ public interface ILocaGuestDbContext
     // Multi-Tenant System
     DbSet<Organization> Organizations { get; }
     DbSet<TenantSequence> TenantSequences { get; }
+
+    // Analytics & Tracking
+    DbSet<TrackingEvent> TrackingEvents { get; }
     
     DatabaseFacade Database { get; }
 

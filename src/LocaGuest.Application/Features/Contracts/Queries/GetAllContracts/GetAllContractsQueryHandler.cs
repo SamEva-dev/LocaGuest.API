@@ -90,7 +90,8 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 HasInventoryEntry = inventoryEntries.ContainsKey(c.Id),
                 HasInventoryExit = inventoryExits.ContainsKey(c.Id),
                 InventoryEntryId = inventoryEntries.GetValueOrDefault(c.Id),
-                InventoryExitId = inventoryExits.GetValueOrDefault(c.Id)
+                InventoryExitId = inventoryExits.GetValueOrDefault(c.Id),
+                NoticeEndDate = c.NoticeEndDate
             }).ToList();
 
             // Filtrer par terme de recherche après chargement des noms

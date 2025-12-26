@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using LocaGuest.Domain.Audit;
+using LocaGuest.Application.Common.Interfaces;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
 /// <summary>
 /// Dedicated database context for audit logs (separate from main business database)
 /// </summary>
-public class AuditDbContext : DbContext
+public class AuditDbContext : DbContext, IAuditDbContext
 {
     public AuditDbContext(DbContextOptions<AuditDbContext> options) : base(options)
     {

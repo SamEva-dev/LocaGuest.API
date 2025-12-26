@@ -254,6 +254,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 
             entity.Property(c => c.TerminationDate);
             entity.Property(c => c.TerminationReason).HasColumnType("text");
+
+            entity.Property(c => c.NoticeDate);
+            entity.Property(c => c.NoticeEndDate);
+            entity.Property(c => c.NoticeReason).HasColumnType("text");
             
             entity.HasMany(c => c.Payments)
                   .WithOne()

@@ -1,4 +1,7 @@
 using LocaGuest.Application.Services;
+using LocaGuest.Application.Features.Analytics.Tracking.Queries.GetTrackingEvent;
+using LocaGuest.Application.Features.Analytics.Tracking.Queries.GetTrackingEvents;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,14 +16,61 @@ namespace LocaGuest.Api.Controllers;
 public class TrackingController : ControllerBase
 {
     private readonly ITrackingService _trackingService;
+    private readonly IMediator _mediator;
     private readonly ILogger<TrackingController> _logger;
 
     public TrackingController(
         ITrackingService trackingService,
+        IMediator mediator,
         ILogger<TrackingController> logger)
     {
         _trackingService = trackingService;
+        _mediator = mediator;
         _logger = logger;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] string? eventType = null,
+        [FromQuery] Guid? userId = null,
+        [FromQuery] string? sessionId = null,
+        [FromQuery] string? correlationId = null,
+        [FromQuery] DateTime? fromUtc = null,
+        [FromQuery] DateTime? toUtc = null)
+    {
+        var query = new GetTrackingEventsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            EventType = eventType,
+            UserId = userId,
+            SessionId = sessionId,
+            CorrelationId = correlationId,
+            FromUtc = fromUtc,
+            ToUtc = toUtc
+        };
+
+        var result = await _mediator.Send(query);
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetTrackingEventQuery(id));
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
     }
 
     /// <summary>
