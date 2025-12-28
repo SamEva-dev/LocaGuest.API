@@ -63,12 +63,12 @@ public class AuditRetentionHostedService : BackgroundService
         _logger.LogInformation("Starting audit retention purge (retention: {RetentionDays} days, cutoff: {CutoffDate})", retentionDays, cutoffDate);
 
         var deletedAuditLogs = await auditDbContext.Database.ExecuteSqlRawAsync(
-            @"DELETE FROM \"AuditLogs\" WHERE \"Timestamp\" < {0}",
+            @"DELETE FROM ""AuditLogs"" WHERE ""Timestamp"" < {0}",
             cutoffDate,
             cancellationToken);
 
         var deletedCommandAuditLogs = await auditDbContext.Database.ExecuteSqlRawAsync(
-            @"DELETE FROM \"CommandAuditLogs\" WHERE \"ExecutedAt\" < {0}",
+            @"DELETE FROM ""CommandAuditLogs"" WHERE ""ExecutedAt"" < {0}",
             cutoffDate,
             cancellationToken);
 

@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork
     private IPropertyRepository? _properties;
     private IPropertyImageRepository? _propertyImages;
     private IContractRepository? _contracts;
+    private IAddendumRepository? _addendums;
     private ITenantRepository? _tenants;
     private ITeamMemberRepository? _teamMembers;
     private IInvitationTokenRepository? _invitationTokens;
@@ -43,6 +44,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IContractRepository Contracts => 
         _contracts ??= new ContractRepository(_context);
+
+    public IAddendumRepository Addendums =>
+        _addendums ??= new AddendumRepository(_context);
 
     public IInventoryEntryRepository InventoryEntries =>
         _inventoryEntries ??= new InventoryEntryRepository(_context);

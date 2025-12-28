@@ -17,6 +17,8 @@ public class TrackingMiddleware
     private static readonly HashSet<string> ExcludedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
         "/health",
+        "/live",
+        "/ready",
         "/metrics",
         "/swagger",
         "/tracking/event",

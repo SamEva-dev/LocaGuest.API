@@ -11,6 +11,7 @@ public interface IUnitOfWork : IDisposable
     ITeamMemberRepository TeamMembers { get; }
     IInvitationTokenRepository InvitationTokens { get; }
     IContractRepository Contracts { get; }
+    IAddendumRepository Addendums { get; }
     IInventoryEntryRepository InventoryEntries { get; }
     IInventoryExitRepository InventoryExits { get; }
     IDocumentRepository Documents { get; }

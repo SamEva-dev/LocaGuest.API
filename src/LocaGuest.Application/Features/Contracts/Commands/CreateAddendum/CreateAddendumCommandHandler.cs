@@ -246,8 +246,8 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             }
 
             // ========== 6. AJOUTER L'AVENANT AU CONTRAT ==========
-            
-            contract.AddAddendum(addendum);
+
+            await _unitOfWork.Addendums.AddAsync(addendum, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation(

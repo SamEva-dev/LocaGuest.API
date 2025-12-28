@@ -197,6 +197,37 @@ public class Addendum : AuditableEntity
     {
         Notes = notes;
     }
+
+    public void UpdateDetails(DateTime effectiveDate, string reason, string description)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Reason is required", nameof(reason));
+
+        if (effectiveDate < DateTime.UtcNow.Date)
+            throw new ArgumentException("Effective date cannot be in the past", nameof(effectiveDate));
+
+        EffectiveDate = effectiveDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(effectiveDate, DateTimeKind.Utc)
+            : effectiveDate.ToUniversalTime();
+
+        Reason = reason;
+        Description = description;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDocuments(List<Guid> documentIds)
+    {
+        AttachedDocumentIds = documentIds != null && documentIds.Any()
+            ? System.Text.Json.JsonSerializer.Serialize(documentIds)
+            : null;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateNotes(string? notes)
+    {
+        Notes = notes;
+        LastModifiedAt = DateTime.UtcNow;
+    }
     
     /// <summary>
     /// Marquer comme signé
