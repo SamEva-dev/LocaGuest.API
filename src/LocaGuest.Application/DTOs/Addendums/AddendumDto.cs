@@ -1,5 +1,7 @@
 namespace LocaGuest.Application.DTOs.Addendums;
 
+using System.Text.Json;
+
 public record AddendumDto(
     Guid Id,
     Guid ContractId,
@@ -36,7 +38,7 @@ public class CreateAddendumDto
     public decimal? NewRent { get; set; }
     public decimal? NewCharges { get; set; }
     public DateTime? NewEndDate { get; set; }
-    public string? OccupantChanges { get; set; }
+    public JsonElement? OccupantChanges { get; set; }
     public Guid? NewRoomId { get; set; }
     public string? NewClauses { get; set; }
 

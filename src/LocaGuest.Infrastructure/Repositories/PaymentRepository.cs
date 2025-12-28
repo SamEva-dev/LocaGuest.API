@@ -38,11 +38,12 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Payment?> GetByMonthYearAsync(Guid contractId, int month, int year, CancellationToken cancellationToken = default)
+    public async Task<Payment?> GetByMonthYearAsync(Guid contractId, Guid tenantId, int month, int year, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Payment>()
             .FirstOrDefaultAsync(p => 
                 p.ContractId == contractId && 
+                p.TenantId == tenantId &&
                 p.Month == month && 
                 p.Year == year,
                 cancellationToken);

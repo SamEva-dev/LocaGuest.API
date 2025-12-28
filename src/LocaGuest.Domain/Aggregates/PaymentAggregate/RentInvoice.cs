@@ -11,6 +11,8 @@ public class RentInvoice : AuditableEntity
     public Guid ContractId { get; private set; }
     public new Guid TenantId { get; private set; }
     public Guid PropertyId { get; private set; }
+
+    public Guid? InvoiceDocumentId { get; private set; }
     
     /// <summary>
     /// Mois de la facture (1-12)
@@ -107,6 +109,39 @@ public class RentInvoice : AuditableEntity
     {
         if (Status == InvoiceStatus.Pending)
             Status = InvoiceStatus.Late;
+    }
+
+    public void AttachInvoiceDocument(Guid documentId)
+    {
+        if (documentId == Guid.Empty)
+            throw new ArgumentException("DocumentId cannot be empty", nameof(documentId));
+
+        InvoiceDocumentId = documentId;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateStatusFromLines(IReadOnlyCollection<RentInvoiceLine> lines)
+    {
+        if (lines == null || lines.Count == 0)
+        {
+            Status = InvoiceStatus.Pending;
+            return;
+        }
+
+        if (lines.All(l => l.Status == InvoiceLineStatus.Paid))
+        {
+            Status = InvoiceStatus.Paid;
+            PaidDate = DateTime.UtcNow;
+            return;
+        }
+
+        if (lines.Any(l => l.Status == InvoiceLineStatus.Partial || l.Status == InvoiceLineStatus.Paid))
+        {
+            Status = InvoiceStatus.Partial;
+            return;
+        }
+
+        Status = InvoiceStatus.Pending;
     }
 
     public void UpdateStatus(PaymentStatus paymentStatus)

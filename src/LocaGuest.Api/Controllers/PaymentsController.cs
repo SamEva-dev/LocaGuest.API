@@ -7,6 +7,8 @@ using LocaGuest.Application.Features.Payments.Queries.GetPaymentsByProperty;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentStats;
 using LocaGuest.Application.Features.Payments.Queries.GetOverduePayments;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentsDashboard;
+using LocaGuest.Application.Features.Documents.Commands.GeneratePaymentQuittance;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +21,16 @@ namespace LocaGuest.Api.Controllers;
 public class PaymentsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PaymentsController> _logger;
 
-    public PaymentsController(IMediator mediator, ILogger<PaymentsController> logger)
+    public PaymentsController(
+        IMediator mediator,
+        IUnitOfWork unitOfWork,
+        ILogger<PaymentsController> logger)
     {
         _mediator = mediator;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -225,5 +232,47 @@ public class PaymentsController : ControllerBase
         }
 
         return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get (or generate) the quittance PDF for a payment
+    /// </summary>
+    [HttpGet("{paymentId:guid}/quittance")]
+    public async Task<IActionResult> GetPaymentQuittance(Guid paymentId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payment = await _unitOfWork.Payments.GetByIdAsync(paymentId, cancellationToken);
+            if (payment == null)
+                return NotFound(new { message = "Payment not found" });
+
+            if (!payment.IsPaid() || !payment.PaymentDate.HasValue)
+                return BadRequest(new { message = "Payment must be paid to generate a quittance" });
+
+            if (!payment.ReceiptId.HasValue)
+            {
+                var gen = await _mediator.Send(new GeneratePaymentQuittanceCommand { PaymentId = payment.Id }, cancellationToken);
+                if (!gen.IsSuccess)
+                    return BadRequest(new { message = gen.ErrorMessage });
+            }
+
+            if (!payment.ReceiptId.HasValue)
+                return BadRequest(new { message = "Receipt not available" });
+
+            var doc = await _unitOfWork.Documents.GetByIdAsync(payment.ReceiptId.Value, cancellationToken);
+            if (doc == null)
+                return NotFound(new { message = "Quittance document not found" });
+
+            if (!System.IO.File.Exists(doc.FilePath))
+                return NotFound(new { message = "Quittance file not found on disk" });
+
+            var bytes = await System.IO.File.ReadAllBytesAsync(doc.FilePath, cancellationToken);
+            return File(bytes, "application/pdf", doc.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting quittance for payment {PaymentId}", paymentId);
+            return StatusCode(500, new { message = "Error getting quittance", error = ex.Message });
+        }
     }
 }

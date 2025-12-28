@@ -49,10 +49,12 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<PropertyImage> PropertyImages => Set<PropertyImage>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<ContractParticipant> ContractParticipants => Set<ContractParticipant>();
     public DbSet<Addendum> Addendums => Set<Addendum>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Domain.Aggregates.PaymentAggregate.Payment> Payments => Set<Domain.Aggregates.PaymentAggregate.Payment>();
     public DbSet<RentInvoice> RentInvoices => Set<RentInvoice>();
+    public DbSet<LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoiceLine> RentInvoiceLines => Set<LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoiceLine>();
     public DbSet<InventoryEntry> InventoryEntries => Set<InventoryEntry>();
     public DbSet<InventoryExit> InventoryExits => Set<InventoryExit>();
     public DbSet<UserSettings> UserSettings => Set<UserSettings>();
@@ -610,6 +612,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Apply custom entity configurations
         modelBuilder.ApplyConfiguration(new Persistence.Configurations.PaymentConfiguration());
         modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceLineConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.ContractParticipantConfiguration());
     }
     
     /// <summary>
@@ -624,6 +628,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             typeof(Property),
             typeof(Tenant),
             typeof(Contract),
+            typeof(ContractParticipant),
             typeof(Document),
             typeof(InventoryEntry),
             typeof(InventoryExit),

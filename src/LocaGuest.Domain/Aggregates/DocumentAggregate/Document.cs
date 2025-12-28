@@ -215,6 +215,9 @@ public enum DocumentType
     
     /// <summary>Quittance de loyer</summary>
     Quittance,
+
+    /// <summary>Facture de loyer</summary>
+    Facture,
     
     /// <summary>Avenant au contrat</summary>
     Avenant,
@@ -260,6 +263,9 @@ public enum DocumentCategory
     
     /// <summary>Quittances de loyer</summary>
     Quittances,
+
+    /// <summary>Factures de loyer</summary>
+    Factures,
     
     /// <summary>Autres documents</summary>
     Autres

@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using System.Text.Json;
 using MediatR;
 
 namespace LocaGuest.Application.Features.Contracts.Commands.CreateAddendum;
@@ -39,9 +40,9 @@ public record CreateAddendumCommand : IRequest<Result<Guid>>
     
     // ========== MODIFICATIONS OCCUPANTS ==========
     /// <summary>
-    /// JSON des modifications d'occupants
+    /// Modifications d'occupants (DTO structuré) - sera sérialisé en JSON dans l'entité Addendum
     /// </summary>
-    public string? OccupantChanges { get; init; }
+    public JsonElement? OccupantChanges { get; init; }
     
     // ========== MODIFICATIONS CHAMBRE ==========
     public Guid? NewRoomId { get; init; }

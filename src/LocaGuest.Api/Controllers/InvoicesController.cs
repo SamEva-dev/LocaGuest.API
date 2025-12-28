@@ -1,9 +1,11 @@
 using LocaGuest.Application.Features.Invoices.Commands.GenerateMonthlyInvoices;
+using LocaGuest.Application.Features.Invoices.Commands.GenerateInvoicePdf;
 using LocaGuest.Application.Features.Invoices.Commands.MarkInvoiceAsPaid;
 using LocaGuest.Application.Features.Invoices.Queries.ExportInvoices;
 using LocaGuest.Application.Features.Invoices.Queries.GetFinancialStats;
 using LocaGuest.Application.Features.Invoices.Queries.GetInvoicesByTenant;
 using LocaGuest.Application.Features.Invoices.Queries.GetOverdueInvoices;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +19,13 @@ public class InvoicesController : ControllerBase
 {
     private readonly ILogger<InvoicesController> _logger;
     private readonly IMediator _mediator;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public InvoicesController(ILogger<InvoicesController> logger, IMediator mediator)
+    public InvoicesController(ILogger<InvoicesController> logger, IMediator mediator, IUnitOfWork unitOfWork)
     {
         _logger = logger;
         _mediator = mediator;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -124,6 +128,59 @@ public class InvoicesController : ControllerBase
             return BadRequest(new { error = result.ErrorMessage });
 
         return Ok(new { message = "Facture marquée comme payée avec succès" });
+    }
+
+    /// <summary>
+    /// Get (or generate) the invoice PDF for a rent invoice
+    /// </summary>
+    [HttpGet("{invoiceId:guid}/pdf")]
+    public async Task<IActionResult> GetInvoicePdf(Guid invoiceId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var invoice = await _unitOfWork.RentInvoices.GetByIdAsync(invoiceId, cancellationToken);
+            if (invoice == null)
+                return NotFound(new { message = "Invoice not found" });
+
+            if (!invoice.InvoiceDocumentId.HasValue)
+            {
+                var gen = await _mediator.Send(new GenerateInvoicePdfCommand(invoice.Id), cancellationToken);
+                if (!gen.IsSuccess)
+                    return BadRequest(new { message = gen.ErrorMessage });
+            }
+
+            if (!invoice.InvoiceDocumentId.HasValue)
+                return BadRequest(new { message = "Invoice PDF not available" });
+
+            var doc = await _unitOfWork.Documents.GetByIdAsync(invoice.InvoiceDocumentId.Value, cancellationToken);
+            if (doc == null)
+                return NotFound(new { message = "Invoice document not found" });
+
+            if (!System.IO.File.Exists(doc.FilePath))
+                return NotFound(new { message = "Invoice file not found on disk" });
+
+            var bytes = await System.IO.File.ReadAllBytesAsync(doc.FilePath, cancellationToken);
+            return File(bytes, "application/pdf", doc.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting invoice PDF for invoice {InvoiceId}", invoiceId);
+            return StatusCode(500, new { message = "Error getting invoice PDF", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Force invoice PDF generation (returns documentId)
+    /// </summary>
+    [HttpPost("{invoiceId:guid}/generate-pdf")]
+    public async Task<IActionResult> GenerateInvoicePdf(Guid invoiceId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateInvoicePdfCommand(invoiceId), cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(new { documentId = result.Data });
     }
 }
 

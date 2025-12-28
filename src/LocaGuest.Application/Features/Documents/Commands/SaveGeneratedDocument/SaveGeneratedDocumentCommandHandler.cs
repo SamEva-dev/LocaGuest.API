@@ -33,7 +33,12 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            var hasJwtTenant = _tenantContext.IsAuthenticated && _tenantContext.TenantId != null;
+            var effectiveOrganizationId = hasJwtTenant
+                ? _tenantContext.TenantId!.Value
+                : request.OrganizationId;
+
+            if (!effectiveOrganizationId.HasValue)
             {
                 return Result.Failure<DocumentDto>("User not authenticated");
             }
@@ -51,7 +56,7 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
 
             // Generate code
             var code = await _numberSequenceService.GenerateNextCodeAsync(
-                _tenantContext.TenantId.Value,
+                effectiveOrganizationId.Value,
                 EntityPrefixes.Document,
                 cancellationToken);
 
@@ -66,6 +71,12 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 tenantId: request.TenantId,
                 propertyId: request.PropertyId,
                 description: request.Description);
+
+            // Background jobs may not have a JWT tenant context; still persist TenantId for query filters.
+            if (!hasJwtTenant)
+            {
+                document.TenantId = effectiveOrganizationId.Value.ToString();
+            }
 
             document.SetCode(code);
 

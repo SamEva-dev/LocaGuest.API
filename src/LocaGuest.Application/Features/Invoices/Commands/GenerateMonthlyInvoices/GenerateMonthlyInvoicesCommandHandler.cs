@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
@@ -11,13 +12,16 @@ namespace LocaGuest.Application.Features.Invoices.Commands.GenerateMonthlyInvoic
 public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMonthlyInvoicesCommand, Result<GenerateInvoicesResultDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
     private readonly ILogger<GenerateMonthlyInvoicesCommandHandler> _logger;
 
     public GenerateMonthlyInvoicesCommandHandler(
         IUnitOfWork unitOfWork,
+        IEffectiveContractStateResolver effectiveContractStateResolver,
         ILogger<GenerateMonthlyInvoicesCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
         _logger = logger;
     }
 
@@ -42,6 +46,14 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
             {
                 try
                 {
+                    var effectiveStateResult = await _effectiveContractStateResolver
+                        .ResolveAsync(contract.Id, targetDate, cancellationToken);
+
+                    if (!effectiveStateResult.IsSuccess || effectiveStateResult.Data == null)
+                        throw new InvalidOperationException(effectiveStateResult.ErrorMessage ?? "Unable to resolve effective contract state");
+
+                    var state = effectiveStateResult.Data;
+
                     // Check if invoice already exists for this contract/month/year
                     var existingInvoice = await _unitOfWork.RentInvoices
                         .GetByMonthYearAsync(contract.Id, request.Month, request.Year, cancellationToken);
@@ -54,21 +66,106 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                         continue;
                     }
 
-                    // Calculate due date (5th of the month)
-                    var dueDate = new DateTime(request.Year, request.Month, 5, 0, 0, 0, DateTimeKind.Utc);
+                    // Calculate due date (contract.PaymentDueDay of the month)
+                    var daysInMonth = DateTime.DaysInMonth(request.Year, request.Month);
+                    var dueDay = Math.Clamp(contract.PaymentDueDay, 1, daysInMonth);
+                    var dueDate = new DateTime(request.Year, request.Month, dueDay, 0, 0, 0, DateTimeKind.Utc);
 
-                    // Create new invoice
+                    var totalAmount = state.Rent + state.Charges;
+
+                    // Create new invoice (header)
                     var invoice = RentInvoice.Create(
                         contract.Id,
                         contract.RenterTenantId,
                         contract.PropertyId,
                         request.Month,
                         request.Year,
-                        contract.Rent + contract.Charges,
+                        totalAmount,
                         dueDate
                     );
 
+                    // Ensure multi-tenant isolation tenant id is set even in background jobs
+                    ((LocaGuest.Domain.Common.AuditableEntity)invoice).TenantId = contract.TenantId;
+
                     await _unitOfWork.RentInvoices.AddAsync(invoice, cancellationToken);
+
+                    // Create invoice line(s) - per effective participant
+                    var participants = state.Participants;
+                    if (participants == null || participants.Count == 0)
+                        throw new InvalidOperationException("No effective participants for invoice generation");
+
+                    var fixedParticipants = participants.Where(p => p.ShareType == BillingShareType.FixedAmount).ToList();
+                    var percentParticipants = participants.Where(p => p.ShareType == BillingShareType.Percentage).ToList();
+
+                    var fixedSum = fixedParticipants.Sum(p => p.ShareValue);
+                    if (fixedSum < 0m)
+                        throw new InvalidOperationException("Invalid fixed share sum");
+
+                    if (fixedSum > totalAmount)
+                        throw new InvalidOperationException("Fixed amount shares exceed invoice total");
+
+                    var remainingForPercent = totalAmount - fixedSum;
+                    var percentSum = percentParticipants.Sum(p => p.ShareValue);
+
+                    if (percentParticipants.Count > 0)
+                    {
+                        if (percentSum <= 0m)
+                            throw new InvalidOperationException("Percentage shares must sum to a positive value");
+
+                        if (percentSum > 100m)
+                            throw new InvalidOperationException("Percentage shares exceed 100%");
+                    }
+
+                    var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
+
+                    foreach (var p in fixedParticipants)
+                    {
+                        lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                    }
+
+                    if (percentParticipants.Count > 0)
+                    {
+                        foreach (var p in percentParticipants)
+                        {
+                            var amount = remainingForPercent * (p.ShareValue / 100m);
+                            lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                        }
+
+                        var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
+                        var diff = Math.Round(remainingForPercent - computed, 2, MidpointRounding.AwayFromZero);
+                        if (diff != 0m)
+                        {
+                            var lastIndex = lineAmounts.FindLastIndex(x => x.shareType == BillingShareType.Percentage);
+                            if (lastIndex >= 0)
+                            {
+                                var last = lineAmounts[lastIndex];
+                                lineAmounts[lastIndex] = (last.tenantId, last.shareType, last.shareValue, last.amountDue + diff);
+                            }
+                        }
+                    }
+
+                    foreach (var la in lineAmounts)
+                    {
+                        if (la.amountDue < 0m)
+                            throw new InvalidOperationException("Computed line amount cannot be negative");
+
+                        var line = RentInvoiceLine.Create(
+                            rentInvoiceId: invoice.Id,
+                            tenantId: la.tenantId,
+                            amountDue: la.amountDue,
+                            shareType: la.shareType,
+                            shareValue: la.shareValue);
+
+                        // Ensure multi-tenant isolation tenant id is set even in background jobs
+                        ((LocaGuest.Domain.Common.AuditableEntity)line).TenantId = contract.TenantId;
+
+                        await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
+                    }
+
+                    var allLinesAmount = lineAmounts.Sum(x => x.amountDue);
+                    if (Math.Round(allLinesAmount - totalAmount, 2, MidpointRounding.AwayFromZero) != 0m)
+                        throw new InvalidOperationException("Sum of invoice lines does not match invoice total");
+
                     generatedCount++;
 
                     _logger.LogInformation("Invoice generated for contract {ContractId} for {Month}/{Year}", 

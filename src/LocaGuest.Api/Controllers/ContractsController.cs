@@ -22,6 +22,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -507,7 +508,7 @@ public class ContractsController : ControllerBase
         decimal? NewRent,
         decimal? NewCharges,
         DateTime? NewEndDate,
-        string? OccupantChanges,
+        JsonElement? OccupantChanges,
         Guid? NewRoomId,
         string? NewClauses,
         List<Guid>? AttachedDocumentIds,

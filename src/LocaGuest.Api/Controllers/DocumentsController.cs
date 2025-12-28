@@ -804,10 +804,15 @@ public class DocumentsController : ControllerBase
             // Si le document est lié à un contrat, vérifier son statut
             if (document.ContractId.HasValue)
             {
-                var contract = await _unitOfWork.Contracts.GetByIdAsync(document.ContractId.Value, cancellationToken);
-                if (contract != null && contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Draft)
+                // ✅ Autoriser l'envoi des avenants même si le contrat est Active/Signed.
+                // La restriction ne s'applique qu'aux documents de bail (contrat).
+                if (document.Type != Domain.Aggregates.DocumentAggregate.DocumentType.Avenant)
                 {
-                    return BadRequest(new { message = "Only draft contracts can be sent for signature" });
+                    var contract = await _unitOfWork.Contracts.GetByIdAsync(document.ContractId.Value, cancellationToken);
+                    if (contract != null && contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Draft)
+                    {
+                        return BadRequest(new { message = "Only draft contracts can be sent for signature" });
+                    }
                 }
             }
 

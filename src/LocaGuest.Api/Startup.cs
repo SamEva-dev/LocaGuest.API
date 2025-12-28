@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using LocaGuest.Infrastructure.Jobs;
 using System.Security.Cryptography;
+using System.Security.Claims;
 
 namespace LocaGuest.Api;
 
@@ -85,6 +86,7 @@ public class Startup
         services.AddScoped<LocaGuest.Application.Services.IStripeService, LocaGuest.Infrastructure.Services.StripeService>();
         services.AddScoped<LocaGuest.Application.Services.IAuditService, LocaGuest.Infrastructure.Services.AuditService>();
         services.AddScoped<LocaGuest.Application.Services.ITrackingService, LocaGuest.Infrastructure.Services.TrackingService>();
+        services.AddScoped<LocaGuest.Application.Services.IEffectiveContractStateResolver, LocaGuest.Application.Services.EffectiveContractStateResolver>();
 
         // Email Service
         services.Configure<LocaGuest.Infrastructure.Email.EmailSettings>(Configuration.GetSection("EmailSettings"));
@@ -235,9 +237,22 @@ public class Startup
                     },
                     OnTokenValidated = context =>
                     {
-                        var userId = context.Principal?.FindFirst("sub")?.Value;
-                        var email = context.Principal?.FindFirst("email")?.Value;
-                        Log.Debug("JWT Token validated - User: {UserId} ({Email})", userId, email);
+                        var principal = context.Principal;
+
+                        var userId = principal?.FindFirst("sub")?.Value
+                                     ?? principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                     ?? principal?.FindFirst("nameid")?.Value
+                                     ?? principal?.FindFirst("userId")?.Value;
+
+                        var email = principal?.FindFirst("email")?.Value
+                                    ?? principal?.FindFirst(ClaimTypes.Email)?.Value
+                                    ?? principal?.FindFirst("upn")?.Value;
+
+                        // Avoid log spam when tokens don't carry these claims
+                        if (!string.IsNullOrWhiteSpace(userId) || !string.IsNullOrWhiteSpace(email))
+                        {
+                            Log.Debug("JWT Token validated - User: {UserId} ({Email})", userId, email);
+                        }
                         return Task.CompletedTask;
                     }
                 };

@@ -1,10 +1,13 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocument;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace LocaGuest.Application.Features.Contracts.Commands.CreateAddendum;
 
@@ -12,15 +15,21 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
+    private readonly ITenantContext _tenantContext;
+    private readonly IMediator _mediator;
     private readonly ILogger<CreateAddendumCommandHandler> _logger;
 
     public CreateAddendumCommandHandler(
         IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
+        ITenantContext tenantContext,
+        IMediator mediator,
         ILogger<CreateAddendumCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _tenantContext = tenantContext;
+        _mediator = mediator;
         _logger = logger;
     }
 
@@ -108,7 +117,9 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
                     break;
 
                 case AddendumType.Occupants:
-                    if (string.IsNullOrWhiteSpace(request.OccupantChanges))
+                    if (!request.OccupantChanges.HasValue
+                        || request.OccupantChanges.Value.ValueKind == JsonValueKind.Undefined
+                        || request.OccupantChanges.Value.ValueKind == JsonValueKind.Null)
                         return Result.Failure<Guid>("Occupants addendum requires occupant changes details");
                     break;
 
@@ -172,7 +183,7 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
                     break;
 
                 case AddendumType.Occupants:
-                    addendum.SetOccupantChanges(request.OccupantChanges!);
+                    addendum.SetOccupantChanges(JsonSerializer.Serialize(request.OccupantChanges!.Value));
                     break;
 
                 case AddendumType.Clauses:
@@ -190,9 +201,41 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             }
 
             // ✅ Attacher documents et notes
-            if (request.AttachedDocumentIds.Any())
+            var attachedDocuments = request.AttachedDocumentIds?.ToList() ?? new List<Guid>();
+
+            // Create a draft Avenant document so it appears like other draft contract documents
+            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+                return Result.Failure<Guid>("User not authenticated");
+
+            var fileName = $"Avenant_{contract.Code}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
+            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _tenantContext.TenantId.Value.ToString(), fileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            // Placeholder PDF content (will be replaced by a real generator)
+            var placeholder = System.Text.Encoding.UTF8.GetBytes($"AVENANT DRAFT\nContract: {contract.Code}\nDate: {DateTime.UtcNow:O}");
+            await File.WriteAllBytesAsync(filePath, placeholder, cancellationToken);
+
+            var saveDoc = new SaveGeneratedDocumentCommand
             {
-                addendum.AttachDocuments(request.AttachedDocumentIds);
+                FileName = fileName,
+                FilePath = filePath,
+                Type = DocumentType.Avenant.ToString(),
+                Category = DocumentCategory.Contrats.ToString(),
+                FileSizeBytes = placeholder.Length,
+                ContractId = contract.Id,
+                TenantId = contract.RenterTenantId,
+                PropertyId = contract.PropertyId,
+                Description = $"Avenant (draft) - {addendumType} - {request.EffectiveDate:yyyy-MM-dd}"
+            };
+
+            var savedDoc = await _mediator.Send(saveDoc, cancellationToken);
+            if (!savedDoc.IsSuccess || savedDoc.Data == null)
+                return Result.Failure<Guid>(savedDoc.ErrorMessage ?? "Unable to save addendum document");
+
+            attachedDocuments.Add(savedDoc.Data.Id);
+            if (attachedDocuments.Any())
+            {
+                addendum.AttachDocuments(attachedDocuments.Distinct().ToList());
             }
 
             if (!string.IsNullOrWhiteSpace(request.Notes))
@@ -204,45 +247,6 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             if (!request.RequireSignature)
             {
                 addendum.MarkAsSigned();
-            }
-
-            // ========== 5. APPLIQUER LES MODIFICATIONS AU CONTRAT ==========
-            
-            // Si l'avenant est signé et la date d'effet est aujourd'hui, appliquer immédiatement
-            if (addendum.SignatureStatus == AddendumSignatureStatus.Signed && 
-                request.EffectiveDate.Date <= DateTime.UtcNow.Date)
-            {
-                switch (addendumType)
-                {
-                    case AddendumType.Financial:
-                        if (request.NewRent.HasValue || request.NewCharges.HasValue)
-                        {
-                            contract.ApplyFinancialAddendum(
-                                newRent: request.NewRent ?? contract.Rent,
-                                newCharges: request.NewCharges ?? contract.Charges
-                            );
-                        }
-                        break;
-
-                    case AddendumType.Duration:
-                        if (request.NewEndDate.HasValue)
-                        {
-                            contract.ApplyDurationAddendum(request.NewEndDate.Value);
-                        }
-                        break;
-
-                    case AddendumType.Clauses:
-                        if (!string.IsNullOrWhiteSpace(request.NewClauses))
-                        {
-                            contract.ApplyClausesAddendum(request.NewClauses);
-                        }
-                        break;
-                }
-
-                if (request.NewRoomId.HasValue)
-                {
-                    contract.ApplyRoomAddendum(request.NewRoomId.Value);
-                }
             }
 
             // ========== 6. AJOUTER L'AVENANT AU CONTRAT ==========

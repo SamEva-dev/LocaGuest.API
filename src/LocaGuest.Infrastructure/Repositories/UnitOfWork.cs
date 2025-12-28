@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork
     private IPropertyRepository? _properties;
     private IPropertyImageRepository? _propertyImages;
     private IContractRepository? _contracts;
+    private IContractParticipantRepository? _contractParticipants;
     private IAddendumRepository? _addendums;
     private ITenantRepository? _tenants;
     private ITeamMemberRepository? _teamMembers;
@@ -24,6 +25,7 @@ public class UnitOfWork : IUnitOfWork
     private IOrganizationRepository? _organizations;
     private IPaymentRepository? _payments;
     private IRentInvoiceRepository? _rentInvoices;
+    private IRentInvoiceLineRepository? _rentInvoiceLines;
     private IUserProfileRepository? _userProfiles;
     private IUserPreferencesRepository? _userPreferences;
     private INotificationSettingsRepository? _notificationSettings;
@@ -44,6 +46,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IContractRepository Contracts => 
         _contracts ??= new ContractRepository(_context);
+
+    public IContractParticipantRepository ContractParticipants =>
+        _contractParticipants ??= new ContractParticipantRepository(_context);
 
     public IAddendumRepository Addendums =>
         _addendums ??= new AddendumRepository(_context);
@@ -80,6 +85,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IRentInvoiceRepository RentInvoices => 
         _rentInvoices ??= new RentInvoiceRepository(_context);
+
+    public IRentInvoiceLineRepository RentInvoiceLines =>
+        _rentInvoiceLines ??= new RentInvoiceLineRepository(_context);
 
     public IUserProfileRepository UserProfiles => 
         _userProfiles ??= new UserProfileRepository(_context);

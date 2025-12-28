@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Addendums;
 using LocaGuest.Application.Features.Addendums.Commands.DeleteAddendum;
+using LocaGuest.Application.Features.Addendums.Commands.MarkAddendumAsSigned;
 using LocaGuest.Application.Features.Addendums.Commands.UpdateAddendum;
 using LocaGuest.Application.Features.Addendums.Queries.GetAddendum;
 using LocaGuest.Application.Features.Addendums.Queries.GetAddendums;
@@ -131,4 +132,26 @@ public class AddendumsController : ControllerBase
 
         return Ok(new { message = "Addendum deleted successfully", id });
     }
+
+    [HttpPut("{id:guid}/mark-signed")]
+    public async Task<IActionResult> MarkSigned(Guid id, [FromBody] MarkAddendumAsSignedRequest? request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new MarkAddendumAsSignedCommand
+        {
+            AddendumId = id,
+            SignedDateUtc = request?.SignedDateUtc,
+            SignedBy = request?.SignedBy
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(new { message = "Addendum marked as signed", id = result.Data });
+    }
+
+    public record MarkAddendumAsSignedRequest(DateTime? SignedDateUtc, string? SignedBy);
 }

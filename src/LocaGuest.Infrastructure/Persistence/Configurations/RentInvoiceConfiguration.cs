@@ -38,6 +38,8 @@ public class RentInvoiceConfiguration : IEntityTypeConfiguration<RentInvoice>
 
         builder.Property(ri => ri.PaymentId);
 
+        builder.Property(ri => ri.InvoiceDocumentId);
+
         builder.Property(ri => ri.GeneratedAt)
             .IsRequired();
 

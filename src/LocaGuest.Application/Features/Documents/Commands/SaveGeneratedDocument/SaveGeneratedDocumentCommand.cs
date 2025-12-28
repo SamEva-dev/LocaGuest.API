@@ -11,6 +11,7 @@ public record SaveGeneratedDocumentCommand : IRequest<Result<DocumentDto>>
     public required string Type { get; init; }
     public required string Category { get; init; }
     public required long FileSizeBytes { get; init; }
+    public Guid? OrganizationId { get; init; }
     public Guid? ContractId { get; init; }
     public Guid? TenantId { get; init; }
     public Guid? PropertyId { get; init; }

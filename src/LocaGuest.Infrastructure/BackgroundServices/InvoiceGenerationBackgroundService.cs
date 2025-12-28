@@ -1,4 +1,6 @@
 using LocaGuest.Application.Features.Invoices.Commands.GenerateMonthlyInvoices;
+using LocaGuest.Application.Features.Invoices.Commands.GenerateInvoicePdf;
+using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -90,6 +92,19 @@ public class InvoiceGenerationBackgroundService : BackgroundService
             else
             {
                 _logger.LogError("Failed to generate invoices: {Error}", result.ErrorMessage);
+            }
+
+            // Then generate missing PDFs for current month invoices
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var currentInvoices = await unitOfWork.RentInvoices.GetCurrentMonthInvoicesAsync(cancellationToken);
+
+            foreach (var inv in currentInvoices.Where(i => !i.InvoiceDocumentId.HasValue))
+            {
+                var genPdf = await mediator.Send(new GenerateInvoicePdfCommand(inv.Id), cancellationToken);
+                if (!genPdf.IsSuccess)
+                {
+                    _logger.LogWarning("Failed to generate invoice PDF for {InvoiceId}: {Error}", inv.Id, genPdf.ErrorMessage);
+                }
             }
         }
         catch (Exception ex)

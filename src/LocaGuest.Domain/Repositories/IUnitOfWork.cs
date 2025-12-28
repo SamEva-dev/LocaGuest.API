@@ -11,6 +11,7 @@ public interface IUnitOfWork : IDisposable
     ITeamMemberRepository TeamMembers { get; }
     IInvitationTokenRepository InvitationTokens { get; }
     IContractRepository Contracts { get; }
+    IContractParticipantRepository ContractParticipants { get; }
     IAddendumRepository Addendums { get; }
     IInventoryEntryRepository InventoryEntries { get; }
     IInventoryExitRepository InventoryExits { get; }
@@ -20,6 +21,7 @@ public interface IUnitOfWork : IDisposable
     IOrganizationRepository Organizations { get; }
     IPaymentRepository Payments { get; }
     IRentInvoiceRepository RentInvoices { get; }
+    IRentInvoiceLineRepository RentInvoiceLines { get; }
     IUserProfileRepository UserProfiles { get; }
     IUserPreferencesRepository UserPreferences { get; }
     INotificationSettingsRepository NotificationSettings { get; }

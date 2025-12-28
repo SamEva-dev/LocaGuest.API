@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Payments;
+using LocaGuest.Application.Features.Documents.Commands.GeneratePaymentQuittance;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -13,15 +14,18 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdatePaymentCommandHandler> _logger;
     private readonly IEmailService _emailService;
+    private readonly IMediator _mediator;
 
     public UpdatePaymentCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<UpdatePaymentCommandHandler> logger,
-        IEmailService emailService)
+        IEmailService emailService,
+        IMediator mediator)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _emailService = emailService;
+        _mediator = mediator;
     }
 
     public async Task<Result<PaymentDto>> Handle(UpdatePaymentCommand request, CancellationToken cancellationToken)
@@ -67,18 +71,28 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
 
             if (invoice != null)
             {
-                invoice.UpdateStatus(payment.Status);
-                if (payment.IsPaid())
+                // Update corresponding invoice line for this tenant
+                var line = await _unitOfWork.RentInvoiceLines
+                    .GetByInvoiceTenantAsync(invoice.Id, payment.TenantId, cancellationToken);
+
+                if (line != null)
                 {
-                    invoice.MarkAsPaid(payment.Id);
+                    line.ApplyPayment(payment.Id, payment.AmountPaid, payment.PaymentDate);
                 }
-                else if (payment.Status == PaymentStatus.Partial)
-                {
-                    invoice.MarkAsPartial(payment.Id);
-                }
+
+                var lines = await _unitOfWork.RentInvoiceLines.GetByInvoiceIdAsync(invoice.Id, cancellationToken);
+                invoice.UpdateStatusFromLines(lines);
             }
 
             await _unitOfWork.CommitAsync(cancellationToken);
+
+            // Generate quittance if payment is fully paid and no receipt exists yet
+            if (payment.IsPaid() && payment.PaymentDate.HasValue && !payment.ReceiptId.HasValue)
+            {
+                await _mediator.Send(
+                    new GeneratePaymentQuittanceCommand { PaymentId = payment.Id },
+                    cancellationToken);
+            }
 
             _logger.LogInformation("Payment updated: {PaymentId}", paymentId);
 

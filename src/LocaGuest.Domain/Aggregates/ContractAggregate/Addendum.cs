@@ -112,7 +112,7 @@ public class Addendum : AuditableEntity
                 : effectiveDate.ToUniversalTime(),
             Reason = reason,
             Description = description,
-            SignatureStatus = AddendumSignatureStatus.Pending,
+            SignatureStatus = AddendumSignatureStatus.Draft,
             CreatedAt = DateTime.UtcNow
         };
     }
@@ -264,6 +264,7 @@ public enum AddendumType
 /// </summary>
 public enum AddendumSignatureStatus
 {
+    Draft = 0,          // Brouillon (avant envoi en signature)
     Pending = 1,        // En attente de signature
     Signed = 2,         // Signé
     Rejected = 3        // Refusé
