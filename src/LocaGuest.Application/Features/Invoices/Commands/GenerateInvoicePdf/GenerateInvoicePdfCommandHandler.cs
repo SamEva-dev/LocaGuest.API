@@ -111,6 +111,7 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
                 return Result.Failure<Guid>(saved.ErrorMessage ?? "Unable to save invoice document");
 
             invoice.AttachInvoiceDocument(saved.Data.Id);
+            _unitOfWork.RentInvoices.Update(invoice);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Invoice PDF generated for invoice {InvoiceId} -> document {DocumentId}", invoice.Id, saved.Data.Id);

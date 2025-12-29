@@ -31,6 +31,7 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
 
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
         _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("TEN-001");
 

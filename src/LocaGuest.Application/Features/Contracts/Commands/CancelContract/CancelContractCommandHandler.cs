@@ -43,10 +43,18 @@ public class CancelContractCommandHandler : IRequestHandler<CancelContractComman
             if (tenant == null)
                 return Result.Failure("Tenant not found");
 
-            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
-                && contract.RoomId.HasValue)
+            if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
+                if (!contract.RoomId.HasValue)
+                {
+                    return Result.Failure("Pour une colocation individuelle, RoomId est obligatoire.");
+                }
+
                 property.ReleaseRoom(contract.RoomId.Value);
+            }
+            else if (property.UsageType == PropertyUsageType.ColocationSolidaire)
+            {
+                property.ReleaseAllRooms();
             }
             else
             {

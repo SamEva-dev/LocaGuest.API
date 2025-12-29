@@ -38,11 +38,20 @@ public class MarkContractAsSignedCommandHandler : IRequestHandler<MarkContractAs
             contract.MarkAsSigned(request.SignedDate ?? DateTime.UtcNow);
             //contract.Activate();
 
-            // ✅ Pour colocation: passer la chambre de Reserved -> Occupied (met à jour OccupiedRooms/ReservedRooms)
-            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation) &&
-                contract.RoomId.HasValue)
+            // ✅ Pour colocation: réserver la/les chambres (Signed => Reserved)
+            if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
-                property.OccupyRoom(contract.RoomId.Value, contract.Id);
+                if (!contract.RoomId.HasValue)
+                {
+                    return Result.Failure("Pour une colocation individuelle, RoomId est obligatoire.");
+                }
+
+                property.ReserveRoom(contract.RoomId.Value, contract.Id);
+            }
+            else if (property.UsageType == PropertyUsageType.ColocationSolidaire)
+            {
+                // Colocation solidaire: 1 contrat => toutes les chambres réservées
+                property.ReserveAllRooms(contract.Id);
             }
 
             // TODO: Update property, tenant status and cancel other drafts via domain events

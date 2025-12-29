@@ -29,7 +29,7 @@ public class ExportInvoicesQueryHandler : IRequestHandler<ExportInvoicesQuery, R
             var query = _unitOfWork.RentInvoices.Query();
 
             if (request.TenantId.HasValue)
-                query = query.Where(i => i.TenantId == request.TenantId.Value);
+                query = query.Where(i => i.RenterTenantId == request.TenantId.Value);
 
             if (request.PropertyId.HasValue)
                 query = query.Where(i => i.PropertyId == request.PropertyId.Value);

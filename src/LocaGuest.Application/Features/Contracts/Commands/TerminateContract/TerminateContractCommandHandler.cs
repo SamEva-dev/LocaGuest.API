@@ -75,12 +75,20 @@ public class TerminateContractCommandHandler : IRequestHandler<TerminateContract
 
             // Mettre à jour le bien / chambres et le locataire
             // ========== BIEN / CHAMBRES ==========
-            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
-                && contract.RoomId.HasValue)
+            if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
+                if (!contract.RoomId.HasValue)
+                {
+                    return Result.Failure("Pour une colocation individuelle, RoomId est obligatoire.");
+                }
+
                 // Colocation individuelle: libérer la chambre
-              
                 property.ReleaseRoom(contract.RoomId.Value);
+            }
+            else if (property.UsageType == PropertyUsageType.ColocationSolidaire)
+            {
+                // Colocation solidaire: libérer toutes les chambres
+                property.ReleaseAllRooms();
             }
             else
             {

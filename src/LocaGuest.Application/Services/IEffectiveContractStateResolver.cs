@@ -6,6 +6,7 @@ namespace LocaGuest.Application.Services;
 public interface IEffectiveContractStateResolver
 {
     Task<Result<EffectiveContractState>> ResolveAsync(Guid contractId, DateTime dateUtc, CancellationToken cancellationToken = default);
+    Task<Result<EffectiveContractState>> ResolveForPeriodAsync(Guid contractId, DateTime periodStartUtc, DateTime periodEndUtc, CancellationToken cancellationToken = default);
 }
 
 public record EffectiveContractState(
@@ -21,7 +22,7 @@ public record EffectiveContractState(
     IReadOnlyList<Guid> AppliedAddendumIds);
 
 public record EffectiveContractParticipant(
-    Guid TenantId,
+    Guid RenterTenantId,
     BillingShareType ShareType,
     decimal ShareValue,
     DateTime StartDate,

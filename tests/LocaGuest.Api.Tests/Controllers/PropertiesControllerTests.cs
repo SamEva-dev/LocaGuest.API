@@ -199,10 +199,65 @@ public class PropertiesControllerTests : BaseTestFixture
         var propertyId = Fixture.Create<Guid>();
         var propertyName = Fixture.Create<string>();
         
-        var property = PropertyDtoBuilder.AProperty()
+        var baseProperty = PropertyDtoBuilder.AProperty()
             .WithId(propertyId)
             .WithName(propertyName)
             .Build();
+
+        var property = new PropertyDetailDto
+        {
+            Id = baseProperty.Id,
+            Code = baseProperty.Code,
+            Name = baseProperty.Name,
+            Address = baseProperty.Address,
+            City = baseProperty.City,
+            PostalCode = baseProperty.PostalCode,
+            Country = baseProperty.Country,
+            Type = baseProperty.Type,
+            PropertyUsageType = baseProperty.PropertyUsageType,
+            Surface = baseProperty.Surface,
+            Bedrooms = baseProperty.Bedrooms,
+            Bathrooms = baseProperty.Bathrooms,
+            Floor = baseProperty.Floor,
+            HasElevator = baseProperty.HasElevator,
+            HasParking = baseProperty.HasParking,
+            HasBalcony = baseProperty.HasBalcony,
+            Rent = baseProperty.Rent,
+            Charges = baseProperty.Charges,
+            Status = baseProperty.Status,
+            TotalRooms = baseProperty.TotalRooms,
+            OccupiedRooms = baseProperty.OccupiedRooms,
+            ReservedRooms = baseProperty.ReservedRooms,
+            Rooms = baseProperty.Rooms,
+            MinimumStay = baseProperty.MinimumStay,
+            MaximumStay = baseProperty.MaximumStay,
+            PricePerNight = baseProperty.PricePerNight,
+            DpeRating = baseProperty.DpeRating,
+            DpeValue = baseProperty.DpeValue,
+            GesRating = baseProperty.GesRating,
+            ElectricDiagnosticDate = baseProperty.ElectricDiagnosticDate,
+            ElectricDiagnosticExpiry = baseProperty.ElectricDiagnosticExpiry,
+            GasDiagnosticDate = baseProperty.GasDiagnosticDate,
+            GasDiagnosticExpiry = baseProperty.GasDiagnosticExpiry,
+            HasAsbestos = baseProperty.HasAsbestos,
+            AsbestosDiagnosticDate = baseProperty.AsbestosDiagnosticDate,
+            ErpZone = baseProperty.ErpZone,
+            PropertyTax = baseProperty.PropertyTax,
+            CondominiumCharges = baseProperty.CondominiumCharges,
+            PurchasePrice = baseProperty.PurchasePrice,
+            Insurance = baseProperty.Insurance,
+            ManagementFeesRate = baseProperty.ManagementFeesRate,
+            MaintenanceRate = baseProperty.MaintenanceRate,
+            VacancyRate = baseProperty.VacancyRate,
+            NightsBookedPerMonth = baseProperty.NightsBookedPerMonth,
+            CadastralReference = baseProperty.CadastralReference,
+            LotNumber = baseProperty.LotNumber,
+            AcquisitionDate = baseProperty.AcquisitionDate,
+            TotalWorksAmount = baseProperty.TotalWorksAmount,
+            CreatedAt = baseProperty.CreatedAt,
+            UpdatedAt = baseProperty.UpdatedAt,
+            ImageUrls = baseProperty.ImageUrls
+        };
 
         var result = Result.Success(property);
 
@@ -230,7 +285,7 @@ public class PropertiesControllerTests : BaseTestFixture
         // Arrange
         var propertyId = Guid.NewGuid();
         var errorMessage = "Property not found";
-        var result = Result.Failure<PropertyDto>(errorMessage);
+        var result = Result.Failure<PropertyDetailDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertyQuery>(q => q.Id == propertyId.ToString()), It.IsAny<CancellationToken>()))
@@ -251,7 +306,7 @@ public class PropertiesControllerTests : BaseTestFixture
         // Arrange
         var propertyId = Guid.NewGuid();
         var errorMessage = "Database connection failed";
-        var result = Result.Failure<PropertyDto>(errorMessage);
+        var result = Result.Failure<PropertyDetailDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertyQuery>(q => q.Id == propertyId.ToString()), It.IsAny<CancellationToken>()))

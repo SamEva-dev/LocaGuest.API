@@ -5,7 +5,7 @@ namespace LocaGuest.Domain.Aggregates.PaymentAggregate;
 public class RentInvoiceLine : AuditableEntity
 {
     public Guid RentInvoiceId { get; private set; }
-    public new Guid TenantId { get; private set; }
+    public Guid RenterTenantId { get; private set; }
 
     public decimal AmountDue { get; private set; }
     public decimal AmountPaid { get; private set; }
@@ -31,7 +31,7 @@ public class RentInvoiceLine : AuditableEntity
         {
             Id = Guid.NewGuid(),
             RentInvoiceId = rentInvoiceId,
-            TenantId = tenantId,
+            RenterTenantId = tenantId,
             AmountDue = amountDue,
             AmountPaid = 0m,
             Status = InvoiceLineStatus.Pending,

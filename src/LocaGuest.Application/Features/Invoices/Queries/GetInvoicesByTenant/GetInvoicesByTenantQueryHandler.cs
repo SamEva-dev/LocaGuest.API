@@ -27,7 +27,7 @@ public class GetInvoicesByTenantQueryHandler : IRequestHandler<GetInvoicesByTena
             var invoiceDtos = invoices.Select(i => new InvoiceDto(
                 i.Id,
                 i.ContractId,
-                i.TenantId,
+                i.RenterTenantId,
                 i.PropertyId,
                 i.Month,
                 i.Year,

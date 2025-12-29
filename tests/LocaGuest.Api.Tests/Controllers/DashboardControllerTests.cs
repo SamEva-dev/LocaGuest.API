@@ -3,6 +3,7 @@ using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
+using LocaGuest.Application.Features.Dashboard.Queries.GetDeadlines;
 using LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -175,10 +176,21 @@ public class DashboardControllerTests : BaseTestFixture
     #region GetDeadlines Tests
 
     [Fact]
-    public void GetDeadlines_ReturnsOkWithDeadlines()
+    public async Task GetDeadlines_ReturnsOkWithDeadlines()
     {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetDeadlinesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(new DeadlinesDto
+            {
+                UpcomingDeadlines = new List<DeadlineItem>
+                {
+                    new DeadlineItem { Type = "Rent", Title = "Test", Description = "Test", Date = DateTime.UtcNow, PropertyCode = "P1", TenantName = "T1" }
+                }
+            }));
+
         // Act
-        var result = _controller.GetDeadlines();
+        var result = await _controller.GetDeadlines();
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -187,10 +199,18 @@ public class DashboardControllerTests : BaseTestFixture
     }
 
     [Fact]
-    public void GetDeadlines_ReturnsEnumerableResult()
+    public async Task GetDeadlines_ReturnsEnumerableResult()
     {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetDeadlinesQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(new DeadlinesDto
+            {
+                UpcomingDeadlines = new List<DeadlineItem>()
+            }));
+
         // Act
-        var result = _controller.GetDeadlines();
+        var result = await _controller.GetDeadlines();
         var okResult = result as OkObjectResult;
 
         // Assert

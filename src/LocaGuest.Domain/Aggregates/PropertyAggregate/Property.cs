@@ -353,7 +353,7 @@ public class Property : AuditableEntity
             AssociatedTenantCodes.Add(tenantCode);
             
             // Mettre à jour le statut en fonction du type de bien
-            UpdateOccupancyStatus();
+            UpdateOccupancyStatus(PropertyStatus.Reserved);
         }
     }
     
@@ -365,13 +365,13 @@ public class Property : AuditableEntity
         AssociatedTenantCodes.Remove(tenantCode);
         
         // Mettre à jour le statut en fonction du type de bien
-        UpdateOccupancyStatus();
+        UpdateOccupancyStatus(PropertyStatus.Vacant);
     }
     
     /// <summary>
     /// Met à jour le statut d'occupation en fonction du type de bien et du nombre de locataires
     /// </summary>
-    public void UpdateOccupancyStatus()
+    private void UpdateOccupancyStatus(PropertyStatus status)
     {
         if (UsageType == PropertyUsageType.Colocation || UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.ColocationSolidaire)
         {
@@ -379,20 +379,7 @@ public class Property : AuditableEntity
             UpdateOccupancyStatusFromRooms();
             return;
         }
-
-        // Pour une location complète ou Airbnb
-        OccupiedRooms = AssociatedTenantCodes.Count;
-        ReservedRooms = 0;
-
-        if (OccupiedRooms > 0)
-        {
-            SetStatus(PropertyStatus.Active);
-            SetStatus(PropertyStatus.Occupied);
-        }
-        else
-        {
-            SetStatus(PropertyStatus.Vacant);
-        }
+        SetStatus(status);
     }
     
     /// <summary>
@@ -448,7 +435,7 @@ public class Property : AuditableEntity
 
     public bool IsAvailableForNewContract()
     {
-        if (UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.Colocation)
+        if (UsageType == PropertyUsageType.ColocationIndividual || UsageType == PropertyUsageType.Colocation || UsageType == PropertyUsageType.ColocationSolidaire)
         {
             return _rooms.Any(r => r.Status == PropertyRoomStatus.Available);
         }
@@ -495,7 +482,7 @@ public class Property : AuditableEntity
     /// </summary>
     public PropertyRoom AddRoom(string name, decimal rent, decimal? surface = null, decimal? charges = null, string? description = null)
     {
-        if (UsageType != PropertyUsageType.ColocationIndividual && UsageType != PropertyUsageType.Colocation)
+        if (UsageType != PropertyUsageType.ColocationIndividual && UsageType != PropertyUsageType.Colocation && UsageType != PropertyUsageType.ColocationSolidaire)
             throw new ValidationException("PROPERTY_NOT_COLOCATION", "Only colocation properties can have rooms");
             
         if (_rooms.Count >= (TotalRooms ?? 0))
@@ -562,6 +549,26 @@ public class Property : AuditableEntity
         room.Reserve(contractId);
         UpdateOccupancyStatusFromRooms();
     }
+
+    public void HoldRoom(Guid roomId, Guid contractId, DateTime holdUntilUtc)
+    {
+        var room = GetRoom(roomId);
+        if (room == null)
+            throw new ValidationException("ROOM_NOT_FOUND", "Room not found");
+
+        room.Hold(contractId, holdUntilUtc);
+        UpdateOccupancyStatusFromRooms();
+    }
+
+    public void ReserveAllRooms(Guid contractId)
+    {
+        foreach (var room in _rooms)
+        {
+            room.Reserve(contractId);
+        }
+
+        UpdateOccupancyStatusFromRooms();
+    }
     
     /// <summary>
     /// Marquer une chambre comme occupée (contrat actif)
@@ -573,6 +580,16 @@ public class Property : AuditableEntity
             throw new ValidationException("ROOM_NOT_FOUND", "Room not found");
             
         room.Occupy(contractId);
+        UpdateOccupancyStatusFromRooms();
+    }
+
+    public void OccupyAllRooms(Guid contractId)
+    {
+        foreach (var room in _rooms)
+        {
+            room.Occupy(contractId);
+        }
+
         UpdateOccupancyStatusFromRooms();
     }
     
@@ -588,13 +605,23 @@ public class Property : AuditableEntity
         room.Release();
         UpdateOccupancyStatusFromRooms();
     }
+
+    public void ReleaseAllRooms()
+    {
+        foreach (var room in _rooms)
+        {
+            room.Release();
+        }
+
+        UpdateOccupancyStatusFromRooms();
+    }
     
     /// <summary>
     /// Mettre à jour le statut d'occupation basé sur l'état des chambres
     /// </summary>
     private void UpdateOccupancyStatusFromRooms()
     {
-        if (UsageType != PropertyUsageType.ColocationIndividual && UsageType != PropertyUsageType.Colocation)
+        if (UsageType != PropertyUsageType.ColocationIndividual && UsageType != PropertyUsageType.Colocation && UsageType != PropertyUsageType.ColocationSolidaire)
             return;
              
         var occupiedCount = _rooms.Count(r => r.Status == PropertyRoomStatus.Occupied);
@@ -657,6 +684,6 @@ public enum PropertyUsageType
     Complete,              // Location complète du bien (1 seul contrat)
     ColocationIndividual,  // Colocation avec baux individuels (1 contrat par chambre)
     ColocationSolidaire,   // Colocation avec bail solidaire (1 contrat pour tous)
-    Colocation,
+    Colocation,// Colocation avec baux individuels (1 contrat par chambre)
     Airbnb                 // Location courte durée type Airbnb
 }

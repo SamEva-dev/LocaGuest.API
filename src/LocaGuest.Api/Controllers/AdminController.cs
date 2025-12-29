@@ -87,6 +87,14 @@ public class AdminController : ControllerBase
                     _logger.LogInformation("✅ Contracts deleted");
                 }
 
+                // 3. Invoiceq
+                if (_context.RentInvoices.Any())
+                {
+                    _context.RentInvoices.RemoveRange(_context.RentInvoices);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("✅ Rent Invoices deleted");
+                }
+
                 // 4. Documents
                 if (_context.Documents.Any())
                 {
@@ -174,7 +182,7 @@ public class AdminController : ControllerBase
                     { 
                         "InventoryExits", "InventoryEntries", "Payments", "Contracts", 
                         "Documents", "Properties", "PropertyRooms", "PropertyImages", "Tenants", "RentabilityScenarios",
-                        "InvitationTokens", "TeamMembers", "TenantSequences", "Organizations"
+                        "InvitationTokens", "TeamMembers", "TenantSequences", "Organizations", "RentInvoices"
                     }
                 });
             }
@@ -201,17 +209,63 @@ public class AdminController : ControllerBase
     {
         try
         {
+            var tenantId = User.FindFirst("tenant_id")?.Value ?? User.FindFirst("tenantId")?.Value;
+            var userId = User.FindFirst("sub")?.Value
+                         ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
             var stats = new
             {
-                Organizations = await _context.Organizations.CountAsync(),
-                Properties = await _context.Properties.CountAsync(),
-                Tenants = await _context.Tenants.CountAsync(),
-                Contracts = await _context.Contracts.CountAsync(),
-                Payments = await _context.Payments.CountAsync(),
-                Documents = await _context.Documents.CountAsync(),
-                InventoryEntries = await _context.InventoryEntries.CountAsync(),
-                InventoryExits = await _context.InventoryExits.CountAsync(),
-                RentabilityScenarios = await _context.RentabilityScenarios.CountAsync(),
+                Auth = new
+                {
+                    UserId = userId,
+                    TenantId = tenantId
+                },
+
+                Organizations = new
+                {
+                    Raw = await _context.Organizations.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Organizations.CountAsync()
+                },
+                Properties = new
+                {
+                    Raw = await _context.Properties.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Properties.CountAsync()
+                },
+                Tenants = new
+                {
+                    Raw = await _context.Tenants.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Tenants.CountAsync()
+                },
+                Contracts = new
+                {
+                    Raw = await _context.Contracts.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Contracts.CountAsync()
+                },
+                Payments = new
+                {
+                    Raw = await _context.Payments.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Payments.CountAsync()
+                },
+                Documents = new
+                {
+                    Raw = await _context.Documents.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Documents.CountAsync()
+                },
+                InventoryEntries = new
+                {
+                    Raw = await _context.InventoryEntries.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.InventoryEntries.CountAsync()
+                },
+                InventoryExits = new
+                {
+                    Raw = await _context.InventoryExits.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.InventoryExits.CountAsync()
+                },
+                RentabilityScenarios = new
+                {
+                    Raw = await _context.RentabilityScenarios.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.RentabilityScenarios.CountAsync()
+                },
                 
             };
 

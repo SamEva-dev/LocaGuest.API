@@ -58,7 +58,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
 
         var mappedParticipants = participants
             .Select(p => new EffectiveContractParticipant(
-                TenantId: p.TenantId,
+                RenterTenantId: p.RenterTenantId,
                 ShareType: p.ShareType,
                 ShareValue: p.ShareValue,
                 StartDate: p.StartDate,
@@ -68,7 +68,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
         if (mappedParticipants.Count == 0)
         {
             mappedParticipants.Add(new EffectiveContractParticipant(
-                TenantId: contract.RenterTenantId,
+                RenterTenantId: contract.RenterTenantId,
                 ShareType: Domain.Aggregates.PaymentAggregate.BillingShareType.Percentage,
                 ShareValue: 100m,
                 StartDate: contract.StartDate,
@@ -86,6 +86,57 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
             CustomClauses: clauses,
             Participants: mappedParticipants,
             AppliedAddendumIds: appliedAddendums);
+
+        return Result.Success(state);
+    }
+
+    public async Task<Result<EffectiveContractState>> ResolveForPeriodAsync(Guid contractId, DateTime periodStartUtc, DateTime periodEndUtc, CancellationToken cancellationToken = default)
+    {
+        var start = EnsureUtc(periodStartUtc);
+        var end = EnsureUtc(periodEndUtc);
+
+        if (end < start)
+            return Result.Failure<EffectiveContractState>("Invalid period: end must be greater than or equal to start");
+
+        var baseStateResult = await ResolveAsync(contractId, start, cancellationToken);
+        if (!baseStateResult.IsSuccess || baseStateResult.Data == null)
+            return baseStateResult;
+
+        var baseState = baseStateResult.Data;
+
+        var contract = await _unitOfWork.Contracts.Query()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == contractId, cancellationToken);
+
+        if (contract == null)
+            return Result.Failure<EffectiveContractState>("Contract not found");
+
+        var overlapping = await _unitOfWork.ContractParticipants
+            .GetOverlappingByContractIdAsync(contractId, start, end, cancellationToken);
+
+        var mappedParticipants = overlapping
+            .Select(p => new EffectiveContractParticipant(
+                RenterTenantId: p.RenterTenantId,
+                ShareType: p.ShareType,
+                ShareValue: p.ShareValue,
+                StartDate: p.StartDate,
+                EndDate: p.EndDate))
+            .ToList();
+
+        if (mappedParticipants.Count == 0)
+        {
+            mappedParticipants.Add(new EffectiveContractParticipant(
+                RenterTenantId: contract.RenterTenantId,
+                ShareType: Domain.Aggregates.PaymentAggregate.BillingShareType.Percentage,
+                ShareValue: 100m,
+                StartDate: contract.StartDate,
+                EndDate: null));
+        }
+
+        var state = baseState with
+        {
+            Participants = mappedParticipants
+        };
 
         return Result.Success(state);
     }

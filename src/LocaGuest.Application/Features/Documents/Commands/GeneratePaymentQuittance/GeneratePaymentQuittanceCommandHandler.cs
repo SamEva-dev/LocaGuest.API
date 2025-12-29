@@ -47,7 +47,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
             if (payment.ReceiptId.HasValue)
                 return Result.Success(payment.ReceiptId.Value);
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(payment.PropertyId, cancellationToken);
 
             if (tenant == null || property == null)
@@ -83,7 +83,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
                 Category = DocumentCategory.Quittances.ToString(),
                 FileSizeBytes = pdf.Length,
                 ContractId = payment.ContractId,
-                TenantId = payment.TenantId,
+                TenantId = payment.RenterTenantId,
                 PropertyId = payment.PropertyId,
                 Description = $"Quittance de loyer pour {monthLabel} - {payment.AmountPaid:N2}€"
             };

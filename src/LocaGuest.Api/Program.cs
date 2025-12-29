@@ -10,14 +10,117 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .CreateLogger();
+
 try
 {
     Log.Information("*** STARTUP ***");
 
     var builder = WebApplication.CreateBuilder(args);
 
+    static string ResolveHomeDirectory(string envVarName, string appFolderName)
+    {
+        var fromEnv = Environment.GetEnvironmentVariable(envVarName);
+        if (!string.IsNullOrWhiteSpace(fromEnv))
+        {
+            return fromEnv;
+        }
+
+        // Cross-OS fallback
+        var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrWhiteSpace(baseDir))
+        {
+            baseDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+
+        if (string.IsNullOrWhiteSpace(baseDir))
+        {
+            baseDir = AppContext.BaseDirectory;
+        }
+
+        var resolved = Path.Combine(baseDir, appFolderName);
+
+        // Best effort: set for current process so Serilog config / other code can reuse it.
+        Environment.SetEnvironmentVariable(envVarName, resolved, EnvironmentVariableTarget.Process);
+
+        return resolved;
+    }
+
+    static void ConfigureSerilogFilePaths(WebApplicationBuilder b, string homeEnvVar, string appFolder)
+    {
+        var home = ResolveHomeDirectory(homeEnvVar, appFolder);
+
+        var appLogPath = Path.Combine(home, "log", "Locaguest", "LocaguestApi_log.txt");
+        var efLogPath = Path.Combine(home, "log", "Locaguest", "EntityFramework", "EntityFramework_log.txt");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(appLogPath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(efLogPath)!);
+
+        b.Configuration["Serilog:WriteTo:1:Args:configureLogger:WriteTo:0:Args:path"] = appLogPath;
+        b.Configuration["Serilog:WriteTo:2:Args:configureLogger:WriteTo:0:Args:path"] = efLogPath;
+    }
+
+    ConfigureSerilogFilePaths(builder, "LOCAGUEST_HOME", "LocaGuest");
+
+    static string RedactPostgresConnectionString(string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return string.Empty;
+        }
+
+        // Best-effort redaction for logs
+        return System.Text.RegularExpressions.Regex.Replace(
+            connectionString,
+            @"(?i)(password)\s*=\s*[^;]+",
+            "$1=***");
+    }
+
+    static void LogEffectiveDatabaseTarget(WebApplicationBuilder b)
+    {
+        var provider = b.Configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
+        if (provider == "sqlite")
+        {
+            var cs = b.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=./Data/LocaGuest.db";
+            var dataSourcePrefix = "Data Source=";
+            var path = cs;
+            var idx = cs.IndexOf(dataSourcePrefix, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                path = cs[(idx + dataSourcePrefix.Length)..].Trim();
+            }
+
+            var fullPath = Path.GetFullPath(path);
+            Log.Information("Database Provider={Provider}; SQLite file={SqliteFile}", provider, fullPath);
+            return;
+        }
+
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        if (!string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            try
+            {
+                var uri = new Uri(databaseUrl.Split('?')[0]);
+                var dbName = uri.AbsolutePath.TrimStart('/');
+                Log.Information("Database Provider={Provider}; DATABASE_URL host={Host}; port={Port}; db={Db}", provider, uri.Host, uri.Port, dbName);
+                return;
+            }
+            catch
+            {
+                Log.Warning("Database Provider={Provider}; DATABASE_URL is set but could not be parsed", provider);
+            }
+        }
+
+        var pg = b.Configuration.GetConnectionString("Default") ?? string.Empty;
+        Log.Information("Database Provider={Provider}; ConnectionString(Default)={ConnectionString}", provider, RedactPostgresConnectionString(pg));
+    }
+
     // Serilog (from appsettings + env)
-    builder.Host.UseSerilog();
+    builder.Host.UseSerilog((ctx, services, loggerConfiguration) =>
+        loggerConfiguration
+            .ReadFrom.Configuration(ctx.Configuration)
+            .ReadFrom.Services(services));
+
+    LogEffectiveDatabaseTarget(builder);
 
     // Use Startup class for service configuration
     var startup = new Startup(builder.Configuration);

@@ -1,10 +1,12 @@
 using LocaGuest.Application.Features.Rooms.Commands.CreateRoom;
 using LocaGuest.Application.Features.Rooms.Commands.UpdateRoom;
 using LocaGuest.Application.Features.Rooms.Commands.DeleteRoom;
+using LocaGuest.Application.Features.Rooms.Commands.ChangeRoomStatus;
 using LocaGuest.Application.Features.Rooms.Commands.ReleaseRoom;
 using LocaGuest.Application.Features.Rooms.Queries.GetPropertyRooms;
 using LocaGuest.Application.Features.Rooms.Queries.GetRoom;
 using LocaGuest.Application.Features.Rooms.Queries.GetAvailableRooms;
+
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -208,6 +210,40 @@ public class RoomsController : ControllerBase
         _logger.LogInformation("Room released: {RoomId} from Property {PropertyId}", roomId, propertyId);
         return Ok(new { message = "Room released successfully" });
     }
+
+    /// <summary>
+    /// Changer le statut d'une chambre
+    /// POST /api/properties/{propertyId}/rooms/{roomId}/status
+    /// </summary>
+    [HttpPost("{roomId:guid}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangeRoomStatus(
+        Guid propertyId,
+        Guid roomId,
+        [FromBody] ChangeRoomStatusRequest request)
+    {
+        var command = new ChangeRoomStatusCommand
+        {
+            PropertyId = propertyId,
+            RoomId = roomId,
+            Status = request.Status,
+            ContractId = request.ContractId,
+            OnHoldUntilUtc = request.OnHoldUntilUtc
+        };
+
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new { message = result.ErrorMessage });
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
+    }
 }
 
 /// <summary>
@@ -230,4 +266,13 @@ public record UpdateRoomRequest(
     decimal? Surface,
     decimal? Charges,
     string? Description
+);
+
+/// <summary>
+/// Request pour changer le statut d'une chambre
+/// </summary>
+public record ChangeRoomStatusRequest(
+    string Status,
+    Guid? ContractId,
+    DateTime? OnHoldUntilUtc
 );

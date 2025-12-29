@@ -80,7 +80,7 @@ public class EmailNotificationBackgroundService : BackgroundService
             foreach (var payment in upcomingPayments)
             {
                 // Load tenant separately
-                var tenant = await unitOfWork.Tenants.GetByIdAsync(payment.TenantId, cancellationToken);
+                var tenant = await unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
                 if (tenant?.Email == null)
                     continue;
 
@@ -123,7 +123,7 @@ public class EmailNotificationBackgroundService : BackgroundService
             foreach (var payment in overduePayments)
             {
                 // Load tenant separately
-                var tenant = await unitOfWork.Tenants.GetByIdAsync(payment.TenantId, cancellationToken);
+                var tenant = await unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
                 if (tenant?.Email == null)
                     continue;
 

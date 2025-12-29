@@ -79,8 +79,8 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
                 .Select(p => new UpcomingPaymentDto
                 {
                     Id = p.Id,
-                    TenantId = p.TenantId,
-                    TenantName = tenantDict.GetValueOrDefault(p.TenantId, "Unknown"),
+                    TenantId = p.RenterTenantId,
+                    TenantName = tenantDict.GetValueOrDefault(p.RenterTenantId, "Unknown"),
                     PropertyId = p.PropertyId,
                     PropertyName = propertyDict.GetValueOrDefault(p.PropertyId, "Unknown"),
                     AmountDue = p.AmountDue,
@@ -97,8 +97,8 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
                 .Select(p => new OverduePaymentSummaryDto
                 {
                     Id = p.Id,
-                    TenantId = p.TenantId,
-                    TenantName = tenantDict.GetValueOrDefault(p.TenantId, "Unknown"),
+                    TenantId = p.RenterTenantId,
+                    TenantName = tenantDict.GetValueOrDefault(p.RenterTenantId, "Unknown"),
                     PropertyId = p.PropertyId,
                     PropertyName = propertyDict.GetValueOrDefault(p.PropertyId, "Unknown"),
                     AmountDue = p.AmountDue,

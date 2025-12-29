@@ -73,7 +73,7 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
             {
                 // Update corresponding invoice line for this tenant
                 var line = await _unitOfWork.RentInvoiceLines
-                    .GetByInvoiceTenantAsync(invoice.Id, payment.TenantId, cancellationToken);
+                    .GetByInvoiceTenantAsync(invoice.Id, payment.RenterTenantId, cancellationToken);
 
                 if (line != null)
                 {
@@ -97,7 +97,7 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
             _logger.LogInformation("Payment updated: {PaymentId}", paymentId);
 
             // Récupérer le tenant pour enrichir le DTO
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
 
             // Send email notification if payment is fully paid
             if (payment.IsPaid() && tenant?.Email != null && payment.PaymentDate.HasValue)
@@ -129,7 +129,7 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
             var dto = new PaymentDto
             {
                 Id = payment.Id,
-                TenantId = payment.TenantId,
+                TenantId = payment.RenterTenantId,
                 PropertyId = payment.PropertyId,
                 ContractId = payment.ContractId,
                 AmountDue = payment.AmountDue,

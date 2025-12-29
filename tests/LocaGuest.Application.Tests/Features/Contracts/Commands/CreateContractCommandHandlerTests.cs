@@ -5,6 +5,8 @@ using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using LocaGuest.Application.Services;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -36,6 +38,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
         _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("CTR-001");
@@ -54,6 +57,18 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         var propertyId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
 
+        var property = Property.Create(
+            name: "Test Property",
+            address: "1 Test Street",
+            city: "Test City",
+            type: PropertyType.Apartment,
+            usageType: PropertyUsageType.Complete,
+            rent: 1500m,
+            bedrooms: 2,
+            bathrooms: 1);
+
+        var tenant = Tenant.Create(fullName: "Test Tenant", email: "tenant@test.com");
+
         var command = new CreateContractCommand
         {
             PropertyId = propertyId,
@@ -65,12 +80,12 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         };
 
         _propertyRepositoryMock
-            .Setup(x => x.GetByIdAsync(propertyId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<Domain.Aggregates.PropertyAggregate.Property>());
+            .Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(property);
 
         _tenantRepositoryMock
             .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<Domain.Aggregates.TenantAggregate.Tenant>());
+            .ReturnsAsync(tenant);
 
         _unitOfWorkMock
             .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))

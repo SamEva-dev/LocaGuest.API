@@ -61,7 +61,7 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
                 paymentDtos.Add(new PaymentDto
                 {
                     Id = payment.Id,
-                    TenantId = payment.TenantId,
+                    TenantId = payment.RenterTenantId,
                     PropertyId = payment.PropertyId,
                     ContractId = payment.ContractId,
                     AmountDue = payment.AmountDue,

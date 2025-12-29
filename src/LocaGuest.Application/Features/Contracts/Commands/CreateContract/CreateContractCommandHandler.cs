@@ -150,7 +150,8 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                  property.UsageType == Domain.Aggregates.PropertyAggregate.PropertyUsageType.Colocation) &&
                 request.RoomId.HasValue)
             {
-                property.ReserveRoom(request.RoomId.Value, contract.Id);
+                var holdUntilUtc = DateTime.UtcNow.AddHours(24);
+                property.HoldRoom(request.RoomId.Value, contract.Id, holdUntilUtc);
             }
 
             _logger.LogInformation(

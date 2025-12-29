@@ -49,7 +49,7 @@ public class GetOverduePaymentsQueryHandler : IRequestHandler<GetOverduePayments
 
             if (request.TenantId.HasValue)
             {
-                overduePayments = overduePayments.Where(p => p.TenantId == request.TenantId.Value);
+                overduePayments = overduePayments.Where(p => p.RenterTenantId == request.TenantId.Value);
             }
 
             if (request.MaxDaysLate.HasValue)
@@ -67,7 +67,7 @@ public class GetOverduePaymentsQueryHandler : IRequestHandler<GetOverduePayments
             var paymentDtos = orderedPayments.Select(p => new PaymentDto
             {
                 Id = p.Id,
-                TenantId = p.TenantId,
+                TenantId = p.RenterTenantId,
                 PropertyId = p.PropertyId,
                 ContractId = p.ContractId,
                 AmountDue = p.AmountDue,

@@ -225,6 +225,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(r => r.Status).IsRequired();
             entity.Property(r => r.CurrentContractId);
             entity.HasIndex(r => r.CurrentContractId);
+            entity.Property(r => r.OnHoldUntilUtc);
+            entity.HasIndex(r => r.OnHoldUntilUtc);
             
             entity.Ignore(r => r.DomainEvents);
         });

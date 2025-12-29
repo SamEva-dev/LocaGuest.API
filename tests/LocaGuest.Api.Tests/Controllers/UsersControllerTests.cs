@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
+using MediatR;
 using System.Net;
 using Xunit;
 
@@ -14,6 +15,7 @@ namespace LocaGuest.Api.Tests.Controllers;
 public class UsersControllerTests : BaseTestFixture
 {
     private readonly Mock<ILogger<UsersController>> _loggerMock;
+    private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly UsersController _controller;
@@ -21,6 +23,7 @@ public class UsersControllerTests : BaseTestFixture
     public UsersControllerTests()
     {
         _loggerMock = new Mock<ILogger<UsersController>>();
+        _mediatorMock = new Mock<IMediator>();
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
 
@@ -33,7 +36,7 @@ public class UsersControllerTests : BaseTestFixture
             .Setup(f => f.CreateClient("AuthGateApi"))
             .Returns(httpClient);
 
-        _controller = new UsersController(_loggerMock.Object);
+        _controller = new UsersController(_loggerMock.Object, _mediatorMock.Object);
     }
 
     #region GetAllUsers Tests

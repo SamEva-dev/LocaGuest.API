@@ -31,6 +31,7 @@ public class CreatePropertyCommandHandlerTests : BaseApplicationTestFixture
 
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
         _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("PROP-001");
 
@@ -51,6 +52,7 @@ public class CreatePropertyCommandHandlerTests : BaseApplicationTestFixture
             Address = Fixture.Create<string>(),
             City = Fixture.Create<string>(),
             Type = "Apartment",
+            PropertyUsageType = "Complete",
             Rent = 1500m,
             Bedrooms = 2,
             Bathrooms = 1

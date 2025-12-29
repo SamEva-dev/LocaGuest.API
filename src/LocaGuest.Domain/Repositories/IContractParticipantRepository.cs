@@ -6,4 +6,5 @@ public interface IContractParticipantRepository : IRepository<ContractParticipan
 {
     Task<List<ContractParticipant>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
     Task<List<ContractParticipant>> GetEffectiveByContractIdAtDateAsync(Guid contractId, DateTime dateUtc, CancellationToken cancellationToken = default);
+    Task<List<ContractParticipant>> GetOverlappingByContractIdAsync(Guid contractId, DateTime periodStartUtc, DateTime periodEndUtc, CancellationToken cancellationToken = default);
 }

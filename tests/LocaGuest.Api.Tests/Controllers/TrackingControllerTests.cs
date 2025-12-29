@@ -2,6 +2,7 @@ using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
 using LocaGuest.Application.Services;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,14 +13,16 @@ namespace LocaGuest.Api.Tests.Controllers;
 public class TrackingControllerTests : BaseTestFixture
 {
     private readonly Mock<ITrackingService> _trackingServiceMock;
+    private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<TrackingController>> _loggerMock;
     private readonly TrackingController _controller;
 
     public TrackingControllerTests()
     {
         _trackingServiceMock = new Mock<ITrackingService>();
+        _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<TrackingController>>();
-        _controller = new TrackingController(_trackingServiceMock.Object, _loggerMock.Object);
+        _controller = new TrackingController(_trackingServiceMock.Object, _mediatorMock.Object, _loggerMock.Object);
     }
 
     [Fact]

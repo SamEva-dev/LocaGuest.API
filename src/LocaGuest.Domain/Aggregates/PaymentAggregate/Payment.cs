@@ -8,7 +8,7 @@ namespace LocaGuest.Domain.Aggregates.PaymentAggregate;
 /// </summary>
 public class Payment : AuditableEntity
 {
-    public new Guid TenantId { get; private set; }
+    public Guid RenterTenantId { get; private set; }
     public Guid PropertyId { get; private set; }
     public Guid ContractId { get; private set; }
     
@@ -78,7 +78,7 @@ public class Payment : AuditableEntity
         var payment = new Payment
         {
             Id = Guid.NewGuid(),
-            TenantId = tenantId,
+            RenterTenantId = tenantId,
             PropertyId = propertyId,
             ContractId = contractId,
             AmountDue = amountDue,
@@ -92,7 +92,7 @@ public class Payment : AuditableEntity
             Status = DetermineStatus(amountDue, amountPaid, expectedDate, paymentDate)
         };
 
-        payment.AddDomainEvent(new PaymentCreated(payment.Id, payment.TenantId, payment.AmountPaid));
+        payment.AddDomainEvent(new PaymentCreated(payment.Id, payment.RenterTenantId, payment.AmountPaid));
         return payment;
     }
 
@@ -113,7 +113,7 @@ public class Payment : AuditableEntity
         
         Status = DetermineStatus(AmountDue, AmountPaid, ExpectedDate, PaymentDate);
         
-        AddDomainEvent(new PaymentUpdated(Id, TenantId, AmountPaid));
+        AddDomainEvent(new PaymentUpdated(Id, RenterTenantId, AmountPaid));
     }
 
     public void AttachReceipt(Guid receiptId)
@@ -124,7 +124,7 @@ public class Payment : AuditableEntity
     public void MarkAsVoided()
     {
         Status = PaymentStatus.Voided;
-        AddDomainEvent(new PaymentVoided(Id, TenantId));
+        AddDomainEvent(new PaymentVoided(Id, RenterTenantId));
     }
 
     private static PaymentStatus DetermineStatus(

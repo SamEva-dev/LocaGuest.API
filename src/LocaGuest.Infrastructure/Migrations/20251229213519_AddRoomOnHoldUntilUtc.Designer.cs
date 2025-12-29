@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Migrations
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251229213519_AddRoomOnHoldUntilUtc")]
+    partial class AddRoomOnHoldUntilUtc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -693,17 +696,13 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid?>("ReceiptId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("RenterTenantId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");
@@ -773,17 +772,13 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("RenterTenantId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");
@@ -840,9 +835,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid>("RentInvoiceId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("RenterTenantId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("ShareType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -856,9 +848,8 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("TenantId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 

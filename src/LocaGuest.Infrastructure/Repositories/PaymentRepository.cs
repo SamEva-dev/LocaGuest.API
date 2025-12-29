@@ -14,7 +14,7 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
     public async Task<List<Payment>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Payment>()
-            .Where(p => p.TenantId == tenantId)
+            .Where(p => p.RenterTenantId == tenantId)
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
             .ToListAsync(cancellationToken);
@@ -43,7 +43,7 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
         return await _context.Set<Payment>()
             .FirstOrDefaultAsync(p => 
                 p.ContractId == contractId && 
-                p.TenantId == tenantId &&
+                p.RenterTenantId == tenantId &&
                 p.Month == month && 
                 p.Year == year,
                 cancellationToken);

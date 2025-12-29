@@ -31,6 +31,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
 
         _handler = new GetCurrentOrganizationQueryHandler(
             _unitOfWorkMock.Object,
+            _tenantContextMock.Object,
             _loggerMock.Object);
     }
 
@@ -64,7 +65,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.Code.Should().Be("ORG-001");
+        result.Data!.Code.Should().Be("T0001");
         result.Data.Name.Should().Be("Test Organization");
         result.Data.Email.Should().Be("test@org.com");
         result.Data.Phone.Should().Be("+1234567890");
@@ -94,7 +95,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.Code.Should().Be("ORG-001");
+        result.Data!.Code.Should().Be("T0001");
     }
 
     [Fact]

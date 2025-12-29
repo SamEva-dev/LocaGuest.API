@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -8,13 +9,16 @@ namespace LocaGuest.Application.Features.Organizations.Commands.UpdateOrganizati
 public class UpdateOrganizationSettingsCommandHandler : IRequestHandler<UpdateOrganizationSettingsCommand, Result<OrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<UpdateOrganizationSettingsCommandHandler> _logger;
 
     public UpdateOrganizationSettingsCommandHandler(
         IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<UpdateOrganizationSettingsCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -26,8 +30,13 @@ public class UpdateOrganizationSettingsCommandHandler : IRequestHandler<UpdateOr
         {
             _logger.LogInformation("Updating organization settings for {OrganizationId}", request.OrganizationId);
 
+            if (!_tenantContext.IsAuthenticated)
+            {
+                return Result.Failure<OrganizationDto>("User not authenticated");
+            }
+
             // Get organization
-            var organization = await _unitOfWork.Organizations.GetByIdAsync(request.OrganizationId);
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(request.OrganizationId, cancellationToken);
             if (organization == null)
             {
                 _logger.LogWarning("Organization not found: {OrganizationId}", request.OrganizationId);
@@ -59,7 +68,11 @@ public class UpdateOrganizationSettingsCommandHandler : IRequestHandler<UpdateOr
             }
 
             // Save changes
-            await _unitOfWork.CommitAsync(cancellationToken);
+            var saved = await _unitOfWork.CommitAsync(cancellationToken);
+            if (saved <= 0)
+            {
+                return Result.Failure<OrganizationDto>("Failed to save organization settings");
+            }
 
             _logger.LogInformation("Organization settings updated successfully for {OrganizationId}", request.OrganizationId);
 

@@ -18,6 +18,8 @@ public class DocumentsControllerTests : BaseTestFixture
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<DocumentsController>> _loggerMock;
     private readonly Mock<IContractGeneratorService> _contractGeneratorMock;
+    private readonly Mock<IPropertySheetGeneratorService> _propertySheetGeneratorMock;
+    private readonly Mock<ITenantSheetGeneratorService> _tenantSheetGeneratorMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ITenantContext> _tenantContextMock;
     private readonly Mock<IWebHostEnvironment> _webHostEnvironmentMock;
@@ -28,6 +30,8 @@ public class DocumentsControllerTests : BaseTestFixture
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<DocumentsController>>();
         _contractGeneratorMock = new Mock<IContractGeneratorService>();
+        _propertySheetGeneratorMock = new Mock<IPropertySheetGeneratorService>();
+        _tenantSheetGeneratorMock = new Mock<ITenantSheetGeneratorService>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _tenantContextMock = new Mock<ITenantContext>();
         _webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
@@ -38,6 +42,8 @@ public class DocumentsControllerTests : BaseTestFixture
             _mediatorMock.Object,
             _loggerMock.Object,
             _contractGeneratorMock.Object,
+            _propertySheetGeneratorMock.Object,
+            _tenantSheetGeneratorMock.Object,
             _unitOfWorkMock.Object,
             _tenantContextMock.Object,
             _webHostEnvironmentMock.Object);

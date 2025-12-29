@@ -40,12 +40,20 @@ public class DeleteContractCommandHandler : IRequestHandler<DeleteContractComman
 
             // Mettre à jour le bien / chambres et le locataire
             // ========== BIEN / CHAMBRES ==========
-            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
-                && contract.RoomId.HasValue)
+            if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
                 // Colocation individuelle: libérer la chambre
+                if (!contract.RoomId.HasValue)
+                {
+                    return Result.Failure<DeleteContractResultDto>("Pour une colocation individuelle, RoomId est obligatoire.");
+                }
 
                 property.ReleaseRoom(contract.RoomId.Value);
+            }
+            else if (property.UsageType == PropertyUsageType.ColocationSolidaire)
+            {
+                // Colocation solidaire: libérer toutes les chambres
+                property.ReleaseAllRooms();
             }
             else
             {

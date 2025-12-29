@@ -32,7 +32,7 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
             contract.Activate();
 
             // Mettre à jour le bien (Active / PartialActive) et le locataire (Active)
-            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdWithRoomsAsync(contract.PropertyId, cancellationToken);
             if (property == null)
                 return Result.Failure("Property not found");
 
@@ -40,11 +40,20 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
             if (tenant == null)
                 return Result.Failure("Tenant not found");
 
-            if ((property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
-                && contract.RoomId.HasValue)
+            if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
+                if (!contract.RoomId.HasValue)
+                {
+                    return Result.Failure("Pour une colocation individuelle, RoomId est obligatoire.");
+                }
+
                 // Colocation individuelle: marquer la chambre comme occupée
                 property.OccupyRoom(contract.RoomId.Value, contract.Id);
+            }
+            else if (property.UsageType == PropertyUsageType.ColocationSolidaire)
+            {
+                // Colocation solidaire: 1 contrat => toutes les chambres occupées
+                property.OccupyAllRooms(contract.Id);
             }
             else
             {

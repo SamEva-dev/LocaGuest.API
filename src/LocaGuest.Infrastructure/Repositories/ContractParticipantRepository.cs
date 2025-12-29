@@ -25,12 +25,42 @@ public class ContractParticipantRepository : Repository<ContractParticipant>, IC
         var d = dateUtc.Kind == DateTimeKind.Utc
             ? dateUtc
             : dateUtc.Kind == DateTimeKind.Local ? dateUtc.ToUniversalTime() : DateTime.SpecifyKind(dateUtc, DateTimeKind.Utc);
+        try
+        {
+            return await _dbSet
+                        .AsNoTracking()
+                        .Where(p => p.ContractId == contractId
+                                    && p.StartDate <= d
+                                    && (!p.EndDate.HasValue || p.EndDate.Value >= d))
+                        .OrderBy(p => p.StartDate)
+                        .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
+        
+    }
+
+    public async Task<List<ContractParticipant>> GetOverlappingByContractIdAsync(Guid contractId, DateTime periodStartUtc, DateTime periodEndUtc, CancellationToken cancellationToken = default)
+    {
+        var start = periodStartUtc.Kind == DateTimeKind.Utc
+            ? periodStartUtc
+            : periodStartUtc.Kind == DateTimeKind.Local ? periodStartUtc.ToUniversalTime() : DateTime.SpecifyKind(periodStartUtc, DateTimeKind.Utc);
+
+        var end = periodEndUtc.Kind == DateTimeKind.Utc
+            ? periodEndUtc
+            : periodEndUtc.Kind == DateTimeKind.Local ? periodEndUtc.ToUniversalTime() : DateTime.SpecifyKind(periodEndUtc, DateTimeKind.Utc);
+
+        if (end < start)
+            throw new ArgumentException("periodEndUtc must be greater than or equal to periodStartUtc");
 
         return await _dbSet
             .AsNoTracking()
             .Where(p => p.ContractId == contractId
-                        && p.StartDate <= d
-                        && (!p.EndDate.HasValue || p.EndDate.Value >= d))
+                        && p.StartDate <= end
+                        && (!p.EndDate.HasValue || p.EndDate.Value >= start))
             .OrderBy(p => p.StartDate)
             .ToListAsync(cancellationToken);
     }

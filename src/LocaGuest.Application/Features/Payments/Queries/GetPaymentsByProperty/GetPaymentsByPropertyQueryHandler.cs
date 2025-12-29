@@ -37,7 +37,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
             var payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken);
 
             // Enrichir avec les noms de locataires
-            var tenantIds = payments.Select(p => p.TenantId).Distinct();
+            var tenantIds = payments.Select(p => p.RenterTenantId).Distinct();
             var tenants = new Dictionary<Guid, string>();
             
             foreach (var tenantId in tenantIds)
@@ -52,7 +52,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
             var paymentDtos = payments.Select(p => new PaymentDto
             {
                 Id = p.Id,
-                TenantId = p.TenantId,
+                TenantId = p.RenterTenantId,
                 PropertyId = p.PropertyId,
                 ContractId = p.ContractId,
                 AmountDue = p.AmountDue,
@@ -68,7 +68,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
                 ReceiptId = p.ReceiptId,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.LastModifiedAt,
-                TenantName = tenants.GetValueOrDefault(p.TenantId),
+                TenantName = tenants.GetValueOrDefault(p.RenterTenantId),
                 PropertyName = property.Name
             }).ToList();
 

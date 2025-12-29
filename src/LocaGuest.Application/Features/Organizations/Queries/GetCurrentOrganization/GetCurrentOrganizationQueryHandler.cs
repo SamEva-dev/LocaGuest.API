@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Organizations.Commands.UpdateOrganizationSettings;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -9,13 +10,16 @@ namespace LocaGuest.Application.Features.Organizations.Queries.GetCurrentOrganiz
 public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrganizationQuery, Result<OrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<GetCurrentOrganizationQueryHandler> _logger;
 
     public GetCurrentOrganizationQueryHandler(
         IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<GetCurrentOrganizationQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -27,6 +31,11 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
         {
             _logger.LogInformation("Getting current organization for user {UserId}", request.UserId);
 
+            if (!_tenantContext.IsAuthenticated)
+            {
+                return Result.Failure<OrganizationDto>("User not authenticated");
+            }
+
             // Get user's organization from Users in AuthGate database
             // For now, we'll need to get the TenantId from the JWT claims
             // and use it to fetch the organization
@@ -35,7 +44,7 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
             // For this implementation, we'll query all organizations and return the first one
             // In production, this should be filtered by the user's TenantId
             
-            var organizations = await _unitOfWork.Organizations.GetAllAsync();
+            var organizations = await _unitOfWork.Organizations.GetAllAsync(cancellationToken);
             var organization = organizations.FirstOrDefault();
 
             if (organization == null)

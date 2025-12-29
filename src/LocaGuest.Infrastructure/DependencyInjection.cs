@@ -12,6 +12,7 @@ using LocaGuest.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using LocaGuest.Infrastructure.Services.InvoicePdfGenerator;
 
 namespace LocaGuest.Infrastructure;
 
@@ -117,7 +118,7 @@ public static class DependencyInjection
         // Document Services
         services.AddScoped<IContractGeneratorService, ContractGeneratorService>();
         services.AddScoped<IQuittanceGeneratorService, QuittanceGeneratorService>();
-        services.AddScoped<IInvoicePdfGeneratorService, LocaGuest.Infrastructure.Services.InvoicePdfGenerator.InvoicePdfGeneratorService>();
+        services.AddScoped<IInvoicePdfGeneratorService, InvoicePdfGeneratorService>();
         services.AddScoped<IPropertySheetGeneratorService, PropertySheetGeneratorService>();
         services.AddScoped<ITenantSheetGeneratorService, TenantSheetGeneratorService>();
         

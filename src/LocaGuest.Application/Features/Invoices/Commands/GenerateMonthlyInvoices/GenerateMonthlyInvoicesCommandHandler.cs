@@ -120,7 +120,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
 
                     foreach (var p in fixedParticipants)
                     {
-                        lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
                     }
 
                     if (percentParticipants.Count > 0)
@@ -128,7 +128,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                         foreach (var p in percentParticipants)
                         {
                             var amount = remainingForPercent * (p.ShareValue / 100m);
-                            lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                            lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
                         }
 
                         var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);

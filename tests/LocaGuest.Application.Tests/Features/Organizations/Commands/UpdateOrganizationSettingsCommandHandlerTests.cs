@@ -31,6 +31,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
 
         _handler = new UpdateOrganizationSettingsCommandHandler(
             _unitOfWorkMock.Object,
+            _tenantContextMock.Object,
             _loggerMock.Object);
     }
 

@@ -74,10 +74,13 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 cancellationToken);
 
             var monthStartUtc = new DateTime(request.ExpectedDate.Year, request.ExpectedDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthEndUtc = monthStartUtc.AddMonths(1).AddTicks(-1);
+
+            RentInvoiceLine? tenantLine = null;
 
             if (invoice == null)
             {
-                var stateResult = await _effectiveContractStateResolver.ResolveAsync(request.ContractId, monthStartUtc, cancellationToken);
+                var stateResult = await _effectiveContractStateResolver.ResolveForPeriodAsync(request.ContractId, monthStartUtc, monthEndUtc, cancellationToken);
                 if (!stateResult.IsSuccess || stateResult.Data == null)
                     return Result.Failure<PaymentDto>(stateResult.ErrorMessage ?? "Unable to resolve effective contract state");
 
@@ -119,14 +122,14 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
 
                 foreach (var p in fixedParticipants)
-                    lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                    lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
 
                 if (percentParticipants.Count > 0)
                 {
                     foreach (var p in percentParticipants)
                     {
                         var amount = remainingForPercent * (p.ShareValue / 100m);
-                        lineAmounts.Add((p.TenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
                     }
 
                     var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
@@ -152,12 +155,94 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                         shareValue: la.shareValue);
 
                     await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
+
+                    if (la.tenantId == request.TenantId)
+                    {
+                        tenantLine = line;
+                    }
                 }
             }
 
             // Ensure tenant has an invoice line (must be an effective participant)
-            var tenantLine = await _unitOfWork.RentInvoiceLines
-                .GetByInvoiceTenantAsync(invoice.Id, request.TenantId, cancellationToken);
+            if (tenantLine == null)
+            {
+                tenantLine = await _unitOfWork.RentInvoiceLines
+                    .GetByInvoiceTenantAsync(invoice.Id, request.TenantId, cancellationToken);
+            }
+
+            if (tenantLine == null)
+            {
+                var stateResult = await _effectiveContractStateResolver.ResolveForPeriodAsync(request.ContractId, monthStartUtc, monthEndUtc, cancellationToken);
+                if (stateResult.IsSuccess && stateResult.Data != null)
+                {
+                    var state = stateResult.Data;
+                    var totalAmount = invoice.Amount;
+                    var participants = state.Participants;
+
+                    if (participants != null && participants.Count > 0)
+                    {
+                        var fixedParticipants = participants.Where(p => p.ShareType == BillingShareType.FixedAmount).ToList();
+                        var percentParticipants = participants.Where(p => p.ShareType == BillingShareType.Percentage).ToList();
+
+                        var fixedSum = fixedParticipants.Sum(p => p.ShareValue);
+                        if (fixedSum <= totalAmount)
+                        {
+                            var remainingForPercent = totalAmount - fixedSum;
+                            var percentSum = percentParticipants.Sum(p => p.ShareValue);
+                            if (percentParticipants.Count == 0 || percentSum <= 100m)
+                            {
+                                var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
+
+                                foreach (var p in fixedParticipants)
+                                    lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+
+                                if (percentParticipants.Count > 0)
+                                {
+                                    foreach (var p in percentParticipants)
+                                    {
+                                        var amount = remainingForPercent * (p.ShareValue / 100m);
+                                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                                    }
+
+                                    var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
+                                    var diff = Math.Round(remainingForPercent - computed, 2, MidpointRounding.AwayFromZero);
+                                    if (diff != 0m)
+                                    {
+                                        var lastIndex = lineAmounts.FindLastIndex(x => x.shareType == BillingShareType.Percentage);
+                                        if (lastIndex >= 0)
+                                        {
+                                            var last = lineAmounts[lastIndex];
+                                            lineAmounts[lastIndex] = (last.tenantId, last.shareType, last.shareValue, last.amountDue + diff);
+                                        }
+                                    }
+                                }
+
+                                var existingLines = await _unitOfWork.RentInvoiceLines.GetByInvoiceIdAsync(invoice.Id, cancellationToken);
+
+                                foreach (var la in lineAmounts)
+                                {
+                                    if (existingLines.Any(l => l.RenterTenantId == la.tenantId))
+                                        continue;
+
+                                    var line = RentInvoiceLine.Create(
+                                        rentInvoiceId: invoice.Id,
+                                        tenantId: la.tenantId,
+                                        amountDue: la.amountDue,
+                                        shareType: la.shareType,
+                                        shareValue: la.shareValue);
+
+                                    await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
+
+                                    if (la.tenantId == request.TenantId)
+                                    {
+                                        tenantLine = line;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             if (tenantLine == null)
             {
@@ -202,7 +287,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             var dto = new PaymentDto
             {
                 Id = payment.Id,
-                TenantId = payment.TenantId,
+                TenantId = payment.RenterTenantId,
                 PropertyId = payment.PropertyId,
                 ContractId = payment.ContractId,
                 AmountDue = payment.AmountDue,

@@ -16,6 +16,8 @@ public class PropertyRoom : Entity
     public decimal? Charges { get; private set; }
     public string? Description { get; private set; }
     public PropertyRoomStatus Status { get; private set; }
+
+    public DateTime? OnHoldUntilUtc { get; private set; }
     
     /// <summary>
     /// ID du contrat actuellement lié à cette chambre (si Signed/Active)
@@ -56,6 +58,27 @@ public class PropertyRoom : Entity
     }
 
     /// <summary>
+    /// Mettre la chambre en pré-réservation (OnHold) pendant une durée limitée
+    /// </summary>
+    public void Hold(Guid contractId, DateTime holdUntilUtc)
+    {
+        if (Status == PropertyRoomStatus.Occupied)
+            throw new ValidationException("ROOM_ALREADY_OCCUPIED", "Room is already occupied");
+
+        if (Status == PropertyRoomStatus.Reserved && CurrentContractId.HasValue && CurrentContractId != contractId)
+            throw new ValidationException("ROOM_ALREADY_RESERVED", "Room is already reserved");
+
+        if (Status == PropertyRoomStatus.OnHold && CurrentContractId.HasValue && CurrentContractId != contractId)
+            throw new ValidationException("ROOM_ALREADY_ON_HOLD", "Room is already on hold");
+
+        Status = PropertyRoomStatus.OnHold;
+        CurrentContractId = contractId;
+        OnHoldUntilUtc = holdUntilUtc.Kind == DateTimeKind.Utc
+            ? holdUntilUtc
+            : DateTime.SpecifyKind(holdUntilUtc, DateTimeKind.Utc);
+    }
+
+    /// <summary>
     /// Réserver la chambre pour un contrat
     /// </summary>
     public void Reserve(Guid contractId)
@@ -63,11 +86,15 @@ public class PropertyRoom : Entity
         if (Status == PropertyRoomStatus.Occupied)
             throw new ValidationException("ROOM_ALREADY_OCCUPIED", "Room is already occupied");
             
-        if (Status == PropertyRoomStatus.Reserved && CurrentContractId.HasValue)
+        if (Status == PropertyRoomStatus.Reserved && CurrentContractId.HasValue && CurrentContractId != contractId)
             throw new ValidationException("ROOM_ALREADY_RESERVED", "Room is already reserved");
+
+        if (Status == PropertyRoomStatus.OnHold && CurrentContractId.HasValue && CurrentContractId != contractId)
+            throw new ValidationException("ROOM_ALREADY_ON_HOLD", "Room is already on hold");
 
         Status = PropertyRoomStatus.Reserved;
         CurrentContractId = contractId;
+        OnHoldUntilUtc = null;
     }
 
     /// <summary>
@@ -78,8 +105,14 @@ public class PropertyRoom : Entity
         if (Status == PropertyRoomStatus.Occupied && CurrentContractId != contractId)
             throw new ValidationException("ROOM_ALREADY_OCCUPIED_BY_ANOTHER", "Room is already occupied by another contract");
 
+        if ((Status == PropertyRoomStatus.Reserved || Status == PropertyRoomStatus.OnHold) &&
+            CurrentContractId.HasValue &&
+            CurrentContractId != contractId)
+            throw new ValidationException("ROOM_ALREADY_OCCUPIED_BY_ANOTHER", "Room is already occupied by another contract");
+
         Status = PropertyRoomStatus.Occupied;
         CurrentContractId = contractId;
+        OnHoldUntilUtc = null;
     }
 
     /// <summary>
@@ -89,6 +122,7 @@ public class PropertyRoom : Entity
     {
         Status = PropertyRoomStatus.Available;
         CurrentContractId = null;
+        OnHoldUntilUtc = null;
     }
 
     /// <summary>
@@ -143,15 +177,17 @@ public enum PropertyRoomStatus
     /// <summary>
     /// Chambre disponible, aucun contrat
     /// </summary>
-    Available,
-    
+    Available = 0,
+
     /// <summary>
     /// Chambre réservée (contrat signé, début futur)
     /// </summary>
-    Reserved,
+    Reserved = 1,
     
     /// <summary>
     /// Chambre occupée (contrat actif)
     /// </summary>
-    Occupied
+    Occupied = 2,
+
+    OnHold = 3
 }
