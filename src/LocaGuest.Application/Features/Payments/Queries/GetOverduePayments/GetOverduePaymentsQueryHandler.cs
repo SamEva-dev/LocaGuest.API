@@ -70,6 +70,7 @@ public class GetOverduePaymentsQueryHandler : IRequestHandler<GetOverduePayments
                 TenantId = p.RenterTenantId,
                 PropertyId = p.PropertyId,
                 ContractId = p.ContractId,
+                PaymentType = p.PaymentType.ToString(),
                 AmountDue = p.AmountDue,
                 AmountPaid = p.AmountPaid,
                 RemainingAmount = p.GetRemainingAmount(),
@@ -80,6 +81,7 @@ public class GetOverduePaymentsQueryHandler : IRequestHandler<GetOverduePayments
                 Note = p.Note,
                 Month = p.Month,
                 Year = p.Year,
+                InvoiceDocumentId = p.InvoiceDocumentId,
                 DaysLate = (int)(DateTime.UtcNow.Date - p.ExpectedDate.Date).TotalDays
             }).ToList();
 

@@ -12,6 +12,9 @@ public class TenantDto
     public int ActiveContracts { get; set; }
     public DateTime? MoveInDate { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // ✅ Dossier administratif
+    public bool HasIdentityDocument { get; set; }
     
     // ⭐ Association Tenant ↔ Property
     public Guid? PropertyId { get; set; }

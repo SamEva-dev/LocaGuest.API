@@ -1,4 +1,5 @@
 using LocaGuest.Application.Interfaces;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -16,6 +17,7 @@ public class QuittanceGeneratorService : IQuittanceGeneratorService
     }
 
     public Task<byte[]> GenerateQuittancePdfAsync(
+        PaymentType paymentType,
         string tenantName,
         string tenantEmail,
         string propertyName,
@@ -29,6 +31,12 @@ public class QuittanceGeneratorService : IQuittanceGeneratorService
     {
         try
         {
+            var (docTitle, purposeLabel) = paymentType switch
+            {
+                PaymentType.Deposit => ("REÇU DE CAUTION", "Au titre de la caution"),
+                _ => ("QUITTANCE DE LOYER", "Au titre du loyer du mois de")
+            };
+
             var pdf = Document.Create(container =>
             {
                 container.Page(page =>
@@ -38,7 +46,7 @@ public class QuittanceGeneratorService : IQuittanceGeneratorService
 
                     page.Header().Column(column =>
                     {
-                        column.Item().Text("QUITTANCE DE LOYER")
+                        column.Item().Text(docTitle)
                             .FontSize(20).Bold().FontColor(Colors.Blue.Darken2);
                         column.Item().PaddingTop(10).LineHorizontal(2).LineColor(Colors.Blue.Medium);
                     });
@@ -64,7 +72,7 @@ public class QuittanceGeneratorService : IQuittanceGeneratorService
                         column.Item().PaddingTop(15).Text($"{amount:N2} €")
                             .FontSize(18).Bold().FontColor(Colors.Green.Darken1);
                         
-                        column.Item().PaddingTop(5).Text($"Au titre du loyer du mois de {month}")
+                        column.Item().PaddingTop(5).Text($"{purposeLabel} {month}")
                             .FontSize(11);
                         
                         column.Item().PaddingTop(20);

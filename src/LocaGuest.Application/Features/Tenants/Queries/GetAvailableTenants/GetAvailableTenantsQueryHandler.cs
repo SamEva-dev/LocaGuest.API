@@ -41,6 +41,7 @@ public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenan
                     Status = t.Status.ToString(),
                     MoveInDate = t.MoveInDate,
                     CreatedAt = t.CreatedAt,
+                    HasIdentityDocument = false,
                     PropertyId = t.PropertyId,
                     PropertyCode = t.PropertyCode
                 })

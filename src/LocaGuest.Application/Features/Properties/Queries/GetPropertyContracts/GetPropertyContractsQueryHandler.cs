@@ -60,12 +60,12 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
             var contractIds = contracts.Select(c => c.Id).ToList();
             var inventoryEntries = await _context.InventoryEntries
                 .Where(ie => contractIds.Contains(ie.ContractId))
-                .Select(ie => new { ie.Id, ie.ContractId })
+                .Select(ie => new { ie.Id, ie.ContractId, ie.IsFinalized })
                 .ToListAsync(cancellationToken);
                 
             var inventoryExits = await _context.InventoryExits
                 .Where(ie => contractIds.Contains(ie.ContractId))
-                .Select(ie => new { ie.Id, ie.ContractId })
+                .Select(ie => new { ie.Id, ie.ContractId, ie.IsFinalized })
                 .ToListAsync(cancellationToken);
 
             foreach (var contract in contracts)
@@ -76,9 +76,9 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                 var entry = inventoryEntries.FirstOrDefault(ie => ie.ContractId == contract.Id);
                 var exit = inventoryExits.FirstOrDefault(ie => ie.ContractId == contract.Id);
                 
-                contract.HasInventoryEntry = entry != null;
+                contract.HasInventoryEntry = entry?.IsFinalized == true;
                 contract.InventoryEntryId = entry?.Id;
-                contract.HasInventoryExit = exit != null;
+                contract.HasInventoryExit = exit?.IsFinalized == true;
                 contract.InventoryExitId = exit?.Id;
             }
 

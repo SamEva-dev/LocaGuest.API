@@ -565,6 +565,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(ie => ie.OwnerCoveredAmount).HasColumnType("decimal(18,2)");
             entity.Property(ie => ie.FinancialNotes).HasMaxLength(1000);
             entity.Property(ie => ie.Status).IsRequired();
+            entity.Property(ie => ie.IsFinalized).IsRequired();
+            entity.Property(ie => ie.FinalizedAt);
             entity.Property(ie => ie.GeneralObservations).HasMaxLength(1000);
             entity.Property(ie => ie.RepresentativeName).HasMaxLength(200);
             

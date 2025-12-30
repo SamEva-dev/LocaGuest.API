@@ -11,6 +11,8 @@ public class Payment : AuditableEntity
     public Guid RenterTenantId { get; private set; }
     public Guid PropertyId { get; private set; }
     public Guid ContractId { get; private set; }
+
+    public PaymentType PaymentType { get; private set; }
     
     /// <summary>
     /// Montant total dû pour cette période
@@ -62,12 +64,15 @@ public class Payment : AuditableEntity
     /// </summary>
     public Guid? ReceiptId { get; private set; }
 
+    public Guid? InvoiceDocumentId { get; private set; }
+
     private Payment() { } // EF Core
 
     public static Payment Create(
         Guid tenantId,
         Guid propertyId,
         Guid contractId,
+        PaymentType paymentType,
         decimal amountDue,
         decimal amountPaid,
         DateTime expectedDate,
@@ -81,6 +86,7 @@ public class Payment : AuditableEntity
             RenterTenantId = tenantId,
             PropertyId = propertyId,
             ContractId = contractId,
+            PaymentType = paymentType,
             AmountDue = amountDue,
             AmountPaid = amountPaid,
             ExpectedDate = expectedDate,
@@ -119,6 +125,11 @@ public class Payment : AuditableEntity
     public void AttachReceipt(Guid receiptId)
     {
         ReceiptId = receiptId;
+    }
+
+    public void AttachInvoiceDocument(Guid documentId)
+    {
+        InvoiceDocumentId = documentId;
     }
 
     public void MarkAsVoided()
@@ -189,4 +200,10 @@ public enum PaymentMethod
     BankTransfer, // Virement bancaire
     Check,        // Chèque
     Other         // Autre
+}
+
+public enum PaymentType
+{
+    Rent,
+    Deposit
 }

@@ -1,7 +1,9 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Tenants;
+using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Tenants.Queries.GetTenant;
@@ -50,6 +52,7 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
                 CreatedAt = tenant.CreatedAt,
                 PropertyId = tenant.PropertyId,
                 PropertyCode = tenant.PropertyCode,
+                HasIdentityDocument = false,
                 
                 // ✅ Detailed information
                 Address = tenant.Address,
@@ -64,6 +67,14 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
                 MonthlyIncome = tenant.MonthlyIncome,
                 Notes = tenant.Notes
             };
+
+            var hasIdentityDocument = await _unitOfWork.Documents.Query()
+                .AnyAsync(d => !d.IsArchived
+                               && d.AssociatedTenantId == tenantId
+                               && d.Type == DocumentType.PieceIdentite,
+                    cancellationToken);
+
+            tenantDto.HasIdentityDocument = hasIdentityDocument;
 
             return Result.Success(tenantDto);
         }

@@ -28,8 +28,7 @@ public class SignInventoryCommandHandler : IRequestHandler<SignInventoryCommand,
                 if (inventory == null)
                     return Result.Failure("Inventory entry not found");
 
-                // TODO: Add signature properties to InventoryEntry aggregate
-                // For now, just log the signature
+                inventory.MarkAsFinalized();
                 _logger.LogInformation("Inventory entry {InventoryId} signed by {SignerRole}: {SignerName}",
                     request.InventoryId, request.SignerRole, request.SignerName);
             }
@@ -39,7 +38,7 @@ public class SignInventoryCommandHandler : IRequestHandler<SignInventoryCommand,
                 if (inventory == null)
                     return Result.Failure("Inventory exit not found");
 
-                // TODO: Add signature properties to InventoryExit aggregate
+                inventory.MarkAsFinalized();
                 _logger.LogInformation("Inventory exit {InventoryId} signed by {SignerRole}: {SignerName}",
                     request.InventoryId, request.SignerRole, request.SignerName);
             }

@@ -1,8 +1,11 @@
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
+
 namespace LocaGuest.Application.Interfaces;
 
 public interface IQuittanceGeneratorService
 {
     Task<byte[]> GenerateQuittancePdfAsync(
+        PaymentType paymentType,
         string tenantName,
         string tenantEmail,
         string propertyName,

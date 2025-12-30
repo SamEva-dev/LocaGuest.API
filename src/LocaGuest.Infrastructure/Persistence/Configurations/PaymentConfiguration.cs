@@ -21,6 +21,11 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.ContractId)
             .IsRequired();
 
+        builder.Property(p => p.PaymentType)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         builder.Property(p => p.AmountDue)
             .HasColumnType("decimal(10,2)")
             .IsRequired();
@@ -55,6 +60,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.Property(p => p.ReceiptId);
 
+        builder.Property(p => p.InvoiceDocumentId);
+
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 
@@ -64,7 +71,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.TenantId);
         builder.HasIndex(p => p.PropertyId);
         builder.HasIndex(p => p.ContractId);
-        builder.HasIndex(p => new { p.ContractId, p.Month, p.Year }).IsUnique();
+        builder.HasIndex(p => new { p.ContractId, p.Month, p.Year, p.PaymentType }).IsUnique();
         builder.HasIndex(p => p.Status);
     }
 }

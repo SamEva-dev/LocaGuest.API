@@ -65,6 +65,7 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<Pa
                 ActiveContracts = 0, // TODO: Calculate from contracts
                 MoveInDate = t.MoveInDate,
                 CreatedAt = t.CreatedAt,
+                HasIdentityDocument = false,
                 PropertyId = t.PropertyId,
                 PropertyCode = t.PropertyCode
             }).ToList();

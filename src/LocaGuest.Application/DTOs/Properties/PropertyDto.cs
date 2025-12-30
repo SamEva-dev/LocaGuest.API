@@ -20,6 +20,7 @@ public class PropertyDto
     public bool HasBalcony { get; set; }
     public decimal Rent { get; set; }
     public decimal? Charges { get; set; }
+    public string? Description { get; set; }
     public string Status { get; set; } = "Vacant";
     
     // Pour les colocations
@@ -56,39 +57,34 @@ public class PropertyDto
     public decimal? MaintenanceRate { get; set; }
     public decimal? VacancyRate { get; set; }
     public int? NightsBookedPerMonth { get; set; }
+
+    public string? EnergyClass { get; set; }
+    public int? ConstructionYear { get; set; }
     
     // Informations administratives
     public string? CadastralReference { get; set; }  // Référence cadastrale
     public string? LotNumber { get; set; }  // Numéro de lot
-    public DateTime? AcquisitionDate { get; set; }  // Date d'acquisition
+    public DateTime? PurchaseDate { get; set; }  // Date d'achat / acquisition
     public decimal? TotalWorksAmount { get; set; }  // Montant total des travaux réalisés
     
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public List<string> ImageUrls { get; set; } = new();  // URLs des images
-    public string? Description { get; internal set; }
-    public string? EnergyClass { get; internal set; }
-    public int? ConstructionYear { get; internal set; }
-    public DateTime? PurchaseDate { get; internal set; }
 }
 
 public class PropertyDetailDto : PropertyDto
 {
-    public string? Description { get; set; }
-    public DateTime? PurchaseDate { get; set; }
-    public decimal? PurchasePrice { get; set; }
-    public string? EnergyClass { get; set; }
-    public int? ConstructionYear { get; set; }
     public List<string> Features { get; set; } = new();
     public int ActiveContractsCount { get; set; }
     public decimal TotalRevenue { get; set; }
+
+    public decimal? Deposit { get; set; }
+    public bool IsFurnished { get; set; }
     
     /// <summary>
     /// Liste des chambres pour les colocations
     /// </summary>
     public new List<PropertyRoomDto> Rooms { get; set; } = new();
-    public decimal? Deposit { get; internal set; }
-    public bool IsFurnished { get; internal set; }
 }
 
 /// <summary>
@@ -138,6 +134,11 @@ public class CreatePropertyDto
     public decimal Rent { get; set; }
     public decimal? Charges { get; set; }
     public string? Description { get; set; }
+
+    public DateTime? PurchaseDate { get; set; }
+    public decimal? PurchasePrice { get; set; }
+    public string? EnergyClass { get; set; }
+    public int? ConstructionYear { get; set; }
     
     // Pour les colocations
     public int? TotalRooms { get; set; }
@@ -167,13 +168,7 @@ public class CreatePropertyDto
     // Informations administratives
     public string? CadastralReference { get; set; }
     public string? LotNumber { get; set; }
-    public DateTime? AcquisitionDate { get; set; }
     public decimal? TotalWorksAmount { get; set; }
-    
-    public DateTime? PurchaseDate { get; set; }
-    public decimal? PurchasePrice { get; set; }
-    public string? EnergyClass { get; set; }
-    public int? ConstructionYear { get; set; }
 }
 
 public class UpdatePropertyDto : CreatePropertyDto

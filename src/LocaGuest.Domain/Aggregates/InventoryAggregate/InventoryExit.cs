@@ -38,6 +38,16 @@ public class InventoryExit : AuditableEntity
     public string? FinancialNotes { get; private set; }
     
     public InventoryStatus Status { get; private set; }
+
+    /// <summary>
+    /// EDL finalisé = document légal, ne peut plus être modifié ni supprimé
+    /// </summary>
+    public bool IsFinalized { get; private set; }
+
+    /// <summary>
+    /// Date de finalisation (signature)
+    /// </summary>
+    public DateTime? FinalizedAt { get; private set; }
     
     private InventoryExit() { } // EF Core
 
@@ -70,13 +80,15 @@ public class InventoryExit : AuditableEntity
             RepresentativeName = representativeName,
             GeneralObservations = generalObservations,
             Status = InventoryStatus.Draft,
-            TotalDeductionAmount = 0
+            TotalDeductionAmount = 0,
+            IsFinalized = false,
+            FinalizedAt = null
         };
     }
 
     public void AddComparison(InventoryComparison comparison)
     {
-        if (Status == InventoryStatus.Completed)
+        if (IsFinalized || Status == InventoryStatus.Completed)
             throw new ValidationException("INVENTORY_COMPLETED", "Cannot modify a completed inventory");
             
         _comparisons.Add(comparison);
@@ -84,7 +96,7 @@ public class InventoryExit : AuditableEntity
 
     public void AddDegradation(Degradation degradation)
     {
-        if (Status == InventoryStatus.Completed)
+        if (IsFinalized || Status == InventoryStatus.Completed)
             throw new ValidationException("INVENTORY_COMPLETED", "Cannot modify a completed inventory");
             
         _degradations.Add(degradation);
@@ -101,6 +113,9 @@ public class InventoryExit : AuditableEntity
 
     public void SetFinancialInfo(decimal? ownerCoveredAmount, string? financialNotes)
     {
+        if (IsFinalized)
+            throw new ValidationException("INVENTORY_FINALIZED", "Cannot modify a finalized inventory - legal document");
+
         OwnerCoveredAmount = ownerCoveredAmount;
         FinancialNotes = financialNotes;
         RecalculateTotalDeduction();
@@ -121,6 +136,23 @@ public class InventoryExit : AuditableEntity
         if (_comparisons.Count == 0)
             throw new ValidationException("INVENTORY_NO_COMPARISONS", "Cannot complete an inventory without comparisons");
             
+        Status = InventoryStatus.Completed;
+    }
+
+    /// <summary>
+    /// Finaliser l'EDL = signer et verrouiller
+    /// Devient un document légal opposable
+    /// </summary>
+    public void MarkAsFinalized()
+    {
+        if (IsFinalized)
+            throw new ValidationException("INVENTORY_ALREADY_FINALIZED", "This inventory is already finalized");
+
+        if (_comparisons.Count == 0)
+            throw new ValidationException("INVENTORY_NO_COMPARISONS", "Cannot finalize an inventory without comparisons");
+
+        IsFinalized = true;
+        FinalizedAt = DateTime.UtcNow;
         Status = InventoryStatus.Completed;
     }
 }

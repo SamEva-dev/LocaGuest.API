@@ -5,6 +5,7 @@ using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Payments.Commands.CreatePayment;
@@ -46,7 +47,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 return Result.Failure<PaymentDto>("Tenant not found");
             }
 
-            // 3. Vérifier qu'il n'existe pas déjà un paiement pour ce mois
+            // 3. Vérifier qu'il n'existe pas déjà un paiement pour ce mois (loyer uniquement)
             var existingPayment = await _unitOfWork.Payments.GetByMonthYearAsync(
                 request.ContractId,
                 request.TenantId,
@@ -64,6 +65,68 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             if (!Enum.TryParse<PaymentMethod>(request.PaymentMethod, true, out var paymentMethod))
             {
                 return Result.Failure<PaymentDto>("Invalid payment method");
+            }
+
+            // 4b. Parser le payment type
+            if (!Enum.TryParse<PaymentType>(request.PaymentType, true, out var paymentType))
+            {
+                return Result.Failure<PaymentDto>("Invalid payment type");
+            }
+
+            // Pour la caution: 1 seule caution par contrat
+            if (paymentType == PaymentType.Deposit)
+            {
+                var existingDeposit = await _unitOfWork.Payments.Query()
+                    .FirstOrDefaultAsync(p => p.ContractId == request.ContractId && p.PaymentType == PaymentType.Deposit, cancellationToken);
+
+                if (existingDeposit != null)
+                {
+                    return Result.Failure<PaymentDto>("A deposit payment already exists for this contract");
+                }
+
+                var depositPayment = Payment.Create(
+                    tenantId: request.TenantId,
+                    propertyId: request.PropertyId,
+                    contractId: request.ContractId,
+                    paymentType: paymentType,
+                    amountDue: request.AmountDue,
+                    amountPaid: request.AmountPaid,
+                    expectedDate: request.ExpectedDate,
+                    paymentDate: request.PaymentDate,
+                    paymentMethod: paymentMethod,
+                    note: request.Note);
+
+                await _unitOfWork.Payments.AddAsync(depositPayment, cancellationToken);
+                await _unitOfWork.CommitAsync(cancellationToken);
+
+                if (depositPayment.IsPaid() && depositPayment.PaymentDate.HasValue && !depositPayment.ReceiptId.HasValue)
+                {
+                    await _mediator.Send(new GeneratePaymentQuittanceCommand { PaymentId = depositPayment.Id }, cancellationToken);
+                }
+
+                return Result.Success(new PaymentDto
+                {
+                    Id = depositPayment.Id,
+                    TenantId = depositPayment.RenterTenantId,
+                    PropertyId = depositPayment.PropertyId,
+                    ContractId = depositPayment.ContractId,
+                    PaymentType = depositPayment.PaymentType.ToString(),
+                    AmountDue = depositPayment.AmountDue,
+                    AmountPaid = depositPayment.AmountPaid,
+                    RemainingAmount = depositPayment.GetRemainingAmount(),
+                    PaymentDate = depositPayment.PaymentDate,
+                    ExpectedDate = depositPayment.ExpectedDate,
+                    Status = depositPayment.Status.ToString(),
+                    PaymentMethod = depositPayment.PaymentMethod.ToString(),
+                    Note = depositPayment.Note,
+                    Month = depositPayment.Month,
+                    Year = depositPayment.Year,
+                    ReceiptId = depositPayment.ReceiptId,
+                    InvoiceDocumentId = depositPayment.InvoiceDocumentId,
+                    CreatedAt = depositPayment.CreatedAt,
+                    UpdatedAt = depositPayment.LastModifiedAt,
+                    TenantName = tenant.FullName
+                });
             }
 
             // 5. Mettre à jour ou créer la RentInvoice (1 entête + lignes par occupant)
@@ -254,6 +317,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 tenantId: request.TenantId,
                 propertyId: invoice.PropertyId,
                 contractId: request.ContractId,
+                paymentType: paymentType,
                 amountDue: tenantLine.AmountDue,
                 amountPaid: request.AmountPaid,
                 expectedDate: request.ExpectedDate,
@@ -290,6 +354,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 TenantId = payment.RenterTenantId,
                 PropertyId = payment.PropertyId,
                 ContractId = payment.ContractId,
+                PaymentType = payment.PaymentType.ToString(),
                 AmountDue = payment.AmountDue,
                 AmountPaid = payment.AmountPaid,
                 RemainingAmount = payment.GetRemainingAmount(),
@@ -301,6 +366,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 Month = payment.Month,
                 Year = payment.Year,
                 ReceiptId = payment.ReceiptId,
+                InvoiceDocumentId = payment.InvoiceDocumentId,
                 CreatedAt = payment.CreatedAt,
                 UpdatedAt = payment.LastModifiedAt,
                 TenantName = tenant.FullName

@@ -47,6 +47,7 @@ public class PaymentsController : ControllerBase
             TenantId = dto.TenantId,
             PropertyId = dto.PropertyId,
             ContractId = dto.ContractId,
+            PaymentType = dto.PaymentType,
             AmountDue = dto.AmountDue,
             AmountPaid = dto.AmountPaid,
             PaymentDate = dto.PaymentDate,

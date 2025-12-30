@@ -47,6 +47,7 @@ public class GenerateQuittanceCommandHandler : IRequestHandler<GenerateQuittance
 
             // Generate PDF using service
             var pdf = await _quittanceGenerator.GenerateQuittancePdfAsync(
+                paymentType: LocaGuest.Domain.Aggregates.PaymentAggregate.PaymentType.Rent,
                 tenant.FullName,
                 tenant.Email,
                 property.Name,

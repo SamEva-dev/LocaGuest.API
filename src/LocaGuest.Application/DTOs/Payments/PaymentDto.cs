@@ -6,6 +6,8 @@ public class PaymentDto
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid ContractId { get; set; }
+
+    public string PaymentType { get; set; } = "Rent";
     
     public decimal AmountDue { get; set; }
     public decimal AmountPaid { get; set; }
@@ -22,6 +24,7 @@ public class PaymentDto
     public int Year { get; set; }
     
     public Guid? ReceiptId { get; set; }
+    public Guid? InvoiceDocumentId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     
@@ -51,6 +54,8 @@ public class CreatePaymentDto
     public Guid TenantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid ContractId { get; set; }
+
+    public string PaymentType { get; set; } = "Rent";
     
     public decimal AmountDue { get; set; }
     public decimal AmountPaid { get; set; }

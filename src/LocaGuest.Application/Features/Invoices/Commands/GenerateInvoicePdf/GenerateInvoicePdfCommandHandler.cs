@@ -2,6 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocument;
 using LocaGuest.Application.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -15,6 +16,7 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
     private readonly ITenantContext _tenantContext;
     private readonly IMediator _mediator;
     private readonly IInvoicePdfGeneratorService _invoicePdfGenerator;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
     private readonly ILogger<GenerateInvoicePdfCommandHandler> _logger;
 
     public GenerateInvoicePdfCommandHandler(
@@ -22,12 +24,14 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
         ITenantContext tenantContext,
         IMediator mediator,
         IInvoicePdfGeneratorService invoicePdfGenerator,
+        IEffectiveContractStateResolver effectiveContractStateResolver,
         ILogger<GenerateInvoicePdfCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _mediator = mediator;
         _invoicePdfGenerator = invoicePdfGenerator;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
         _logger = logger;
     }
 
@@ -54,9 +58,15 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
 
             var lines = await _unitOfWork.RentInvoiceLines.GetByInvoiceIdAsync(invoice.Id, cancellationToken);
 
-            // Minimal line breakdown
-            var rent = Math.Max(0m, contract.Rent);
-            var charges = Math.Max(0m, contract.Charges);
+            // Minimal line breakdown (use effective state => avenants financiers)
+            var monthStartUtc = new DateTime(invoice.Year, invoice.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthEndUtc = monthStartUtc.AddMonths(1).AddTicks(-1);
+
+            var stateResult = await _effectiveContractStateResolver.ResolveForPeriodAsync(contract.Id, monthStartUtc, monthEndUtc, cancellationToken);
+            var state = stateResult.IsSuccess ? stateResult.Data : null;
+
+            var rent = Math.Max(0m, state?.Rent ?? contract.Rent);
+            var charges = Math.Max(0m, state?.Charges ?? contract.Charges);
 
             var pdfLines = new List<(string label, decimal amount)>
             {

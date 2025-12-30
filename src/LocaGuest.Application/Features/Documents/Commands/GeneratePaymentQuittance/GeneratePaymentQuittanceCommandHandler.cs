@@ -56,7 +56,16 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
             var culture = CultureInfo.GetCultureInfo("fr-FR");
             var monthLabel = payment.ExpectedDate.ToString("MMMM yyyy", culture);
 
+            var docPrefix = payment.PaymentType == LocaGuest.Domain.Aggregates.PaymentAggregate.PaymentType.Deposit
+                ? "Recu_Caution"
+                : "Quittance";
+
+            var docDescription = payment.PaymentType == LocaGuest.Domain.Aggregates.PaymentAggregate.PaymentType.Deposit
+                ? $"Reçu de caution pour {monthLabel} - {payment.AmountPaid:N2}€"
+                : $"Quittance de loyer pour {monthLabel} - {payment.AmountPaid:N2}€";
+
             var pdf = await _quittanceGenerator.GenerateQuittancePdfAsync(
+                paymentType: payment.PaymentType,
                 tenantName: tenant.FullName,
                 tenantEmail: tenant.Email,
                 propertyName: property.Name,
@@ -69,7 +78,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
                 cancellationToken: cancellationToken);
 
             var safeMonth = monthLabel.Replace(" ", "_");
-            var fileName = $"Quittance_{safeMonth}_{tenant.Code}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+            var fileName = $"{docPrefix}_{safeMonth}_{tenant.Code}_{DateTime.UtcNow:yyyyMMdd}.pdf";
             var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _tenantContext.TenantId!.Value.ToString(), fileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
@@ -85,7 +94,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
                 ContractId = payment.ContractId,
                 TenantId = payment.RenterTenantId,
                 PropertyId = payment.PropertyId,
-                Description = $"Quittance de loyer pour {monthLabel} - {payment.AmountPaid:N2}€"
+                Description = docDescription
             };
 
             var saved = await _mediator.Send(saveCommand, cancellationToken);

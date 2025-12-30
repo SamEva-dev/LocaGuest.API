@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Tenants;
+using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -42,9 +43,27 @@ public class GetAssociatedTenantsQueryHandler : IRequestHandler<GetAssociatedTen
                     MoveInDate = t.MoveInDate,
                     CreatedAt = t.CreatedAt,
                     PropertyId = t.PropertyId,
-                    PropertyCode = t.PropertyCode
+                    PropertyCode = t.PropertyCode,
+                    HasIdentityDocument = false
                 })
                 .ToListAsync(cancellationToken);
+
+            var tenantIds = tenants.Select(t => t.Id).Distinct().ToList();
+
+            var identityDocTenantIds = await _unitOfWork.Documents.Query()
+                .Where(d => !d.IsArchived
+                            && d.AssociatedTenantId != null
+                            && tenantIds.Contains(d.AssociatedTenantId.Value)
+                            && d.Type == DocumentType.PieceIdentite)
+                .Select(d => d.AssociatedTenantId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var identityDocTenantIdSet = identityDocTenantIds.ToHashSet();
+            foreach (var t in tenants)
+            {
+                t.HasIdentityDocument = identityDocTenantIdSet.Contains(t.Id);
+            }
 
             _logger.LogInformation("Found {Count} associated tenants for property {PropertyId}", 
                 tenants.Count, propertyId);
