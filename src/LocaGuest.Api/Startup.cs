@@ -272,6 +272,7 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        EnsureLocaguestLogDirectories();
         var forwardedHeadersOptions = new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -377,5 +378,26 @@ public class Startup
                 Predicate = check => check.Tags.Contains("live")
             });
         });
+    }
+
+    private void EnsureLocaguestLogDirectories()
+    {
+        // 1) Récupère la variable
+        var home = Environment.GetEnvironmentVariable("LOCAGUEST_HOME");
+
+        // 2) Si elle n'existe pas au runtime, on la force (au niveau Process)
+        //    Important : mets bien un trailing backslash : E:\ (pas E:)
+        if (string.IsNullOrWhiteSpace(home))
+        {
+            home = @"E:\";
+            Environment.SetEnvironmentVariable("LOCAGUEST_HOME", home, EnvironmentVariableTarget.Process);
+        }
+
+        // 3) Crée les dossiers attendus par tes sinks fichier
+        var locaGuestDir = Path.Combine(home, "log", "LocaGuest");
+        var efDir = Path.Combine(locaGuestDir, "EntityFramework");
+
+        Directory.CreateDirectory(locaGuestDir);
+        Directory.CreateDirectory(efDir);
     }
 }
