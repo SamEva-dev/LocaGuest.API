@@ -88,9 +88,9 @@ public class PropertySheetGeneratorService : IPropertySheetGeneratorService
             col.Item().Element(c => ComposeAddress(c, property));
             col.Item().Element(c => ComposeTechnical(c, property));
 
-            if (!string.IsNullOrWhiteSpace(property.Notes))
+            if (!string.IsNullOrWhiteSpace(property.Description))
             {
-                col.Item().Element(c => ComposeNotes(c, property.Notes!));
+                col.Item().Element(c => ComposeNotes(c, property.Description!));
             }
         });
     }

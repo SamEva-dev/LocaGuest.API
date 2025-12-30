@@ -72,10 +72,10 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 request.Bathrooms ?? 0,
                 request.TotalRooms);
 
-            // ✅ Set the generated code
+            // Set the generated code
             property.SetCode(code);
             
-            // ✅ Update extended details (city, postalCode, country, surface, floor, elevator, parking, furnished, charges, deposit, notes)
+            // Update extended details (city, postalCode, country, surface, floor, elevator, parking, furnished, charges, deposit, notes)
             property.UpdateExtendedDetails(
                 city: request.City,
                 postalCode: request.PostalCode,
@@ -84,12 +84,15 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 floor: request.Floor,
                 hasElevator: request.HasElevator,
                 hasParking: request.HasParking,
+                hasBalcony: request.HasBalcony,
                 isFurnished: request.IsFurnished,
                 charges: request.Charges,
                 deposit: request.Deposit,
-                notes: request.Notes ?? request.Description);
+                description: request.Description,
+                energyClass: request.EnergyClass,
+                constructionYear: request.ConstructionYear);
             
-            // ✅ Update diagnostics if provided
+            // Update diagnostics if provided
             if (request.DpeRating != null || request.GesRating != null)
             {
                 property.UpdateDiagnostics(
@@ -105,7 +108,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     erpZone: request.ErpZone);
             }
             
-            // ✅ Update financial info if provided
+            // Update financial info if provided
             if (request.PropertyTax.HasValue || request.CondominiumCharges.HasValue)
             {
                 property.UpdateFinancialInfo(
@@ -113,7 +116,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     condominiumCharges: request.CondominiumCharges);
             }
 
-            // ✅ Purchase + rentability fields
+            // Purchase + rentability fields
             if (request.PurchasePrice.HasValue)
             {
                 property.UpdatePurchaseInfo(purchasePrice: request.PurchasePrice);
@@ -129,17 +132,17 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     nightsBookedPerMonth: request.NightsBookedPerMonth);
             }
             
-            // ✅ Update administrative info if provided
-            if (!string.IsNullOrEmpty(request.CadastralReference) || request.AcquisitionDate.HasValue)
+            // Update administrative info if provided
+            if (!string.IsNullOrEmpty(request.CadastralReference) || request.PurchaseDate.HasValue)
             {
                 property.UpdateAdministrativeInfo(
                     cadastralReference: request.CadastralReference,
                     lotNumber: request.LotNumber,
-                    acquisitionDate: request.AcquisitionDate ?? request.PurchaseDate,
+                    purchaseDate: request.PurchaseDate,
                     totalWorksAmount: request.TotalWorksAmount);
             }
             
-            // ✅ Configure Airbnb settings if applicable
+            // Configure Airbnb settings if applicable
             if (usageType == PropertyUsageType.Airbnb && 
                 request.MinimumStay.HasValue && 
                 request.MaximumStay.HasValue && 
@@ -151,7 +154,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                     request.PricePerNight.Value);
             }
             
-            // ✅ Create rooms for colocation if provided
+            // Create rooms for colocation if provided
             if ((
                 usageType == PropertyUsageType.Colocation || 
                 usageType == PropertyUsageType.ColocationIndividual) && 
@@ -178,7 +181,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {TenantId}", 
                 property.Id, property.Name, _tenantContext.TenantId);
 
-            // ✅ Map to DTO with ALL fields
+            // Map to DTO with ALL fields
             var dto = new PropertyDetailDto
             {
                 Id = property.Id,
@@ -196,6 +199,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 Floor = property.Floor,
                 HasElevator = property.HasElevator,
                 HasParking = property.HasParking,
+                HasBalcony = property.HasBalcony,
                 Rent = property.Rent,
                 Charges = property.Charges,
                 Status = property.Status.ToString(),
@@ -204,7 +208,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 MinimumStay = property.MinimumStay,
                 MaximumStay = property.MaximumStay,
                 PricePerNight = property.PricePerNight,
-                // ✅ Diagnostics
+                // Diagnostics
                 DpeRating = property.DpeRating,
                 DpeValue = property.DpeValue,
                 GesRating = property.GesRating,
@@ -215,7 +219,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 HasAsbestos = property.HasAsbestos,
                 AsbestosDiagnosticDate = property.AsbestosDiagnosticDate,
                 ErpZone = property.ErpZone,
-                // ✅ Financial info
+                // Financial info
                 PropertyTax = property.PropertyTax,
                 CondominiumCharges = property.CondominiumCharges,
                 Insurance = property.Insurance,
@@ -223,22 +227,21 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 MaintenanceRate = property.MaintenanceRate,
                 VacancyRate = property.VacancyRate,
                 NightsBookedPerMonth = property.NightsBookedPerMonth,
-                // ✅ Administrative info
+                // Administrative info
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
-                AcquisitionDate = property.AcquisitionDate,
+                PurchaseDate = property.PurchaseDate,
+               PurchasePrice= property.PurchasePrice,
                 TotalWorksAmount = property.TotalWorksAmount,
-                // ✅ Timestamps
+                // Timestamps
                 CreatedAt = property.CreatedAt,
                 ImageUrls = property.ImageUrls,
                 UpdatedAt = property.UpdatedAt,
-                // ✅ Other fields
-                Description = property.Notes,
-                PurchaseDate = property.AcquisitionDate,
-                PurchasePrice = property.PurchasePrice,
-                EnergyClass = request.EnergyClass,
-                ConstructionYear = request.ConstructionYear,
-                // ✅ Rooms (for colocation)
+                // Other fields
+                Description = property.Description,
+                EnergyClass = property.EnergyClass,
+                ConstructionYear = property.ConstructionYear,
+                // Rooms (for colocation)
                 Rooms = property.Rooms.Select(r => new PropertyRoomDto
                 {
                     Id = r.Id,

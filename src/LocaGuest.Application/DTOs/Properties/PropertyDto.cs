@@ -66,6 +66,10 @@ public class PropertyDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public List<string> ImageUrls { get; set; } = new();  // URLs des images
+    public string? Description { get; internal set; }
+    public string? EnergyClass { get; internal set; }
+    public int? ConstructionYear { get; internal set; }
+    public DateTime? PurchaseDate { get; internal set; }
 }
 
 public class PropertyDetailDto : PropertyDto
@@ -83,6 +87,8 @@ public class PropertyDetailDto : PropertyDto
     /// Liste des chambres pour les colocations
     /// </summary>
     public new List<PropertyRoomDto> Rooms { get; set; } = new();
+    public decimal? Deposit { get; internal set; }
+    public bool IsFurnished { get; internal set; }
 }
 
 /// <summary>

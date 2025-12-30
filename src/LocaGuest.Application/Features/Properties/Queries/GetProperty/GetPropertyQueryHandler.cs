@@ -70,9 +70,14 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 Floor = property.Floor,
                 HasElevator = property.HasElevator,
                 HasParking = property.HasParking,
-                HasBalcony = false, // Pas dans le domaine
+                HasBalcony = property.HasBalcony,
+                IsFurnished = property.IsFurnished,
                 Rent = property.Rent,
                 Charges = property.Charges,
+                Deposit = property.Deposit,
+                Description = property.Description,
+                EnergyClass = property.EnergyClass,
+                ConstructionYear = property.ConstructionYear,
                 Status = property.Status.ToString(),
                 TotalRooms = property.TotalRooms,
                 OccupiedRooms = property.OccupiedRooms,
@@ -100,14 +105,11 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 NightsBookedPerMonth = property.NightsBookedPerMonth,
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
-                AcquisitionDate = property.AcquisitionDate,
                 TotalWorksAmount = property.TotalWorksAmount,
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt,
                 ImageUrls = property.ImageUrls,
-                Rooms = roomDtos,  // ✅ Inclure les rooms
-                Description = property.Notes,
-                PurchaseDate = property.AcquisitionDate
+                Rooms = roomDtos  // Inclure les rooms
             };
 
             return Result.Success(propertyDto);

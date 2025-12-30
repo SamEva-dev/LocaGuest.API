@@ -24,11 +24,7 @@ public record CreatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public bool HasBalcony { get; init; }
     public decimal Rent { get; init; }
     public decimal? Charges { get; init; }
-    public string? Description { get; init; }
-    public DateTime? PurchaseDate { get; init; }
     public decimal? PurchasePrice { get; init; }
-    public string? EnergyClass { get; init; }
-    public int? ConstructionYear { get; init; }
     
     // Nouveau: Type d'utilisation
     public string PropertyUsageType { get; init; } = "Complete"; // "Complete", "Colocation", "Airbnb"
@@ -68,11 +64,14 @@ public record CreatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     // Informations administratives
     public string? CadastralReference { get; init; }  // Référence cadastrale
     public string? LotNumber { get; init; }  // Numéro de lot
-    public DateTime? AcquisitionDate { get; init; }  // Date d'acquisition
+    public DateTime? PurchaseDate { get; init; }  // Date d'acquisition
     public decimal? TotalWorksAmount { get; init; }  // Montant total des travaux réalisés
     
     // Autres informations
     public bool? IsFurnished { get; init; }
     public decimal? Deposit { get; init; }
-    public string? Notes { get; init; }
+    public string? Description { get; init; }
+
+    public string? EnergyClass { get; init; }
+    public int? ConstructionYear { get; init; }
 }

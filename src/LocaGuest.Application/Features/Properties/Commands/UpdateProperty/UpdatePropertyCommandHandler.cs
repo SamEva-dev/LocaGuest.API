@@ -43,6 +43,31 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 return Result.Failure<PropertyDetailDto>($"Property with ID {request.Id} not found");
             }
 
+            // Update type / usage type / capacity (if provided)
+            if (!string.IsNullOrWhiteSpace(request.Type) && Enum.TryParse<PropertyType>(request.Type, true, out var parsedType))
+            {
+                property.UpdateClassification(type: parsedType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.PropertyUsageType) && Enum.TryParse<PropertyUsageType>(request.PropertyUsageType, true, out var parsedUsage))
+            {
+                property.UpdateClassification(usageType: parsedUsage);
+            }
+
+            if (request.TotalRooms.HasValue)
+            {
+                property.UpdateCapacity(totalRooms: request.TotalRooms);
+            }
+
+            // Airbnb settings
+            if (request.MinimumStay.HasValue || request.MaximumStay.HasValue || request.PricePerNight.HasValue)
+            {
+                property.UpdateAirbnbSettings(
+                    minimumStay: request.MinimumStay,
+                    maximumStay: request.MaximumStay,
+                    pricePerNight: request.PricePerNight);
+            }
+
             // Update basic details
             property.UpdateDetails(
                 name: request.Name,
@@ -60,10 +85,13 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 floor: request.Floor,
                 hasElevator: request.HasElevator,
                 hasParking: request.HasParking,
+                hasBalcony: request.HasBalcony,
                 isFurnished: request.IsFurnished,
                 charges: request.Charges,
                 deposit: request.Deposit,
-                notes: request.Notes);
+                description: request.Description,
+                energyClass: request.EnergyClass,
+                constructionYear: request.ConstructionYear);
 
             // Update images if provided
             if (request.ImageUrls != null)
@@ -93,7 +121,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
             property.UpdateAdministrativeInfo(
                 cadastralReference: request.CadastralReference,
                 lotNumber: request.LotNumber,
-                acquisitionDate: request.AcquisitionDate,
+                purchaseDate: request.PurchaseDate,
                 totalWorksAmount: request.TotalWorksAmount);
 
             // ✅ Purchase + rentability fields
@@ -192,11 +220,16 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 Floor = property.Floor,
                 HasElevator = property.HasElevator,
                 HasParking = property.HasParking,
+                HasBalcony = property.HasBalcony,
+                IsFurnished = property.IsFurnished,
                 Rent = property.Rent,
                 Charges = property.Charges,
+                Deposit = property.Deposit,
+                Description = property.Description,
                 Status = property.Status.ToString(),
                 TotalRooms = property.TotalRooms,
                 OccupiedRooms = property.OccupiedRooms,
+                ReservedRooms = property.ReservedRooms,
                 MinimumStay = property.MinimumStay,
                 MaximumStay = property.MaximumStay,
                 PricePerNight = property.PricePerNight,
@@ -220,8 +253,10 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 NightsBookedPerMonth = property.NightsBookedPerMonth,
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
-                AcquisitionDate = property.AcquisitionDate,
+                PurchaseDate = property.PurchaseDate,
                 TotalWorksAmount = property.TotalWorksAmount,
+                EnergyClass = property.EnergyClass,
+                ConstructionYear = property.ConstructionYear,
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt,
                 // ✅ Include rooms in response

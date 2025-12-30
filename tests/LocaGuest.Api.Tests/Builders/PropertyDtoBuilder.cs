@@ -20,7 +20,6 @@ public class PropertyDtoBuilder
     private int? _floor = 3;
     private bool _hasElevator = true;
     private bool _hasParking = false;
-    private bool _hasBalcony = true;
     private decimal _rent = 1200;
     private decimal? _charges = 150;
     private string _status = "Vacant";
@@ -92,7 +91,6 @@ public class PropertyDtoBuilder
             Floor = _floor,
             HasElevator = _hasElevator,
             HasParking = _hasParking,
-            HasBalcony = _hasBalcony,
             Rent = _rent,
             Charges = _charges,
             Status = _status,
@@ -109,20 +107,10 @@ public class PropertyDtoBuilder
 /// </summary>
 public class PropertyDetailDtoBuilder : PropertyDtoBuilder
 {
-    private string? _description = "Test property description";
-    private DateTime? _purchaseDate = DateTime.UtcNow.AddYears(-1);
     private decimal? _purchasePrice = 250000;
-    private string? _energyClass = "B";
-    private int? _constructionYear = 2020;
     private List<string> _features = new() { "Wifi", "Climatisation" };
     private int _activeContractsCount = 1;
     private decimal _totalRevenue = 15000;
-
-    public PropertyDetailDtoBuilder WithDescription(string? description)
-    {
-        _description = description;
-        return this;
-    }
 
     public PropertyDetailDtoBuilder WithPurchasePrice(decimal? purchasePrice)
     {
@@ -154,17 +142,12 @@ public class PropertyDetailDtoBuilder : PropertyDtoBuilder
             Floor = baseDto.Floor,
             HasElevator = baseDto.HasElevator,
             HasParking = baseDto.HasParking,
-            HasBalcony = baseDto.HasBalcony,
             Rent = baseDto.Rent,
             Charges = baseDto.Charges,
             Status = baseDto.Status,
             CreatedAt = baseDto.CreatedAt,
             UpdatedAt = baseDto.UpdatedAt,
-            Description = _description,
-            PurchaseDate = _purchaseDate,
             PurchasePrice = _purchasePrice,
-            EnergyClass = _energyClass,
-            ConstructionYear = _constructionYear,
             Features = _features,
             ActiveContractsCount = _activeContractsCount,
             TotalRevenue = _totalRevenue

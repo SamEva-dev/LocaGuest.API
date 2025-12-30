@@ -22,12 +22,16 @@ public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     public int? Floor { get; init; }
     public bool? HasElevator { get; init; }
     public bool? HasParking { get; init; }
+    public bool? HasBalcony { get; init; }
     public bool? IsFurnished { get; init; }
     public decimal? Rent { get; init; }
     public decimal? Charges { get; init; }
     public decimal? Deposit { get; init; }
-    public string? Notes { get; init; }
+    public string? Description { get; init; }
     public List<string>? ImageUrls { get; init; }
+
+    public string? EnergyClass { get; init; }
+    public int? ConstructionYear { get; init; }
 
     public decimal? PurchasePrice { get; init; }
     public decimal? Insurance { get; init; }
@@ -64,6 +68,6 @@ public record UpdatePropertyCommand : IRequest<Result<PropertyDetailDto>>
     // Informations administratives
     public string? CadastralReference { get; init; }
     public string? LotNumber { get; init; }
-    public DateTime? AcquisitionDate { get; init; }
+    public DateTime? PurchaseDate { get; init; }
     public decimal? TotalWorksAmount { get; init; }
 }

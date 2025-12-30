@@ -48,13 +48,17 @@ public class Property : AuditableEntity
     public decimal? Surface { get; private set; }
     public bool HasElevator { get; private set; }
     public bool HasParking { get; private set; }
+    public bool HasBalcony { get; private set; }
     public int? Floor { get; private set; }
     public bool IsFurnished { get; private set; }
     public decimal? Charges { get; private set; }
     public decimal? Deposit { get; private set; }
-    public string? Notes { get; private set; }
+    public string? Description { get; private set; }
     public List<string> ImageUrls { get; private set; } = new();
     public DateTime? UpdatedAt { get; set; }
+
+    public string? EnergyClass { get; private set; }
+    public int? ConstructionYear { get; private set; }
     
     // Diagnostics obligatoires
     public string? DpeRating { get; private set; }  // A, B, C, D, E, F, G
@@ -85,7 +89,7 @@ public class Property : AuditableEntity
     // Informations administratives
     public string? CadastralReference { get; private set; }  // Référence cadastrale
     public string? LotNumber { get; private set; }  // Numéro de lot
-    public DateTime? AcquisitionDate { get; private set; }  // Date d'acquisition
+    public DateTime? PurchaseDate { get; private set; }  // Date d'acquisition
     public decimal? TotalWorksAmount { get; private set; }  // Montant total des travaux réalisés
     
     /// <summary>
@@ -95,6 +99,22 @@ public class Property : AuditableEntity
     public List<string> AssociatedTenantCodes { get; private set; } = new();
 
     private Property() { } // EF
+
+    private static DateTime EnsureUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+    }
+
+    private static DateTime? EnsureUtc(DateTime? value)
+    {
+        return value.HasValue ? EnsureUtc(value.Value) : null;
+    }
 
     public static Property Create(
         string name,
@@ -161,6 +181,63 @@ public class Property : AuditableEntity
         AddDomainEvent(new PropertyStatusChanged(Id, oldStatus, newStatus));
     }
 
+    public void UpdateClassification(PropertyType? type = null, PropertyUsageType? usageType = null)
+    {
+        if (type.HasValue) Type = type.Value;
+
+        if (usageType.HasValue)
+        {
+            UsageType = usageType.Value;
+
+            // If switching away from colocation, TotalRooms is not applicable.
+            if (UsageType != PropertyUsageType.Colocation
+                && UsageType != PropertyUsageType.ColocationIndividual
+                && UsageType != PropertyUsageType.ColocationSolidaire)
+            {
+                TotalRooms = null;
+            }
+        }
+
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateCapacity(int? totalRooms = null)
+    {
+        if (!totalRooms.HasValue)
+            return;
+
+        if (UsageType != PropertyUsageType.Colocation
+            && UsageType != PropertyUsageType.ColocationIndividual
+            && UsageType != PropertyUsageType.ColocationSolidaire)
+        {
+            // Ignore capacity updates when not a colocation
+            TotalRooms = null;
+            return;
+        }
+
+        if (totalRooms.Value <= 0)
+            throw new ValidationException("PROPERTY_COLOCATION_ROOMS_REQUIRED", "TotalRooms is required for colocations");
+
+        TotalRooms = totalRooms.Value;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateAirbnbSettings(int? minimumStay = null, int? maximumStay = null, decimal? pricePerNight = null)
+    {
+        if (!minimumStay.HasValue && !maximumStay.HasValue && !pricePerNight.HasValue)
+            return;
+
+        if (UsageType != PropertyUsageType.Airbnb)
+            throw new ValidationException("PROPERTY_NOT_AIRBNB", "This property is not configured for Airbnb");
+
+        var min = minimumStay ?? MinimumStay ?? 0;
+        var max = maximumStay ?? MaximumStay ?? 0;
+        var price = pricePerNight ?? PricePerNight ?? 0m;
+
+        SetAirbnbSettings(min, max, price);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void UpdateDetails(
         string? name = null,
         string? address = null,
@@ -190,10 +267,13 @@ public class Property : AuditableEntity
         int? floor = null,
         bool? hasElevator = null,
         bool? hasParking = null,
+        bool? hasBalcony = null,
         bool? isFurnished = null,
         decimal? charges = null,
         decimal? deposit = null,
-        string? notes = null)
+        string? description = null,
+        string? energyClass = null,
+        int? constructionYear = null)
     {
         if (city != null) City = city;
         if (postalCode != null) PostalCode = postalCode;
@@ -207,10 +287,13 @@ public class Property : AuditableEntity
         if (floor.HasValue) Floor = floor.Value;
         if (hasElevator.HasValue) HasElevator = hasElevator.Value;
         if (hasParking.HasValue) HasParking = hasParking.Value;
+        if (hasBalcony.HasValue) HasBalcony = hasBalcony.Value;
         if (isFurnished.HasValue) IsFurnished = isFurnished.Value;
         if (charges.HasValue) Charges = charges.Value;
         if (deposit.HasValue) Deposit = deposit.Value;
-        if (notes != null) Notes = notes;
+        if (description != null) Description = description;
+        if (energyClass != null) EnergyClass = energyClass;
+        if (constructionYear.HasValue) ConstructionYear = constructionYear.Value;
         
         UpdatedAt = DateTime.UtcNow;
     }
@@ -235,12 +318,12 @@ public class Property : AuditableEntity
         if (dpeRating != null) DpeRating = dpeRating;
         if (dpeValue.HasValue) DpeValue = dpeValue.Value;
         if (gesRating != null) GesRating = gesRating;
-        if (electricDiagnosticDate.HasValue) ElectricDiagnosticDate = electricDiagnosticDate;
-        if (electricDiagnosticExpiry.HasValue) ElectricDiagnosticExpiry = electricDiagnosticExpiry;
-        if (gasDiagnosticDate.HasValue) GasDiagnosticDate = gasDiagnosticDate;
-        if (gasDiagnosticExpiry.HasValue) GasDiagnosticExpiry = gasDiagnosticExpiry;
+        if (electricDiagnosticDate.HasValue) ElectricDiagnosticDate = EnsureUtc(electricDiagnosticDate);
+        if (electricDiagnosticExpiry.HasValue) ElectricDiagnosticExpiry = EnsureUtc(electricDiagnosticExpiry);
+        if (gasDiagnosticDate.HasValue) GasDiagnosticDate = EnsureUtc(gasDiagnosticDate);
+        if (gasDiagnosticExpiry.HasValue) GasDiagnosticExpiry = EnsureUtc(gasDiagnosticExpiry);
         if (hasAsbestos.HasValue) HasAsbestos = hasAsbestos;
-        if (asbestosDiagnosticDate.HasValue) AsbestosDiagnosticDate = asbestosDiagnosticDate;
+        if (asbestosDiagnosticDate.HasValue) AsbestosDiagnosticDate = EnsureUtc(asbestosDiagnosticDate);
         if (erpZone != null) ErpZone = erpZone;
         
         UpdatedAt = DateTime.UtcNow;
@@ -327,12 +410,12 @@ public class Property : AuditableEntity
     public void UpdateAdministrativeInfo(
         string? cadastralReference = null,
         string? lotNumber = null,
-        DateTime? acquisitionDate = null,
+        DateTime? purchaseDate = null,
         decimal? totalWorksAmount = null)
     {
         if (cadastralReference != null) CadastralReference = cadastralReference;
         if (lotNumber != null) LotNumber = lotNumber;
-        if (acquisitionDate.HasValue) AcquisitionDate = acquisitionDate;
+        if (purchaseDate.HasValue) PurchaseDate = EnsureUtc(purchaseDate);
         if (totalWorksAmount.HasValue)
         {
             if (totalWorksAmount.Value < 0)
