@@ -24,23 +24,23 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService? _currentUserService;
-    private readonly ITenantContext? _tenantContext;
+    private readonly IOrganizationContext? _orgContext;
 
     public LocaGuestDbContext(
         DbContextOptions<LocaGuestDbContext> options,
         IMediator mediator,
         ICurrentUserService? currentUserService = null,
-        ITenantContext? tenantContext = null)
+        IOrganizationContext? organizationContext = null)
         : base(options)
     {
         _mediator = mediator;
         _currentUserService = currentUserService;
-        _tenantContext = tenantContext;
+        _orgContext = organizationContext;
     }
 
     // Multi-tenant Organizations
     public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<TenantSequence> TenantSequences => Set<TenantSequence>();
+    public DbSet<OrganizationSequence> OrganizationSequences => Set<OrganizationSequence>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<InvitationToken> InvitationTokens => Set<InvitationToken>();
 
@@ -107,16 +107,16 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Ignore(o => o.DomainEvents);
         });
 
-        // TenantSequence (Numbering service per organization)
-        modelBuilder.Entity<TenantSequence>(entity =>
+        // OrganizationSequence (Numbering service per organization)
+        modelBuilder.Entity<OrganizationSequence>(entity =>
         {
             entity.ToTable("tenant_sequences");
-            entity.HasKey(ts => new { ts.TenantId, ts.EntityPrefix });
-            entity.Property(ts => ts.TenantId).IsRequired();
+            entity.HasKey(ts => new { ts.OrganizationId, ts.EntityPrefix });
+            entity.Property(ts => ts.OrganizationId).IsRequired();
             entity.Property(ts => ts.EntityPrefix).IsRequired().HasMaxLength(10);
             entity.Property(ts => ts.LastNumber).IsRequired();
             entity.Property(ts => ts.Description).HasMaxLength(200);
-            entity.HasIndex(ts => ts.TenantId);
+            entity.HasIndex(ts => ts.OrganizationId);
         });
 
         // TeamMember (Members of an organization)
@@ -175,8 +175,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("properties");
             entity.HasKey(p => p.Id);
-            entity.Property(p => p.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(p => p.TenantId);
+            entity.Property(p => p.OrganizationId).IsRequired();
+            entity.HasIndex(p => p.OrganizationId);
             entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
             entity.Property(p => p.Address).IsRequired().HasMaxLength(300);
             entity.Property(p => p.City).IsRequired().HasMaxLength(100);
@@ -244,8 +244,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("tenants");
             entity.HasKey(t => t.Id);
-            entity.Property(t => t.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(t => t.TenantId);
+            entity.Property(t => t.OrganizationId).IsRequired();
+            entity.HasIndex(t => t.OrganizationId);
             entity.Property(t => t.FullName).IsRequired().HasMaxLength(200);
             entity.Property(t => t.Email).IsRequired().HasMaxLength(200);
             entity.Property(t => t.Phone).HasMaxLength(50);
@@ -257,8 +257,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("contracts");
             entity.HasKey(c => c.Id);
-            entity.Property(c => c.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(c => c.TenantId);
+            entity.Property(c => c.OrganizationId).IsRequired();
+            entity.HasIndex(c => c.OrganizationId);
             entity.Property(c => c.RenterTenantId).IsRequired();
             entity.HasIndex(c => c.RenterTenantId);
             entity.Property(c => c.Rent).HasColumnType("decimal(18,2)");
@@ -308,8 +308,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("user_settings");
             entity.HasKey(us => us.Id);
-            entity.Property(us => us.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(us => new { us.TenantId, us.UserId }).IsUnique();
+            entity.Property(us => us.OrganizationId).IsRequired();
+            entity.HasIndex(us => new { us.OrganizationId, us.UserId }).IsUnique();
             entity.Property(us => us.Language).IsRequired().HasMaxLength(10);
             entity.Property(us => us.Timezone).IsRequired().HasMaxLength(100);
             entity.Property(us => us.DateFormat).IsRequired().HasMaxLength(20);
@@ -323,8 +323,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("rentability_scenarios");
             entity.HasKey(rs => rs.Id);
-            entity.Property(rs => rs.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(rs => rs.TenantId);
+            entity.Property(rs => rs.OrganizationId).IsRequired();
+            entity.HasIndex(rs => rs.OrganizationId);
             entity.Property(rs => rs.Name).IsRequired().HasMaxLength(200);
             entity.Property(rs => rs.PropertyType).IsRequired().HasMaxLength(50);
             entity.Property(rs => rs.Location).IsRequired().HasMaxLength(300);
@@ -375,8 +375,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(rs => rs.PlannedCapexJson).HasColumnType("text");
             entity.Property(rs => rs.ResultsJson).HasColumnType("text");
             
-            entity.HasIndex(rs => new { rs.TenantId, rs.UserId });
-            entity.HasIndex(rs => new { rs.TenantId, rs.UserId, rs.IsBase });
+            entity.HasIndex(rs => new { rs.OrganizationId, rs.UserId });
+            entity.HasIndex(rs => new { rs.OrganizationId, rs.UserId, rs.IsBase });
             
             entity.HasMany(rs => rs.Versions)
                 .WithOne()
@@ -429,8 +429,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("subscriptions");
             entity.HasKey(s => s.Id);
-            entity.Property(s => s.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(s => new { s.TenantId, s.UserId });
+            entity.Property(s => s.OrganizationId).IsRequired();
+            entity.HasIndex(s => new { s.OrganizationId, s.UserId });
             entity.HasIndex(s => s.StripeSubscriptionId);
             entity.Ignore(s => s.DomainEvents);
         });
@@ -440,18 +440,18 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         {
             entity.ToTable("usage_events");
             entity.HasKey(ue => ue.Id);
-            entity.Property(ue => ue.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(ue => new { ue.TenantId, ue.SubscriptionId });
+            entity.Property(ue => ue.OrganizationId).IsRequired();
+            entity.HasIndex(ue => new { ue.OrganizationId, ue.SubscriptionId });
             entity.Ignore(ue => ue.DomainEvents);
         });
-        
+
         // UsageAggregate
         modelBuilder.Entity<UsageAggregate>(entity =>
         {
             entity.ToTable("usage_aggregates");
             entity.HasKey(ua => ua.Id);
-            entity.Property(ua => ua.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(ua => new { ua.TenantId, ua.UserId, ua.Dimension, ua.PeriodYear, ua.PeriodMonth }).IsUnique();
+            entity.Property(ua => ua.OrganizationId).IsRequired();
+            entity.HasIndex(ua => new { ua.OrganizationId, ua.UserId, ua.Dimension, ua.PeriodYear, ua.PeriodMonth }).IsUnique();
             entity.Ignore(ua => ua.DomainEvents);
         });
         
@@ -461,7 +461,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.ToTable("tracking_events");
             entity.HasKey(te => te.Id);
             
-            entity.Property(te => te.TenantId).IsRequired();
+            entity.Property(te => te.OrganizationId).IsRequired();
             entity.Property(te => te.UserId).IsRequired();
             entity.Property(te => te.EventType).IsRequired().HasMaxLength(100);
             entity.Property(te => te.PageName).HasMaxLength(200);
@@ -475,12 +475,12 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(te => te.Metadata).HasColumnType("jsonb");
             
             // Indexes for performance
-            entity.HasIndex(te => te.TenantId);
+            entity.HasIndex(te => te.OrganizationId);
             entity.HasIndex(te => te.UserId);
             entity.HasIndex(te => te.EventType);
             entity.HasIndex(te => te.Timestamp);
-            entity.HasIndex(te => new { te.TenantId, te.Timestamp });
-            entity.HasIndex(te => new { te.TenantId, te.UserId, te.Timestamp });
+            entity.HasIndex(te => new { te.OrganizationId, te.Timestamp });
+            entity.HasIndex(te => new { te.OrganizationId, te.UserId, te.Timestamp });
             entity.HasIndex(te => new { te.EventType, te.Timestamp });
         });
         
@@ -491,8 +491,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasKey(ie => ie.Id);
             
             // TenantId (string) hérité de AuditableEntity pour multi-tenant
-            entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(ie => ie.TenantId);
+            entity.Property(ie => ie.OrganizationId).IsRequired();
+            entity.HasIndex(ie => ie.OrganizationId);
             
             // RenterTenantId (Guid) pour le locataire du contrat
             entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
@@ -547,8 +547,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasKey(ie => ie.Id);
             
             // TenantId (string) hérité de AuditableEntity pour multi-tenant
-            entity.Property(ie => ie.TenantId).IsRequired().HasMaxLength(100);
-            entity.HasIndex(ie => ie.TenantId);
+            entity.Property(ie => ie.OrganizationId).IsRequired();
+            entity.HasIndex(ie => ie.OrganizationId);
             
             // RenterTenantId (Guid) pour le locataire du contrat
             entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
@@ -653,7 +653,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         foreach (var entityType in tenantEntityTypes)
         {
             var method = typeof(LocaGuestDbContext)
-                .GetMethod(nameof(ApplyTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                .GetMethod(nameof(ApplyOrganizationFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
             method?.MakeGenericMethod(entityType).Invoke(this, new object[] { modelBuilder });
         }
@@ -662,77 +662,81 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     /// <summary>
     /// Applique un filtre global sur une entité pour filtrer par TenantId
     /// </summary>
-    private void ApplyTenantFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
+    private void ApplyOrganizationFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
     {
-        // IMPORTANT: Ne PAS capturer tenantId dans une variable locale
+        // IMPORTANT: Ne PAS capturer OrganizationId dans une variable locale
         // car cela fige la valeur au moment de OnModelCreating (avant l'authentification).
-        // Le filtre doit évaluer _tenantContext à CHAQUE requête.
-        modelBuilder.Entity<TEntity>().HasQueryFilter(e => 
-            _tenantContext == null || 
-            !_tenantContext.IsAuthenticated || 
-            _tenantContext.TenantId == null ||
-            e.TenantId == _tenantContext.TenantId.ToString());
+        // Le filtre doit évaluer _orgContext à CHAQUE requête.
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
+            (_orgContext != null && _orgContext.IsSystemContext && _orgContext.CanBypassOrganizationFilter)
+            ||
+            (_orgContext != null && _orgContext.OrganizationId.HasValue && e.OrganizationId == _orgContext.OrganizationId.Value));
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // Audit et isolation multi-tenant
         var entries = ChangeTracker.Entries<AuditableEntity>();
+
+        var userId = _currentUserService?.UserId?.ToString() ?? "system";
+        var now = DateTime.UtcNow;
+
+        var orgId = _orgContext?.OrganizationId;
+        var isAuthenticated = _orgContext?.IsAuthenticated == true;
+        var bypass = _orgContext?.IsSystemContext == true && _orgContext?.CanBypassOrganizationFilter == true;
+
+        if (isAuthenticated && !orgId.HasValue)
+        {
+            throw new UnauthorizedAccessException("Authenticated request is missing OrganizationId.");
+        }
+
         foreach (var entry in entries)
         {
-            var userId = _currentUserService?.UserId?.ToString() ?? "system";
-            var now = DateTime.UtcNow;
-
             if (entry.State == EntityState.Added)
             {
-                // Assignation automatique du TenantId
-                if (string.IsNullOrEmpty(entry.Entity.TenantId))
+                if (!bypass)
                 {
-                    if (_tenantContext?.IsAuthenticated == true && _tenantContext.TenantId.HasValue)
+                    if (orgId.HasValue)
                     {
-                        entry.Entity.TenantId = _tenantContext.TenantId.Value.ToString();
+                        entry.Entity.SetOrganizationId(orgId.Value);
                     }
-                    else if (_tenantContext?.IsAuthenticated == true)
+                    else
                     {
-                        // User is authenticated but no TenantId in JWT
-                        throw new UnauthorizedAccessException("Cannot create entity without a valid TenantId");
+                        // Contexte non authentifié (jobs, tâches internes, tests...)
+                        // => exiger que l'entité ait déjà été taggée explicitement.
+                        if (entry.Entity.OrganizationId == Guid.Empty)
+                            throw new UnauthorizedAccessException("Missing OrganizationId for created entity.");
                     }
-                    // else: Not authenticated (seeding, background jobs) - allow creation without TenantId
                 }
-                
-                // Vérification que le TenantId correspond au tenant courant (only if authenticated)
-                if (_tenantContext?.IsAuthenticated == true && 
-                    !string.IsNullOrEmpty(entry.Entity.TenantId) &&
-                    entry.Entity.TenantId != _tenantContext.TenantId.ToString())
+                else
                 {
-                    throw new UnauthorizedAccessException($"Cannot create entity for another tenant. Expected: {_tenantContext.TenantId}, Got: {entry.Entity.TenantId}");
+                    if (entry.Entity.OrganizationId == Guid.Empty)
+                        throw new InvalidOperationException("System context must explicitly set OrganizationId on created entities.");
                 }
-                
+
                 entry.Entity.CreatedBy = userId;
                 entry.Entity.CreatedAt = now;
             }
 
-            if (entry.State == EntityState.Modified)
+            if (entry.State is EntityState.Modified or EntityState.Deleted)
             {
-                // Vérification que le TenantId n'a pas été modifié
-                var originalTenantId = entry.Property(nameof(AuditableEntity.TenantId)).OriginalValue?.ToString();
-                var currentTenantId = entry.Entity.TenantId;
-                
-                if (originalTenantId != currentTenantId)
+                if (entry.Property(nameof(AuditableEntity.OrganizationId)).IsModified)
+                    throw new InvalidOperationException("OrganizationId cannot be modified after entity creation.");
+
+                if (!bypass)
                 {
-                    throw new InvalidOperationException("TenantId cannot be modified after entity creation");
+                    if (entry.Entity.OrganizationId == Guid.Empty)
+                        throw new UnauthorizedAccessException("Entity without OrganizationId cannot be modified.");
+
+                    if (entry.Entity.OrganizationId != orgId!.Value)
+                        throw new UnauthorizedAccessException("Cross-organization data access is forbidden.");
                 }
-                
-                // Vérification que l'entité appartient au tenant courant (only if authenticated)
-                if (_tenantContext?.IsAuthenticated == true && 
-                    !string.IsNullOrEmpty(entry.Entity.TenantId) &&
-                    entry.Entity.TenantId != _tenantContext.TenantId.ToString())
+
+                if (entry.State == EntityState.Modified)
                 {
-                    throw new UnauthorizedAccessException($"Cannot modify entity from another tenant");
+                    entry.Entity.LastModifiedBy = userId;
+                    entry.Entity.LastModifiedAt = now;
                 }
-                
-                entry.Entity.LastModifiedBy = userId;
-                entry.Entity.LastModifiedAt = now;
             }
         }
 

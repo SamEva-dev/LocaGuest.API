@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Properties.Commands.UpdateProperty;
 public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyCommand, Result<PropertyDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdatePropertyCommandHandler> _logger;
 
     public UpdatePropertyCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<UpdatePropertyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -29,7 +30,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
         try
         {
             // Validate tenant authentication
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
             {
                 _logger.LogWarning("Unauthorized property update attempt");
                 return Result.Failure<PropertyDetailDto>("User not authenticated");

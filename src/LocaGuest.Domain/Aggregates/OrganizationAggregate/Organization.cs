@@ -97,6 +97,8 @@ public class Organization : AuditableEntity
             SubscriptionExpiryDate = DateTime.UtcNow.AddDays(30) // 30-day trial
         };
 
+        organization.SetOrganizationId(organization.Id);
+
         organization.AddDomainEvent(new OrganizationCreated(
             organization.Id,
             organization.Code,

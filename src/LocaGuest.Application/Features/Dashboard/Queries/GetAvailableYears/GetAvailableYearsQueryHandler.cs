@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,16 +10,16 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetAvailableYears;
 public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQuery, Result<AvailableYearsDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetAvailableYearsQueryHandler> _logger;
 
     public GetAvailableYearsQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetAvailableYearsQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -26,7 +27,7 @@ public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQu
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<AvailableYearsDto>("User not authenticated");
 
             var currentYear = DateTime.UtcNow.Year;
@@ -57,7 +58,7 @@ public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQu
                 years.Add(currentYear);
             }
 
-            _logger.LogInformation("Retrieved {Count} available years for tenant {TenantId}", years.Count, _tenantContext.TenantId);
+            _logger.LogInformation("Retrieved {Count} available years", years.Count);
 
             return Result.Success(new AvailableYearsDto
             {
@@ -66,7 +67,7 @@ public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQu
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving available years for tenant {TenantId}", _tenantContext.TenantId);
+            _logger.LogError(ex, "Error retrieving available years");
             return Result.Failure<AvailableYearsDto>($"Error retrieving available years: {ex.Message}");
         }
     }

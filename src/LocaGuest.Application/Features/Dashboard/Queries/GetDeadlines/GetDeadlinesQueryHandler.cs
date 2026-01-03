@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetDeadlines;
 public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Result<DeadlinesDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetDeadlinesQueryHandler> _logger;
 
     public GetDeadlinesQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetDeadlinesQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,7 +29,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<DeadlinesDto>("User not authenticated");
 
             var deadlines = new List<DeadlineItem>();
@@ -105,7 +106,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
                 .Take(10)
                 .ToList();
 
-            _logger.LogInformation("Retrieved {Count} upcoming deadlines for tenant {TenantId}", sortedDeadlines.Count, _tenantContext.TenantId);
+            _logger.LogInformation("Retrieved {Count} upcoming deadlines", sortedDeadlines.Count);
 
             return Result.Success(new DeadlinesDto
             {
@@ -114,7 +115,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving deadlines for tenant {TenantId}", _tenantContext.TenantId);
+            _logger.LogError(ex, "Error retrieving deadlines");
             return Result.Failure<DeadlinesDto>($"Error retrieving deadlines: {ex.Message}");
         }
     }

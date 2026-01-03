@@ -31,7 +31,7 @@ public class GetTrackingEventQueryHandler : IRequestHandler<GetTrackingEventQuer
 
             var dto = new TrackingEventReadDto(
                 entity.Id,
-                entity.TenantId,
+                entity.OrganizationId,
                 entity.UserId,
                 entity.EventType,
                 entity.PageName,

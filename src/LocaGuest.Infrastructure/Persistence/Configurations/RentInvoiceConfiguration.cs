@@ -15,7 +15,7 @@ public class RentInvoiceConfiguration : IEntityTypeConfiguration<RentInvoice>
         builder.Property(ri => ri.ContractId)
             .IsRequired();
 
-        builder.Property(ri => ri.TenantId)
+        builder.Property(ri => ri.OrganizationId)
             .IsRequired();
 
         builder.Property(ri => ri.PropertyId)
@@ -53,7 +53,7 @@ public class RentInvoiceConfiguration : IEntityTypeConfiguration<RentInvoice>
 
         // Indexes pour performance
         builder.HasIndex(ri => ri.ContractId);
-        builder.HasIndex(ri => ri.TenantId);
+        builder.HasIndex(ri => ri.OrganizationId);
         builder.HasIndex(ri => ri.PropertyId);
         builder.HasIndex(ri => new { ri.ContractId, ri.Month, ri.Year }).IsUnique();
         builder.HasIndex(ri => ri.Status);

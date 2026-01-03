@@ -36,6 +36,8 @@ public class AuditDbContext : DbContext, IAuditDbContext
             entity.Property(e => e.HttpMethod).HasMaxLength(10);
             entity.Property(e => e.CorrelationId).HasMaxLength(100);
             entity.Property(e => e.SessionId).HasMaxLength(100);
+
+            entity.Property(e => e.OrganizationId).HasColumnName("TenantId");
             
             // JSON columns for flexibility
             entity.Property(e => e.OldValues).HasColumnType("jsonb");
@@ -46,7 +48,7 @@ public class AuditDbContext : DbContext, IAuditDbContext
             // Indexes for performance
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.TenantId);
+            entity.HasIndex(e => e.OrganizationId);
             entity.HasIndex(e => e.EntityType);
             entity.HasIndex(e => e.Action);
             entity.HasIndex(e => new { e.EntityType, e.EntityId });
@@ -65,6 +67,8 @@ public class AuditDbContext : DbContext, IAuditDbContext
             entity.Property(e => e.CorrelationId).HasMaxLength(100);
             entity.Property(e => e.RequestPath).HasMaxLength(500);
             entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+
+            entity.Property(e => e.OrganizationId).HasColumnName("TenantId");
             
             // JSON columns
             entity.Property(e => e.CommandData).HasColumnType("jsonb");
@@ -74,7 +78,7 @@ public class AuditDbContext : DbContext, IAuditDbContext
             // Indexes
             entity.HasIndex(e => e.ExecutedAt);
             entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.TenantId);
+            entity.HasIndex(e => e.OrganizationId);
             entity.HasIndex(e => e.CommandName);
             entity.HasIndex(e => e.Success);
             entity.HasIndex(e => e.CorrelationId);

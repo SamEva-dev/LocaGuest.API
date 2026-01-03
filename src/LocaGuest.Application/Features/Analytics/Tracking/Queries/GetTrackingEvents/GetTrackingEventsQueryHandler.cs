@@ -54,7 +54,7 @@ public class GetTrackingEventsQueryHandler : IRequestHandler<GetTrackingEventsQu
                 .Take(pageSize)
                 .Select(entity => new TrackingEventReadDto(
                     entity.Id,
-                    entity.TenantId,
+                    entity.OrganizationId,
                     entity.UserId,
                     entity.EventType,
                     entity.PageName,

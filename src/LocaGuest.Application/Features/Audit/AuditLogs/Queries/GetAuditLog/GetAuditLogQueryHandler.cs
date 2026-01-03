@@ -33,7 +33,7 @@ public class GetAuditLogQueryHandler : IRequestHandler<GetAuditLogQuery, Result<
                 entity.Id,
                 entity.UserId,
                 entity.UserEmail,
-                entity.TenantId,
+                entity.OrganizationId,
                 entity.Action,
                 entity.EntityType,
                 entity.EntityId,

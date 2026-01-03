@@ -22,7 +22,7 @@ public class DocumentsIntegrationTests : IDisposable
 {
     private readonly LocaGuestDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly string _testTenantId = Guid.NewGuid().ToString();
@@ -35,16 +35,17 @@ public class DocumentsIntegrationTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _tenantContextMock = new Mock<ITenantContext>();
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
-        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.Parse(_testTenantId));
-        _tenantContextMock.Setup(x => x.UserId).Returns(_testUserId);
+        _orgContextMock = new Mock<IOrganizationContext>();
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.Parse(_testTenantId));
+        _orgContextMock.Setup(x => x.IsSystemContext).Returns(false);
+        _orgContextMock.Setup(x => x.CanBypassOrganizationFilter).Returns(false);
 
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _currentUserServiceMock.Setup(x => x.UserId).Returns(_testUserId);
 
         var mediatorMock = new Mock<IMediator>();
-        _context = new LocaGuestDbContext(options, mediatorMock.Object, _currentUserServiceMock.Object, _tenantContextMock.Object);
+        _context = new LocaGuestDbContext(options, mediatorMock.Object, _currentUserServiceMock.Object, _orgContextMock.Object);
         _unitOfWork = new UnitOfWork(_context);
 
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
@@ -81,7 +82,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());
 
@@ -133,7 +134,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());
 
@@ -170,7 +171,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());
 

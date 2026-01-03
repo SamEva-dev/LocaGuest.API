@@ -10,18 +10,18 @@ namespace LocaGuest.Application.Features.PropertyImages.Commands.DeleteImage;
 public class DeleteImageCommandHandler : IRequestHandler<DeleteImageCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<DeleteImageCommandHandler> _logger;
 
     public DeleteImageCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IFileStorageService fileStorage,
         ILogger<DeleteImageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -39,7 +39,7 @@ public class DeleteImageCommandHandler : IRequestHandler<DeleteImageCommand, Res
 
         // Vérifier que l'image appartient à une propriété du tenant
         var property = await _unitOfWork.Properties.GetByIdAsync(image.PropertyId, cancellationToken);
-        if (property == null || property.TenantId.ToString() != _tenantContext.TenantId.ToString())
+        if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure("Accès non autorisé");
         }

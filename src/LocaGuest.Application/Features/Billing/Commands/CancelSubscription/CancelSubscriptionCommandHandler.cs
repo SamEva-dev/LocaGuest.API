@@ -10,18 +10,18 @@ public class CancelSubscriptionCommandHandler : IRequestHandler<CancelSubscripti
 {
     private readonly IStripeService _stripeService;
     private readonly ISubscriptionService _subscriptionService;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CancelSubscriptionCommandHandler> _logger;
 
     public CancelSubscriptionCommandHandler(
         IStripeService stripeService,
         ISubscriptionService subscriptionService,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<CancelSubscriptionCommandHandler> logger)
     {
         _stripeService = stripeService;
         _subscriptionService = subscriptionService;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -29,10 +29,10 @@ public class CancelSubscriptionCommandHandler : IRequestHandler<CancelSubscripti
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<bool>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value;
+            var userId = _currentUserService.UserId.Value;
             var subscription = await _subscriptionService.GetActiveSubscriptionAsync(userId);
 
             if (subscription == null || string.IsNullOrEmpty(subscription.StripeSubscriptionId))

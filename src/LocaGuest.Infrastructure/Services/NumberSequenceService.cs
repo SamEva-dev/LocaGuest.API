@@ -24,24 +24,24 @@ public class NumberSequenceService : INumberSequenceService
     }
 
     public async Task<string> GenerateNextCodeAsync(
-        Guid tenantId,
+        Guid organizationId,
         string entityPrefix,
         CancellationToken cancellationToken = default)
     {
-        if (tenantId == Guid.Empty)
-            throw new ArgumentException("TenantId cannot be empty", nameof(tenantId));
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId cannot be empty", nameof(organizationId));
 
         if (string.IsNullOrWhiteSpace(entityPrefix))
             throw new ArgumentException("EntityPrefix cannot be null or empty", nameof(entityPrefix));
 
         // Get tenant code
         var organization = await _context.Organizations
-            .Where(o => o.Id == tenantId)
+            .Where(o => o.Id == organizationId)
             .Select(o => new { o.Code })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (organization == null)
-            throw new InvalidOperationException($"Organization with ID {tenantId} not found");
+            throw new InvalidOperationException($"Organization with ID {organizationId} not found");
 
         var tenantCode = organization.Code;
 
@@ -51,8 +51,8 @@ public class NumberSequenceService : INumberSequenceService
         try
         {
             // Lock the sequence row for this tenant+prefix (SELECT FOR UPDATE in SQL)
-            var sequence = await _context.TenantSequences
-                .Where(s => s.TenantId == tenantId && s.EntityPrefix == entityPrefix)
+            var sequence = await _context.OrganizationSequences
+                .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
                 .FirstOrDefaultAsync(cancellationToken);
 
             int nextNumber;
@@ -61,16 +61,16 @@ public class NumberSequenceService : INumberSequenceService
             {
                 // Create new sequence starting at 1
                 nextNumber = 1;
-                sequence = new TenantSequence
+                sequence = new OrganizationSequence
                 {
-                    TenantId = tenantId,
+                    OrganizationId = organizationId,
                     EntityPrefix = entityPrefix,
                     LastNumber = nextNumber,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     Description = $"Sequence for {entityPrefix} entities"
                 };
-                _context.TenantSequences.Add(sequence);
+                _context.OrganizationSequences.Add(sequence);
             }
             else
             {
@@ -87,7 +87,7 @@ public class NumberSequenceService : INumberSequenceService
             
             _logger.LogInformation(
                 "Generated code {Code} for tenant {TenantId} prefix {Prefix}",
-                generatedCode, tenantId, entityPrefix);
+                generatedCode, organizationId, entityPrefix);
 
             return generatedCode;
         }
@@ -96,29 +96,29 @@ public class NumberSequenceService : INumberSequenceService
             await transaction.RollbackAsync(cancellationToken);
             _logger.LogWarning(ex, 
                 "Concurrency conflict generating code for tenant {TenantId} prefix {Prefix}. Retrying...",
-                tenantId, entityPrefix);
+                organizationId, entityPrefix);
             
             // Retry once on concurrency conflict
             await Task.Delay(100, cancellationToken);
-            return await GenerateNextCodeAsync(tenantId, entityPrefix, cancellationToken);
+            return await GenerateNextCodeAsync(organizationId, entityPrefix, cancellationToken);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
             _logger.LogError(ex, 
                 "Error generating code for tenant {TenantId} prefix {Prefix}",
-                tenantId, entityPrefix);
+                organizationId, entityPrefix);
             throw;
         }
     }
 
     public async Task<int> GetLastNumberAsync(
-        Guid tenantId,
+        Guid organizationId,
         string entityPrefix,
         CancellationToken cancellationToken = default)
     {
-        var sequence = await _context.TenantSequences
-            .Where(s => s.TenantId == tenantId && s.EntityPrefix == entityPrefix)
+        var sequence = await _context.OrganizationSequences
+            .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
             .FirstOrDefaultAsync(cancellationToken);
 
         return sequence?.LastNumber ?? 0;
@@ -136,7 +136,7 @@ public class NumberSequenceService : INumberSequenceService
     }
 
     public async Task ResetSequenceAsync(
-        Guid tenantId,
+        Guid organizationId,
         string entityPrefix,
         int newNumber,
         CancellationToken cancellationToken = default)
@@ -144,8 +144,8 @@ public class NumberSequenceService : INumberSequenceService
         if (newNumber < 0)
             throw new ArgumentException("New number cannot be negative", nameof(newNumber));
 
-        var sequence = await _context.TenantSequences
-            .Where(s => s.TenantId == tenantId && s.EntityPrefix == entityPrefix)
+        var sequence = await _context.OrganizationSequences
+            .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (sequence != null)
@@ -156,7 +156,7 @@ public class NumberSequenceService : INumberSequenceService
             
             _logger.LogWarning(
                 "Sequence reset for tenant {TenantId} prefix {Prefix} to {NewNumber}",
-                tenantId, entityPrefix, newNumber);
+                organizationId, entityPrefix, newNumber);
         }
     }
 }

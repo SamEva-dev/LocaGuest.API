@@ -13,18 +13,18 @@ namespace LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
 public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, Result<TenantDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<CreateTenantCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
@@ -33,7 +33,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_orgContext.IsAuthenticated)
                 return Result.Failure<TenantDetailDto>("User not authenticated");
 
             // Create full name
@@ -41,7 +41,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
 
             // ✅ QUICK WIN: Generate automatic code
             var code = await _numberSequenceService.GenerateNextCodeAsync(
-                _tenantContext.TenantId!.Value,
+                _orgContext.OrganizationId!.Value,
                 EntityPrefixes.Tenant,
                 cancellationToken);
 

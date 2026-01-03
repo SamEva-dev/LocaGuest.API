@@ -11,20 +11,20 @@ namespace LocaGuest.Application.Features.Team.Commands.InviteTeamMember;
 public class InviteTeamMemberCommandHandler : IRequestHandler<InviteTeamMemberCommand, Result<InviteTeamMemberResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IEmailService _emailService;
     private readonly ILogger<InviteTeamMemberCommandHandler> _logger;
 
     public InviteTeamMemberCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ICurrentUserService currentUserService,
         IEmailService emailService,
         ILogger<InviteTeamMemberCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _currentUserService = currentUserService;
         _emailService = emailService;
         _logger = logger;
@@ -39,7 +39,7 @@ public class InviteTeamMemberCommandHandler : IRequestHandler<InviteTeamMemberCo
         }
 
         // Récupérer l'organization actuelle (tenant multi-tenant)
-        var organizationId = _tenantContext.TenantId;
+        var organizationId = _orgContext.OrganizationId;
         if (!organizationId.HasValue || organizationId.Value == Guid.Empty)
         {
             return Result.Failure<InviteTeamMemberResponse>("Organization context not found");

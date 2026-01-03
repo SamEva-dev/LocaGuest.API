@@ -9,22 +9,22 @@ namespace LocaGuest.Application.Features.Team.Queries.GetTeamMembers;
 public class GetTeamMembersQueryHandler : IRequestHandler<GetTeamMembersQuery, Result<List<TeamMemberDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<GetTeamMembersQueryHandler> _logger;
 
     public GetTeamMembersQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<GetTeamMembersQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
     public async Task<Result<List<TeamMemberDto>>> Handle(GetTeamMembersQuery request, CancellationToken cancellationToken)
     {
-        var organizationId = _tenantContext.TenantId;
+        var organizationId = _orgContext.OrganizationId;
         if (!organizationId.HasValue || organizationId.Value == Guid.Empty)
         {
             return Result.Failure<List<TeamMemberDto>>("Organization context not found");

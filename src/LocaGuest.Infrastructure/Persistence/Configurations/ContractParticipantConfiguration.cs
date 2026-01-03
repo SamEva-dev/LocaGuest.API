@@ -13,7 +13,7 @@ public class ContractParticipantConfiguration : IEntityTypeConfiguration<Contrac
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.ContractId).IsRequired();
-        builder.Property(p => p.TenantId).IsRequired();
+        builder.Property(p => p.OrganizationId).IsRequired();
 
         builder.Property(p => p.StartDate).IsRequired();
         builder.Property(p => p.EndDate);
@@ -31,8 +31,8 @@ public class ContractParticipantConfiguration : IEntityTypeConfiguration<Contrac
         builder.Property(p => p.LastModifiedAt);
 
         builder.HasIndex(p => p.ContractId);
-        builder.HasIndex(p => p.TenantId);
-        builder.HasIndex(p => new { p.ContractId, p.TenantId, p.StartDate }).IsUnique();
+        builder.HasIndex(p => p.OrganizationId);
+        builder.HasIndex(p => new { p.ContractId, p.OrganizationId, p.StartDate }).IsUnique();
         builder.HasIndex(p => p.StartDate);
         builder.HasIndex(p => p.EndDate);
     }

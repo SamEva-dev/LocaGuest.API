@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Users;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Users.Commands.UpdateNotifications;
 public class UpdateNotificationsCommandHandler : IRequestHandler<UpdateNotificationsCommand, Result<NotificationSettingsDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateNotificationsCommandHandler> _logger;
 
     public UpdateNotificationsCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<UpdateNotificationsCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,10 +29,10 @@ public class UpdateNotificationsCommandHandler : IRequestHandler<UpdateNotificat
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<NotificationSettingsDto>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
             var settings = await _unitOfWork.NotificationSettings.GetByUserIdAsync(userId, cancellationToken);
             
             if (settings == null)

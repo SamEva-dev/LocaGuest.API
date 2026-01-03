@@ -40,7 +40,7 @@ public interface ILocaGuestDbContext
     
     // Multi-Tenant System
     DbSet<Organization> Organizations { get; }
-    DbSet<TenantSequence> TenantSequences { get; }
+    DbSet<OrganizationSequence> OrganizationSequences { get; }
 
     // Analytics & Tracking
     DbSet<TrackingEvent> TrackingEvents { get; }

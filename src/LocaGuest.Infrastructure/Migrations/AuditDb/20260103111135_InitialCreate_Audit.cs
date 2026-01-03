@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LocaGuest.Infrastructure.Migrations.AuditDb
 {
     /// <inheritdoc />
-    public partial class InitialAuditSchema : Migration
+    public partial class InitialCreate_Audit : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

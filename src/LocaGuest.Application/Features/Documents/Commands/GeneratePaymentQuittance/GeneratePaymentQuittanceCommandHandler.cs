@@ -14,20 +14,20 @@ namespace LocaGuest.Application.Features.Documents.Commands.GeneratePaymentQuitt
 public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePaymentQuittanceCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IMediator _mediator;
     private readonly IQuittanceGeneratorService _quittanceGenerator;
     private readonly ILogger<GeneratePaymentQuittanceCommandHandler> _logger;
 
     public GeneratePaymentQuittanceCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IMediator mediator,
         IQuittanceGeneratorService quittanceGenerator,
         ILogger<GeneratePaymentQuittanceCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _mediator = mediator;
         _quittanceGenerator = quittanceGenerator;
         _logger = logger;
@@ -79,7 +79,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
 
             var safeMonth = monthLabel.Replace(" ", "_");
             var fileName = $"{docPrefix}_{safeMonth}_{tenant.Code}_{DateTime.UtcNow:yyyyMMdd}.pdf";
-            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _tenantContext.TenantId!.Value.ToString(), fileName);
+            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _orgContext.OrganizationId!.Value.ToString(), fileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             await File.WriteAllBytesAsync(filePath, pdf, cancellationToken);

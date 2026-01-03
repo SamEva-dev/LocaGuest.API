@@ -16,7 +16,7 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ITenantRepository> _tenantRepositoryMock;
-    private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateTenantCommandHandler>> _loggerMock;
     private readonly CreateTenantCommandHandler _handler;
@@ -25,19 +25,19 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _tenantRepositoryMock = new Mock<ITenantRepository>();
-        _tenantContextMock = new Mock<ITenantContext>();
+        _orgContextMock = new Mock<IOrganizationContext>();
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _loggerMock = new Mock<ILogger<CreateTenantCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
-        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("TEN-001");
 
         _handler = new CreateTenantCommandHandler(
             _unitOfWorkMock.Object,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             _loggerMock.Object);
     }
@@ -75,7 +75,7 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
     public async Task Handle_WhenNotAuthenticated_ReturnsFailure()
     {
         // Arrange
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(false);
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(false);
 
         var command = new CreateTenantCommand
         {

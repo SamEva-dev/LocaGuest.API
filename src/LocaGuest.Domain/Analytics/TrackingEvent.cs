@@ -6,37 +6,80 @@ namespace LocaGuest.Domain.Analytics;
 /// </summary>
 public class TrackingEvent
 {
+    /// <summary>
+    /// Identifiant unique de l'événement.
+    /// </summary>
     public Guid Id { get; private set; }
-    
-    // Multi-tenant
-    public Guid TenantId { get; private set; }
+
+    /// <summary>
+    /// Tenant SaaS (organisation/compte) - requis pour l'isolation multi-tenant.
+    /// </summary>
+    public Guid OrganizationId { get; private set; }
+
+    /// <summary>
+    /// Identifiant de l'utilisateur à l'origine de l'événement.
+    /// </summary>
     public Guid UserId { get; private set; }
-    
-    // Event details
+
+    /// <summary>
+    /// Type d'événement (ex: PAGE_VIEW, API_REQUEST...).
+    /// </summary>
     public string EventType { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Nom de la page (si applicable).
+    /// </summary>
     public string? PageName { get; private set; }
+
+    /// <summary>
+    /// URL (si applicable).
+    /// </summary>
     public string? Url { get; private set; }
-    
-    // Technical context
+
+    /// <summary>
+    /// User-Agent du client.
+    /// </summary>
     public string UserAgent { get; private set; } = string.Empty;
-    public string IpAddress { get; private set; } = string.Empty; // Anonymized
+
+    /// <summary>
+    /// Adresse IP anonymisée (RGPD).
+    /// </summary>
+    public string IpAddress { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Timestamp UTC de l'événement.
+    /// </summary>
     public DateTime Timestamp { get; private set; }
-    
-    // Additional data (JSON)
+
+    /// <summary>
+    /// Données additionnelles (JSON) liées à l'événement.
+    /// </summary>
     public string? Metadata { get; private set; }
-    
-    // Session tracking
+
+    /// <summary>
+    /// Identifiant de session (si applicable).
+    /// </summary>
     public string? SessionId { get; private set; }
+
+    /// <summary>
+    /// Identifiant de corrélation (si applicable).
+    /// </summary>
     public string? CorrelationId { get; private set; }
-    
-    // Performance metrics
+
+    /// <summary>
+    /// Durée de l'opération en millisecondes (si applicable).
+    /// </summary>
     public int? DurationMs { get; private set; }
+
+    /// <summary>
+    /// Code de statut HTTP (si applicable).
+    /// </summary>
     public int? HttpStatusCode { get; private set; }
     
     private TrackingEvent() { }
     
     public static TrackingEvent Create(
-        Guid tenantId,
+        Guid organizationId,
         Guid userId,
         string eventType,
         string ipAddress,
@@ -50,7 +93,7 @@ public class TrackingEvent
         return new TrackingEvent
         {
             Id = Guid.NewGuid(),
-            TenantId = tenantId,
+            OrganizationId = organizationId,
             UserId = userId,
             EventType = eventType,
             PageName = pageName,

@@ -12,15 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Migrations.AuditDb
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20251213064043_InitialAuditSchema")]
-    partial class InitialAuditSchema
+    [Migration("20260103181240_RenameTenantIdToOrganizationId_Audit")]
+    partial class RenameTenantIdToOrganizationId_Audit
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -73,6 +73,10 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
                     b.Property<string>("OldValues")
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
                     b.Property<string>("RequestPath")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -83,9 +87,6 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.Property<int?>("StatusCode")
                         .HasColumnType("integer");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
@@ -109,7 +110,7 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.HasIndex("EntityType");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("Timestamp");
 
@@ -154,6 +155,10 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
                         .HasMaxLength(45)
                         .HasColumnType("character varying(45)");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
                     b.Property<string>("RequestPath")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -166,9 +171,6 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.Property<bool>("Success")
                         .HasColumnType("boolean");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("UserEmail")
                         .HasMaxLength(256)
@@ -185,9 +187,9 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.HasIndex("ExecutedAt");
 
-                    b.HasIndex("Success");
+                    b.HasIndex("OrganizationId");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("Success");
 
                     b.HasIndex("UserId");
 

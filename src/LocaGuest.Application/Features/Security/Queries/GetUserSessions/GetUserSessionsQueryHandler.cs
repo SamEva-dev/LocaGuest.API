@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Security;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,16 +11,16 @@ namespace LocaGuest.Application.Features.Security.Queries.GetUserSessions;
 public class GetUserSessionsQueryHandler : IRequestHandler<GetUserSessionsQuery, Result<List<UserSessionDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetUserSessionsQueryHandler> _logger;
 
     public GetUserSessionsQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetUserSessionsQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -27,10 +28,10 @@ public class GetUserSessionsQueryHandler : IRequestHandler<GetUserSessionsQuery,
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<List<UserSessionDto>>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
             var sessions = await _unitOfWork.UserSessions.GetActiveSessionsByUserIdAsync(userId, cancellationToken);
 
             var dtos = sessions.Select(s => new UserSessionDto

@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Users;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,16 +11,16 @@ namespace LocaGuest.Application.Features.Users.Commands.UpdateUserProfile;
 public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfileCommand, Result<UserProfileDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateUserProfileCommandHandler> _logger;
 
     public UpdateUserProfileCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<UpdateUserProfileCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -27,10 +28,10 @@ public class UpdateUserProfileCommandHandler : IRequestHandler<UpdateUserProfile
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<UserProfileDto>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
             var profile = await _unitOfWork.UserProfiles.GetByUserIdAsync(userId, cancellationToken);
             if (profile == null)
                 return Result.Failure<UserProfileDto>("Profile not found");

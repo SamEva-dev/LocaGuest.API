@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,16 +10,16 @@ namespace LocaGuest.Application.Features.Security.Commands.RevokeSession;
 public class RevokeSessionCommandHandler : IRequestHandler<RevokeSessionCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<RevokeSessionCommandHandler> _logger;
 
     public RevokeSessionCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<RevokeSessionCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -26,7 +27,7 @@ public class RevokeSessionCommandHandler : IRequestHandler<RevokeSessionCommand,
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<bool>("User not authenticated");
 
             var session = await _unitOfWork.UserSessions.GetByIdAsync(request.SessionId, cancellationToken);
@@ -35,7 +36,7 @@ public class RevokeSessionCommandHandler : IRequestHandler<RevokeSessionCommand,
                 return Result.Failure<bool>("Session not found");
 
             // Verify session belongs to current user
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
             if (session.UserId != userId)
                 return Result.Failure<bool>("Unauthorized");
 

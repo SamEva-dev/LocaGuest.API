@@ -4,12 +4,12 @@ namespace LocaGuest.Domain.Entities;
 /// Manages entity numbering sequences per organization (tenant)
 /// Ensures unique auto-incrementing codes for each entity type within a tenant
 /// </summary>
-public class TenantSequence
+public class OrganizationSequence
 {
     /// <summary>
     /// Organization (Tenant) ID
     /// </summary>
-    public Guid TenantId { get; set; }
+    public Guid OrganizationId { get; set; }
 
     /// <summary>
     /// Entity prefix (APP, L, M, CTR, PAY, INV...)

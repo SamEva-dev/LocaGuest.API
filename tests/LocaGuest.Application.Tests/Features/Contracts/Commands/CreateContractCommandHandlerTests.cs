@@ -20,7 +20,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IContractRepository> _contractRepositoryMock;
     private readonly Mock<IPropertyRepository> _propertyRepositoryMock;
     private readonly Mock<ITenantRepository> _tenantRepositoryMock;
-    private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateContractCommandHandler>> _loggerMock;
     private readonly CreateContractCommandHandler _handler;
@@ -31,21 +31,21 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         _contractRepositoryMock = new Mock<IContractRepository>();
         _propertyRepositoryMock = new Mock<IPropertyRepository>();
         _tenantRepositoryMock = new Mock<ITenantRepository>();
-        _tenantContextMock = new Mock<ITenantContext>();
+        _orgContextMock = new Mock<IOrganizationContext>();
         _loggerMock = new Mock<ILogger<CreateContractCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Contracts).Returns(_contractRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
-        _tenantContextMock.Setup(x => x.TenantId).Returns(Guid.NewGuid());
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("CTR-001");
 
         _handler = new CreateContractCommandHandler(
             _unitOfWorkMock.Object,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             _loggerMock.Object);
     }
@@ -107,7 +107,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
     public async Task Handle_WhenNotAuthenticated_ReturnsFailure()
     {
         // Arrange
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(false);
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(false);
 
         var command = new CreateContractCommand
         {

@@ -40,9 +40,9 @@ public class PropertiesControllerTests : BaseTestFixture
         
         var mediatorForDbMock = new Mock<IMediator>();
         var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var tenantContextMock = new Mock<ITenantContext>();
+        var orgContextMock = new Mock<IOrganizationContext>();
         
-        _dbContext = new LocaGuestDbContext(options, mediatorForDbMock.Object, currentUserServiceMock.Object, tenantContextMock.Object);
+        _dbContext = new LocaGuestDbContext(options, mediatorForDbMock.Object, currentUserServiceMock.Object, orgContextMock.Object);
         
         _controller = new PropertiesController(_mediatorMock.Object, _loggerMock.Object, _dbContext);
     }

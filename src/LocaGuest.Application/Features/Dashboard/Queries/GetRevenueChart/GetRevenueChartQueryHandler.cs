@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetRevenueChart;
 public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery, Result<RevenueChartDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetRevenueChartQueryHandler> _logger;
 
     public GetRevenueChartQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetRevenueChartQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,7 +29,7 @@ public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery,
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<RevenueChartDto>("User not authenticated");
 
             var monthlyData = new List<MonthlyRevenue>();
@@ -65,7 +66,7 @@ public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery,
                 });
             }
 
-            _logger.LogInformation("Retrieved revenue chart for year {Year} for tenant {TenantId}", request.Year, _tenantContext.TenantId);
+            _logger.LogInformation("Retrieved revenue chart for year {Year}", request.Year);
 
             return Result.Success(new RevenueChartDto
             {
@@ -74,7 +75,7 @@ public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery,
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving revenue chart for year {Year} and tenant {TenantId}", request.Year, _tenantContext.TenantId);
+            _logger.LogError(ex, "Error retrieving revenue chart for year {Year}", request.Year);
             return Result.Failure<RevenueChartDto>($"Error retrieving revenue chart: {ex.Message}");
         }
     }

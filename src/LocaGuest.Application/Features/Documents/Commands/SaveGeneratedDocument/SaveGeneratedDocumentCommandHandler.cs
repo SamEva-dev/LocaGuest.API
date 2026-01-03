@@ -13,18 +13,18 @@ namespace LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocumen
 public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGeneratedDocumentCommand, Result<DocumentDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<SaveGeneratedDocumentCommandHandler> _logger;
 
     public SaveGeneratedDocumentCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<SaveGeneratedDocumentCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
@@ -33,10 +33,7 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
     {
         try
         {
-            var hasJwtTenant = _tenantContext.IsAuthenticated && _tenantContext.TenantId != null;
-            var effectiveOrganizationId = hasJwtTenant
-                ? _tenantContext.TenantId!.Value
-                : request.OrganizationId;
+            var effectiveOrganizationId = _orgContext.OrganizationId ?? request.OrganizationId;
 
             if (!effectiveOrganizationId.HasValue)
             {
@@ -72,11 +69,8 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 propertyId: request.PropertyId,
                 description: request.Description);
 
-            // Background jobs may not have a JWT tenant context; still persist TenantId for query filters.
-            if (!hasJwtTenant)
-            {
-                document.TenantId = effectiveOrganizationId.Value.ToString();
-            }
+            // Background jobs may not have a HTTP context; still persist OrganizationId for query filters.
+            document.SetOrganizationId(effectiveOrganizationId.Value);
 
             document.SetCode(code);
 

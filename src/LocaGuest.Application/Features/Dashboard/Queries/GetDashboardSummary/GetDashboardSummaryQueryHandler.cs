@@ -41,7 +41,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
             var activeContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active &&
                            c.StartDate <= endDate &&
-                           (c.EndDate == null || c.EndDate >= startDate))
+                           c.EndDate >= startDate)
                 .ToListAsync(cancellationToken);
 
             var tenantsCount = await _unitOfWork.Tenants.Query()
@@ -78,7 +78,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
             // 3. Locataires ayant payé (uniques)
             var paidTenantsCount = periodPayments
-                .Select(p => p.TenantId)
+                .Select(p => p.RenterTenantId)
                 .Distinct()
                 .Count();
 
@@ -96,7 +96,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
             // 6. Locataires avec paiements en retard (uniques)
             var latePaymentsCount = latePayments
-                .Select(p => p.TenantId)
+                .Select(p => p.RenterTenantId)
                 .Distinct()
                 .Count();
 

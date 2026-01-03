@@ -34,8 +34,8 @@ public class GetCommandAuditLogsQueryHandler : IRequestHandler<GetCommandAuditLo
             if (request.UserId.HasValue)
                 query = query.Where(x => x.UserId == request.UserId);
 
-            if (request.TenantId.HasValue)
-                query = query.Where(x => x.TenantId == request.TenantId);
+            if (request.OrganizationId.HasValue)
+                query = query.Where(x => x.OrganizationId == request.OrganizationId);
 
             if (request.Success.HasValue)
                 query = query.Where(x => x.Success == request.Success.Value);
@@ -61,7 +61,7 @@ public class GetCommandAuditLogsQueryHandler : IRequestHandler<GetCommandAuditLo
                     entity.CommandData,
                     entity.UserId,
                     entity.UserEmail,
-                    entity.TenantId,
+                    entity.OrganizationId,
                     entity.ExecutedAt,
                     entity.DurationMs,
                     entity.Success,

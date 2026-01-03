@@ -16,18 +16,18 @@ public class AuditBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
 {
     private readonly ILogger<AuditBehavior<TRequest, TResponse>> _logger;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IAuditService _auditService;
 
     public AuditBehavior(
         ILogger<AuditBehavior<TRequest, TResponse>> logger,
         ICurrentUserService currentUserService,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IAuditService auditService)
     {
         _logger = logger;
         _currentUserService = currentUserService;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _auditService = auditService;
     }
 
@@ -46,7 +46,7 @@ public class AuditBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
 
         var userId = _currentUserService.UserId;
         var userEmail = _currentUserService.UserEmail;
-        var tenantId = _tenantContext.TenantId;
+        var organizationId = _orgContext.OrganizationId;
         var ipAddress = _currentUserService.IpAddress ?? "Unknown";
 
         // Serialize command data (excluding sensitive fields)
@@ -57,7 +57,7 @@ public class AuditBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
             commandData: commandData,
             userId: userId,
             userEmail: userEmail,
-            tenantId: tenantId,
+            organizationId: organizationId,
             ipAddress: ipAddress);
 
         var stopwatch = Stopwatch.StartNew();
@@ -67,7 +67,7 @@ public class AuditBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
         {
             _logger.LogInformation(
                 "Executing command {CommandName} for user {UserId} (Tenant: {TenantId})",
-                requestName, userId, tenantId);
+                requestName, userId, organizationId);
 
             response = await next();
 

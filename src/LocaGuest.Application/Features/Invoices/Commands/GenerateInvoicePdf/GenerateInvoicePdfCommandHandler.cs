@@ -13,7 +13,7 @@ namespace LocaGuest.Application.Features.Invoices.Commands.GenerateInvoicePdf;
 public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoicePdfCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IMediator _mediator;
     private readonly IInvoicePdfGeneratorService _invoicePdfGenerator;
     private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
@@ -21,14 +21,14 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
 
     public GenerateInvoicePdfCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IMediator mediator,
         IInvoicePdfGeneratorService invoicePdfGenerator,
         IEffectiveContractStateResolver effectiveContractStateResolver,
         ILogger<GenerateInvoicePdfCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _mediator = mediator;
         _invoicePdfGenerator = invoicePdfGenerator;
         _effectiveContractStateResolver = effectiveContractStateResolver;
@@ -137,14 +137,11 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
 
     private Guid? ParseOrganizationIdFromContract(LocaGuest.Domain.Aggregates.ContractAggregate.Contract contract)
     {
-        // Contract.TenantId is the multi-tenant organization id stored as string.
-        if (!string.IsNullOrWhiteSpace(contract.TenantId) && Guid.TryParse(contract.TenantId, out var orgId))
-            return orgId;
+        // Contract.OrganizationId is the multi-tenant organization id (AuditableEntity).
+        if (contract.OrganizationId != Guid.Empty)
+            return contract.OrganizationId;
 
-        // Fallback to JWT context if available (manual call).
-        if (_tenantContext.IsAuthenticated && _tenantContext.TenantId.HasValue)
-            return _tenantContext.TenantId.Value;
-
-        return null;
+        // Fallback to organization context if available (manual call).
+        return _orgContext.OrganizationId;
     }
 }

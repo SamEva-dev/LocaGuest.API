@@ -13,7 +13,7 @@ public class RentInvoiceLineConfiguration : IEntityTypeConfiguration<RentInvoice
         builder.HasKey(l => l.Id);
 
         builder.Property(l => l.RentInvoiceId).IsRequired();
-        builder.Property(l => l.TenantId).IsRequired();
+        builder.Property(l => l.OrganizationId).IsRequired();
 
         builder.Property(l => l.AmountDue)
             .HasColumnType("decimal(10,2)")
@@ -44,8 +44,8 @@ public class RentInvoiceLineConfiguration : IEntityTypeConfiguration<RentInvoice
         builder.Property(l => l.LastModifiedAt);
 
         builder.HasIndex(l => l.RentInvoiceId);
-        builder.HasIndex(l => l.TenantId);
-        builder.HasIndex(l => new { l.RentInvoiceId, l.TenantId }).IsUnique();
+        builder.HasIndex(l => l.OrganizationId);
+        builder.HasIndex(l => new { l.RentInvoiceId, l.OrganizationId }).IsUnique();
         builder.HasIndex(l => l.Status);
     }
 }

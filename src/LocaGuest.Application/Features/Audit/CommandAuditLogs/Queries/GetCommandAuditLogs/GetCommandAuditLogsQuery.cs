@@ -12,7 +12,7 @@ public record GetCommandAuditLogsQuery : IRequest<Result<PagedResult<CommandAudi
 
     public string? CommandName { get; init; }
     public Guid? UserId { get; init; }
-    public Guid? TenantId { get; init; }
+    public Guid? OrganizationId { get; init; }
     public bool? Success { get; init; }
     public string? CorrelationId { get; init; }
     public DateTime? FromUtc { get; init; }

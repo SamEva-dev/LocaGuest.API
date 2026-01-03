@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -10,22 +11,22 @@ namespace LocaGuest.Application.Features.Payments.Queries.GetPaymentsDashboard;
 public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashboardQuery, Result<PaymentsDashboardDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetPaymentsDashboardQueryHandler> _logger;
 
     public GetPaymentsDashboardQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetPaymentsDashboardQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task<Result<PaymentsDashboardDto>> Handle(GetPaymentsDashboardQuery request, CancellationToken cancellationToken)
     {
-        if (!_tenantContext.IsAuthenticated)
+        if (!_currentUserService.IsAuthenticated)
         {
             return Result<PaymentsDashboardDto>.Failure<PaymentsDashboardDto>("User not authenticated");
         }

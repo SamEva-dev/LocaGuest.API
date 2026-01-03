@@ -106,11 +106,30 @@ public class Startup
         // JWT Authentication with AuthGate (RSA via JWKS)
         ConfigureJwtAuthentication(services);
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireOrganization", policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id"));
+
+            // Fail-closed by default: any authenticated request without organization_id is forbidden.
+            // Endpoints that must remain public should use [AllowAnonymous] or be configured with AllowAnonymous.
+            options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .RequireClaim("organization_id")
+                .Build();
+            options.FallbackPolicy = options.DefaultPolicy;
+
+            options.AddPolicy("Provisioning", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("scope", "locaguest.provisioning");
+            });
+        });
 
         // CORS
         services.AddCors(options =>
         {
+            var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:4200" };
             options.AddPolicy("AllowAngular", policy =>
             {
                 var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:4200" };
@@ -126,9 +145,11 @@ public class Startup
 
         // HttpContext and User Context
         services.AddHttpContextAccessor();
+        services.AddScoped<OrganizationContextAccessor>();
+        services.AddScoped<IOrganizationContext>(sp => sp.GetRequiredService<OrganizationContextAccessor>());
+        services.AddScoped<IOrganizationContextWriter>(sp => sp.GetRequiredService<OrganizationContextAccessor>());
         services.AddScoped<CurrentUserService>();
         services.AddScoped<ICurrentUserService>(sp => sp.GetRequiredService<CurrentUserService>());
-        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<CurrentUserService>());
         services.AddScoped<ISubscriptionService, SubscriptionService>();
 
         // Health Checks
@@ -332,6 +353,7 @@ public class Startup
         app.UseCors("AllowAngular");
 
         app.UseAuthentication();
+        app.UseMiddleware<OrganizationContextMiddleware>();
         app.UseAuthorization();
 
         // Tracking middleware (after authentication)
@@ -366,17 +388,17 @@ public class Startup
                     });
                     await context.Response.WriteAsync(result);
                 }
-            });
+            }).AllowAnonymous();
 
             endpoints.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
             {
                 Predicate = check => check.Tags.Contains("ready")
-            });
+            }).AllowAnonymous();
 
             endpoints.MapHealthChecks("/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
             {
                 Predicate = check => check.Tags.Contains("live")
-            });
+            }).AllowAnonymous();
         });
     }
 

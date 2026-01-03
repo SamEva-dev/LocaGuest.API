@@ -154,9 +154,9 @@ public class AdminController : ControllerBase
                     _logger.LogInformation("✅ Team members deleted");
                 }
 
-                if (_context.TenantSequences.Any())
+                if (_context.OrganizationSequences.Any())
                 {
-                    _context.TenantSequences.RemoveRange(_context.TenantSequences);
+                    _context.OrganizationSequences.RemoveRange(_context.OrganizationSequences);
                     await _context.SaveChangesAsync();
                     _logger.LogInformation("✅ Tenant sequences deleted");
                 }
@@ -209,7 +209,7 @@ public class AdminController : ControllerBase
     {
         try
         {
-            var tenantId = User.FindFirst("tenant_id")?.Value ?? User.FindFirst("tenantId")?.Value;
+            var tenantId = User.FindFirst("organization_id")?.Value ?? User.FindFirst("organizationId")?.Value;
             var userId = User.FindFirst("sub")?.Value
                          ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
 

@@ -10,16 +10,16 @@ namespace LocaGuest.Application.Features.Organizations.Queries.GetCurrentOrganiz
 public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrganizationQuery, Result<OrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<GetCurrentOrganizationQueryHandler> _logger;
 
     public GetCurrentOrganizationQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<GetCurrentOrganizationQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -31,7 +31,7 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
         {
             _logger.LogInformation("Getting current organization for user {UserId}", request.UserId);
 
-            if (!_tenantContext.IsAuthenticated)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
             {
                 return Result.Failure<OrganizationDto>("User not authenticated");
             }
@@ -44,8 +44,7 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
             // For this implementation, we'll query all organizations and return the first one
             // In production, this should be filtered by the user's TenantId
             
-            var organizations = await _unitOfWork.Organizations.GetAllAsync(cancellationToken);
-            var organization = organizations.FirstOrDefault();
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(_orgContext.OrganizationId.Value, cancellationToken);
 
             if (organization == null)
             {

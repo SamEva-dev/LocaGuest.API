@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,22 +10,22 @@ namespace LocaGuest.Application.Features.Payments.Commands.VoidPayment;
 public class VoidPaymentCommandHandler : IRequestHandler<VoidPaymentCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<VoidPaymentCommandHandler> _logger;
 
     public VoidPaymentCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<VoidPaymentCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task<Result<bool>> Handle(VoidPaymentCommand request, CancellationToken cancellationToken)
     {
-        if (!_tenantContext.IsAuthenticated)
+        if (!_currentUserService.IsAuthenticated)
         {
             return Result<bool>.Failure<bool>("User not authenticated");
         }

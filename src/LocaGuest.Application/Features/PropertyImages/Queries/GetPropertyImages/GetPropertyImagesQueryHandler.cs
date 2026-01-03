@@ -10,16 +10,16 @@ namespace LocaGuest.Application.Features.PropertyImages.Queries.GetPropertyImage
 public class GetPropertyImagesQueryHandler : IRequestHandler<GetPropertyImagesQuery, Result<List<PropertyImageDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<GetPropertyImagesQueryHandler> _logger;
 
     public GetPropertyImagesQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<GetPropertyImagesQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class GetPropertyImagesQueryHandler : IRequestHandler<GetPropertyImagesQu
     {
         // Vérifier que la propriété existe et appartient au tenant
         var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
-        if (property == null || property.TenantId.ToString() != _tenantContext.TenantId.ToString())
+        if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure<List<PropertyImageDto>>("Propriété non trouvée");
         }

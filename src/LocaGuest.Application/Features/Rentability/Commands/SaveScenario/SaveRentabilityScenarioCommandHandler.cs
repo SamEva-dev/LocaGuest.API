@@ -17,7 +17,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<SaveRentabilityScenarioCommandHandler> _logger;
 
@@ -25,14 +25,14 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
         IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         ICurrentUserService currentUserService,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<SaveRentabilityScenarioCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _currentUserService = currentUserService;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
@@ -61,7 +61,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
             {
                 // ✅ QUICK WIN: Generate automatic code
                 var code = await _numberSequenceService.GenerateNextCodeAsync(
-                    _tenantContext.TenantId!.Value,
+                    _orgContext.OrganizationId!.Value,
                     EntityPrefixes.Scenario,
                     cancellationToken);
 

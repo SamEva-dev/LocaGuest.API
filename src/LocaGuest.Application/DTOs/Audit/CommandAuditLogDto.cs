@@ -6,7 +6,7 @@ public record CommandAuditLogDto(
     string CommandData,
     Guid? UserId,
     string? UserEmail,
-    Guid? TenantId,
+    Guid? OrganizationId,
     DateTime ExecutedAt,
     long DurationMs,
     bool Success,

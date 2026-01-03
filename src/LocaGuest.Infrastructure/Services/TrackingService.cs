@@ -14,18 +14,18 @@ public class TrackingService : ITrackingService
 {
     private readonly LocaGuestDbContext _context;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<TrackingService> _logger;
 
     public TrackingService(
         LocaGuestDbContext context,
         ICurrentUserService currentUserService,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<TrackingService> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -52,7 +52,7 @@ public class TrackingService : ITrackingService
     {
         try
         {
-            var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("TenantId is required for tracking");
+            var organizationId = _orgContext.OrganizationId ?? throw new InvalidOperationException("OrganizationId is required for tracking");
             var userId = _currentUserService.UserId ?? throw new InvalidOperationException("UserId is required for tracking");
             var ipAddress = _currentUserService.IpAddress ?? "unknown";
             var userAgent = _currentUserService.UserAgent ?? "unknown";
@@ -66,7 +66,7 @@ public class TrackingService : ITrackingService
             }
 
             var trackingEvent = TrackingEvent.Create(
-                tenantId: tenantId,
+                organizationId: organizationId,
                 userId: userId,
                 eventType: eventType,
                 ipAddress: ipAddress,

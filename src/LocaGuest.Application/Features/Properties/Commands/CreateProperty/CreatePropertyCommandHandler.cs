@@ -13,18 +13,18 @@ namespace LocaGuest.Application.Features.Properties.Commands.CreateProperty;
 public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyCommand, Result<PropertyDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreatePropertyCommandHandler> _logger;
 
     public CreatePropertyCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<CreatePropertyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
@@ -34,7 +34,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
         try
         {
             // Validate tenant authentication
-            if (!_tenantContext.IsAuthenticated)
+            if (!_orgContext.IsAuthenticated)
             {
                 _logger.LogWarning("Unauthorized property creation attempt");
                 return Result.Failure<PropertyDetailDto>("User not authenticated");
@@ -54,7 +54,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
 
             // ✅ QUICK WIN: Generate automatic code
             var code = await _numberSequenceService.GenerateNextCodeAsync(
-                _tenantContext.TenantId!.Value,
+                _orgContext.OrganizationId!.Value,
                 EntityPrefixes.Property,
                 cancellationToken);
 
@@ -179,7 +179,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {TenantId}", 
-                property.Id, property.Name, _tenantContext.TenantId);
+                property.Id, property.Name, _orgContext.OrganizationId);
 
             // Map to DTO with ALL fields
             var dto = new PropertyDetailDto

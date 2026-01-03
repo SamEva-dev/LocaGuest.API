@@ -15,20 +15,20 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IMediator _mediator;
     private readonly ILogger<CreateAddendumCommandHandler> _logger;
 
     public CreateAddendumCommandHandler(
         IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IMediator mediator,
         ILogger<CreateAddendumCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _context = context;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _mediator = mediator;
         _logger = logger;
     }
@@ -204,11 +204,11 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             var attachedDocuments = request.AttachedDocumentIds?.ToList() ?? new List<Guid>();
 
             // Create a draft Avenant document so it appears like other draft contract documents
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || _orgContext.OrganizationId == null)
                 return Result.Failure<Guid>("User not authenticated");
 
             var fileName = $"Avenant_{contract.Code}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
-            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _tenantContext.TenantId.Value.ToString(), fileName);
+            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _orgContext.OrganizationId.Value.ToString(), fileName);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
             // Placeholder PDF content (will be replaced by a real generator)

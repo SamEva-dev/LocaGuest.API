@@ -14,16 +14,16 @@ namespace LocaGuest.Infrastructure.Persistence.Interceptors;
 public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 {
     private readonly ICurrentUserService _currentUserService;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IAuditService _auditService;
 
     public AuditSaveChangesInterceptor(
         ICurrentUserService currentUserService,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IAuditService auditService)
     {
         _currentUserService = currentUserService;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _auditService = auditService;
     }
 
@@ -65,7 +65,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 
         var userId = _currentUserService.UserId;
         var userEmail = _currentUserService.UserEmail;
-        var tenantId = _tenantContext.TenantId;
+        var tenantId = _orgContext.OrganizationId;
         var ipAddress = _currentUserService.IpAddress ?? "Unknown";
 
         foreach (var entry in entries)
@@ -145,7 +145,7 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
             entityId: entityId,
             userId: userId,
             userEmail: userEmail,
-            tenantId: tenantId,
+            organizationId: tenantId,
             ipAddress: ipAddress,
             oldValues: oldValues,
             newValues: newValues,

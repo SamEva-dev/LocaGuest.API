@@ -13,18 +13,18 @@ namespace LocaGuest.Application.Features.PropertyImages.Commands.UploadImages;
 public class UploadImagesCommandHandler : IRequestHandler<UploadImagesCommand, Result<UploadImagesResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<UploadImagesCommandHandler> _logger;
 
     public UploadImagesCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IFileStorageService fileStorage,
         ILogger<UploadImagesCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -34,7 +34,7 @@ public class UploadImagesCommandHandler : IRequestHandler<UploadImagesCommand, R
         // Vérifier que la propriété existe et appartient au tenant
         var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
         
-        if (property == null || property.TenantId.ToString() != _tenantContext.TenantId.ToString())
+        if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure<UploadImagesResponse>("Propriété non trouvée");
         }
@@ -45,9 +45,9 @@ public class UploadImagesCommandHandler : IRequestHandler<UploadImagesCommand, R
         }
 
         var uploadedImages = new List<PropertyImageDto>();
-      //  var tenantCode = $"T{_tenantContext.TenantId:D}"; // T001, T002, etc.
+      //  var tenantCode = $"T{_orgContext.OrganizationId:D}"; // T001, T002, etc.
 
-        var tenantCode = await _unitOfWork.Organizations.GetTenantNumberAsync(_tenantContext.TenantId.Value, cancellationToken);
+        var tenantCode = await _unitOfWork.Organizations.GetTenantNumberAsync(_orgContext.OrganizationId.Value, cancellationToken);
 
         var propertyName = SanitizeFileName(property.Name);
         

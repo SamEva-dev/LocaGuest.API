@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -10,16 +11,16 @@ namespace LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
 public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DissociateTenantCommandHandler> _logger;
 
     public DissociateTenantCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<DissociateTenantCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,7 +29,7 @@ public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCo
         try
         {
             // Validate tenant context
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_currentUserService.IsAuthenticated)
             {
                 return Result.Failure<bool>("User not authenticated");
             }

@@ -85,7 +85,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                     );
 
                     // Ensure multi-tenant isolation tenant id is set even in background jobs
-                    ((LocaGuest.Domain.Common.AuditableEntity)invoice).TenantId = contract.TenantId;
+                    ((LocaGuest.Domain.Common.AuditableEntity)invoice).SetOrganizationId(contract.OrganizationId);
 
                     await _unitOfWork.RentInvoices.AddAsync(invoice, cancellationToken);
 
@@ -157,7 +157,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                             shareValue: la.shareValue);
 
                         // Ensure multi-tenant isolation tenant id is set even in background jobs
-                        ((LocaGuest.Domain.Common.AuditableEntity)line).TenantId = contract.TenantId;
+                        ((LocaGuest.Domain.Common.AuditableEntity)line).SetOrganizationId(contract.OrganizationId);
 
                         await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
                     }

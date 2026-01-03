@@ -10,7 +10,7 @@ public class AuditLog
     // Who
     public Guid? UserId { get; private set; }
     public string? UserEmail { get; private set; }
-    public Guid? TenantId { get; private set; }
+    public Guid? OrganizationId { get; private set; }
     
     // What
     public string Action { get; private set; } = string.Empty;
@@ -48,7 +48,7 @@ public class AuditLog
         string? entityId,
         Guid? userId,
         string? userEmail,
-        Guid? tenantId,
+        Guid? organizationId,
         string ipAddress,
         string? userAgent = null,
         string? oldValues = null,
@@ -66,7 +66,7 @@ public class AuditLog
             EntityId = entityId,
             UserId = userId,
             UserEmail = userEmail,
-            TenantId = tenantId,
+            OrganizationId = organizationId,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             OldValues = oldValues,

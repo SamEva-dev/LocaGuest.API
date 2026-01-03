@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Users;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Users.Queries.GetPreferences;
 public class GetPreferencesQueryHandler : IRequestHandler<GetPreferencesQuery, Result<UserPreferencesDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetPreferencesQueryHandler> _logger;
 
     public GetPreferencesQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetPreferencesQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,10 +29,10 @@ public class GetPreferencesQueryHandler : IRequestHandler<GetPreferencesQuery, R
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<UserPreferencesDto>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
             var preferences = await _unitOfWork.UserPreferences.GetByUserIdAsync(userId, cancellationToken);
 
             // Si pas de préférences, créer des valeurs par défaut

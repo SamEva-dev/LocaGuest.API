@@ -14,7 +14,7 @@ public class CommandAuditLog
     // User context
     public Guid? UserId { get; private set; }
     public string? UserEmail { get; private set; }
-    public Guid? TenantId { get; private set; }
+    public Guid? OrganizationId { get; private set; }
     
     // Execution
     public DateTime ExecutedAt { get; private set; }
@@ -38,7 +38,7 @@ public class CommandAuditLog
         string commandData,
         Guid? userId,
         string? userEmail,
-        Guid? tenantId,
+        Guid? organizationId,
         string ipAddress,
         string? correlationId = null,
         string? requestPath = null)
@@ -50,7 +50,7 @@ public class CommandAuditLog
             CommandData = commandData,
             UserId = userId,
             UserEmail = userEmail,
-            TenantId = tenantId,
+            OrganizationId = organizationId,
             IpAddress = ipAddress,
             CorrelationId = correlationId,
             RequestPath = requestPath,

@@ -10,18 +10,18 @@ namespace LocaGuest.Application.Features.PropertyImages.Queries.GetImage;
 public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageFileResult>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<GetImageQueryHandler> _logger;
 
     public GetImageQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IFileStorageService fileStorage,
         ILogger<GetImageQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -39,7 +39,7 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageF
 
         // Vérifier que l'image appartient à une propriété du tenant
         var property = await _unitOfWork.Properties.GetByIdAsync(image.PropertyId, cancellationToken);
-        if (property == null || property.TenantId.ToString() != _tenantContext.TenantId.ToString())
+        if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure<ImageFileResult>("Accès non autorisé");
         }

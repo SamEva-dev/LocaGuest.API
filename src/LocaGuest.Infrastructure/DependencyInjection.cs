@@ -112,7 +112,6 @@ public static class DependencyInjection
         });
         
         // Multi-Tenant Services  
-        services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<INumberSequenceService, NumberSequenceService>();
 
         // Document Services

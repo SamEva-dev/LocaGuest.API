@@ -27,7 +27,7 @@ public class AuditLogsController : ControllerBase
         [FromQuery] string? entityType = null,
         [FromQuery] string? entityId = null,
         [FromQuery] Guid? userId = null,
-        [FromQuery] Guid? tenantId = null,
+        [FromQuery] Guid? organizationId = null,
         [FromQuery] string? correlationId = null,
         [FromQuery] DateTime? fromUtc = null,
         [FromQuery] DateTime? toUtc = null)
@@ -40,7 +40,7 @@ public class AuditLogsController : ControllerBase
             EntityType = entityType,
             EntityId = entityId,
             UserId = userId,
-            TenantId = tenantId,
+            OrganizationId = organizationId,
             CorrelationId = correlationId,
             FromUtc = fromUtc,
             ToUtc = toUtc

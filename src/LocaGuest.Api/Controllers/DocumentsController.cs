@@ -28,7 +28,7 @@ public class DocumentsController : ControllerBase
     private readonly IPropertySheetGeneratorService _propertySheetGenerator;
     private readonly ITenantSheetGeneratorService _tenantSheetGenerator;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IWebHostEnvironment _environment;
 
     public DocumentsController(
@@ -38,7 +38,7 @@ public class DocumentsController : ControllerBase
         IPropertySheetGeneratorService propertySheetGenerator,
         ITenantSheetGeneratorService tenantSheetGenerator,
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IWebHostEnvironment environment)
     {
         _mediator = mediator;
@@ -47,7 +47,7 @@ public class DocumentsController : ControllerBase
         _propertySheetGenerator = propertySheetGenerator;
         _tenantSheetGenerator = tenantSheetGenerator;
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _environment = environment;
     }
 
@@ -61,7 +61,7 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
             var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
@@ -103,7 +103,7 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
             var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
@@ -243,7 +243,7 @@ public class DocumentsController : ControllerBase
         try
         {
             // Validate tenant context
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
             {
                 _logger.LogWarning("Unauthorized contract generation attempt");
                 return Unauthorized(new { message = "User not authenticated" });
@@ -297,7 +297,7 @@ public class DocumentsController : ControllerBase
             var fileName = $"Contrat_{dto.ContractType}_{DateTime.UtcNow:yyyy-MM-dd}_{Guid.NewGuid():N}.pdf";
 
             // Save file to disk
-            var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _tenantContext.TenantId!.Value.ToString());
+            var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _orgContext.OrganizationId!.Value.ToString());
             Directory.CreateDirectory(documentsPath);
             var filePath = Path.Combine(documentsPath, fileName);
             await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes, cancellationToken);
@@ -389,7 +389,7 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
             var documents = await _unitOfWork.Documents.GetByPropertyIdAsync(Guid.Parse(propertyId));
@@ -411,7 +411,7 @@ public class DocumentsController : ControllerBase
                         d.FileSizeBytes,
                         d.CreatedAt,
                         d.Description,
-                        d.TenantId,
+                        d.OrganizationId,
                         d.PropertyId
                     }).ToList()
                 })
@@ -441,12 +441,12 @@ public class DocumentsController : ControllerBase
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "No file uploaded" });
 
-            if (!_tenantContext.IsAuthenticated || _tenantContext.TenantId == null)
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
             // Save file to disk
             var fileName = $"{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid():N}{Path.GetExtension(file.FileName)}";
-            var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _tenantContext.TenantId!.Value.ToString());
+            var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _orgContext.OrganizationId!.Value.ToString());
             Directory.CreateDirectory(documentsPath);
             var filePath = Path.Combine(documentsPath, fileName);
 

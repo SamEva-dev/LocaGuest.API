@@ -14,7 +14,7 @@ public record GetAuditLogsQuery : IRequest<Result<PagedResult<AuditLogDto>>>
     public string? EntityType { get; init; }
     public string? EntityId { get; init; }
     public Guid? UserId { get; init; }
-    public Guid? TenantId { get; init; }
+    public Guid? OrganizationId { get; init; }
     public string? CorrelationId { get; init; }
     public DateTime? FromUtc { get; init; }
     public DateTime? ToUtc { get; init; }

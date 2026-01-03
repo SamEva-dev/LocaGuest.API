@@ -10,22 +10,22 @@ namespace LocaGuest.Application.Features.Team.Commands.RemoveTeamMember;
 public class RemoveTeamMemberCommandHandler : IRequestHandler<RemoveTeamMemberCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<RemoveTeamMemberCommandHandler> _logger;
 
     public RemoveTeamMemberCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<RemoveTeamMemberCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
     public async Task<Result> Handle(RemoveTeamMemberCommand request, CancellationToken cancellationToken)
     {
-        var organizationId = _tenantContext.TenantId;
+        var organizationId = _orgContext.OrganizationId;
         if (!organizationId.HasValue || organizationId.Value == Guid.Empty)
         {
             return Result.Failure("Organization context not found");

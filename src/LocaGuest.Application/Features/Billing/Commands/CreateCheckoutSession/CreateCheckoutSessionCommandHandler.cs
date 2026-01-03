@@ -9,16 +9,16 @@ namespace LocaGuest.Application.Features.Billing.Commands.CreateCheckoutSession;
 public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckoutSessionCommand, Result<CheckoutSessionDto>>
 {
     private readonly IStripeService _stripeService;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CreateCheckoutSessionCommandHandler> _logger;
 
     public CreateCheckoutSessionCommandHandler(
         IStripeService stripeService,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<CreateCheckoutSessionCommandHandler> logger)
     {
         _stripeService = stripeService;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -26,10 +26,10 @@ public class CreateCheckoutSessionCommandHandler : IRequestHandler<CreateCheckou
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<CheckoutSessionDto>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value.ToString();
+            var userId = _currentUserService.UserId.Value.ToString();
 
             var sessionData = await _stripeService.CreateCheckoutSessionAsync(
                 userId,

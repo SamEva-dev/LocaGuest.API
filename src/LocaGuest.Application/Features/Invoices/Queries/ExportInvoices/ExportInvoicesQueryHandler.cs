@@ -92,7 +92,7 @@ public class ExportInvoicesQueryHandler : IRequestHandler<ExportInvoicesQuery, R
         {
             csv.AppendLine(string.Join(";",
                 invoice.GeneratedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                invoice.TenantId,
+                invoice.RenterTenantId,
                 invoice.PropertyId,
                 invoice.ContractId,
                 invoice.Month,

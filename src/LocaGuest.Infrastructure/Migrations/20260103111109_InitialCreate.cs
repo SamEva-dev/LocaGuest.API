@@ -13,6 +13,28 @@ namespace LocaGuest.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "ContractParticipants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ContractId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ShareType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ShareValue = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContractParticipants", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "contracts",
                 columns: table => new
                 {
@@ -29,13 +51,18 @@ namespace LocaGuest.Infrastructure.Migrations
                     PaymentDueDay = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true),
+                    TerminationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TerminationReason = table.Column<string>(type: "text", nullable: true),
+                    NoticeDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    NoticeEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    NoticeReason = table.Column<string>(type: "text", nullable: true),
                     RoomId = table.Column<Guid>(type: "uuid", nullable: true),
                     IsConflict = table.Column<bool>(type: "boolean", nullable: false),
                     RenewedContractId = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomClauses = table.Column<string>(type: "text", nullable: true),
                     PreviousIRL = table.Column<decimal>(type: "numeric", nullable: true),
                     CurrentIRL = table.Column<decimal>(type: "numeric", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -66,7 +93,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     SignedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SignedBy = table.Column<string>(type: "text", nullable: true),
                     IsArchived = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -95,7 +122,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Status = table.Column<int>(type: "integer", nullable: false),
                     IsFinalized = table.Column<bool>(type: "boolean", nullable: false),
                     FinalizedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -126,7 +153,9 @@ namespace LocaGuest.Infrastructure.Migrations
                     OwnerCoveredAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     FinancialNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IsFinalized = table.Column<bool>(type: "boolean", nullable: false),
+                    FinalizedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -155,7 +184,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     MaintenanceCompleted = table.Column<bool>(type: "boolean", nullable: false),
                     SystemUpdates = table.Column<bool>(type: "boolean", nullable: false),
                     MarketingEmails = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -185,7 +214,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     SecondaryColor = table.Column<string>(type: "text", nullable: true),
                     AccentColor = table.Column<string>(type: "text", nullable: true),
                     Website = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -201,9 +230,10 @@ namespace LocaGuest.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     AmountDue = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     AmountPaid = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -214,6 +244,8 @@ namespace LocaGuest.Infrastructure.Migrations
                     Month = table.Column<int>(type: "integer", nullable: false),
                     Year = table.Column<int>(type: "integer", nullable: false),
                     ReceiptId = table.Column<Guid>(type: "uuid", nullable: true),
+                    InvoiceDocumentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -286,6 +318,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Rent = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     TotalRooms = table.Column<int>(type: "integer", nullable: true),
                     OccupiedRooms = table.Column<int>(type: "integer", nullable: false),
+                    ReservedRooms = table.Column<int>(type: "integer", nullable: false),
                     MinimumStay = table.Column<int>(type: "integer", nullable: true),
                     MaximumStay = table.Column<int>(type: "integer", nullable: true),
                     PricePerNight = table.Column<decimal>(type: "numeric", nullable: true),
@@ -294,13 +327,16 @@ namespace LocaGuest.Infrastructure.Migrations
                     Surface = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     HasElevator = table.Column<bool>(type: "boolean", nullable: false),
                     HasParking = table.Column<bool>(type: "boolean", nullable: false),
+                    HasBalcony = table.Column<bool>(type: "boolean", nullable: false),
                     Floor = table.Column<int>(type: "integer", nullable: true),
                     IsFurnished = table.Column<bool>(type: "boolean", nullable: false),
                     Charges = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     Deposit = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
-                    Notes = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     ImageUrls = table.Column<string>(type: "text", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EnergyClass = table.Column<string>(type: "text", nullable: true),
+                    ConstructionYear = table.Column<int>(type: "integer", nullable: true),
                     DpeRating = table.Column<string>(type: "text", nullable: true),
                     DpeValue = table.Column<int>(type: "integer", nullable: true),
                     GesRating = table.Column<string>(type: "text", nullable: true),
@@ -313,12 +349,18 @@ namespace LocaGuest.Infrastructure.Migrations
                     ErpZone = table.Column<string>(type: "text", nullable: true),
                     PropertyTax = table.Column<decimal>(type: "numeric", nullable: true),
                     CondominiumCharges = table.Column<decimal>(type: "numeric", nullable: true),
+                    PurchasePrice = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    Insurance = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    ManagementFeesRate = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    MaintenanceRate = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    VacancyRate = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    NightsBookedPerMonth = table.Column<int>(type: "integer", nullable: true),
                     CadastralReference = table.Column<string>(type: "text", nullable: true),
                     LotNumber = table.Column<string>(type: "text", nullable: true),
-                    AcquisitionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    PurchaseDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     TotalWorksAmount = table.Column<decimal>(type: "numeric", nullable: true),
                     AssociatedTenantCodes = table.Column<List<string>>(type: "text[]", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -398,7 +440,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Category = table.Column<string>(type: "text", nullable: true),
                     IsFavorite = table.Column<bool>(type: "boolean", nullable: false),
                     CurrentVersion = table.Column<int>(type: "integer", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -410,13 +452,39 @@ namespace LocaGuest.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RentInvoiceLines",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RentInvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AmountDue = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    AmountPaid = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ShareType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ShareValue = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    PaymentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PaidDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "text", nullable: true),
+                    LastModifiedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentInvoiceLines", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RentInvoices",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InvoiceDocumentId = table.Column<Guid>(type: "uuid", nullable: true),
                     Month = table.Column<int>(type: "integer", nullable: false),
                     Year = table.Column<int>(type: "integer", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
@@ -426,6 +494,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     DueDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PaidDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Notes = table.Column<string>(type: "text", nullable: true),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -477,7 +546,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     MonthlyIncome = table.Column<decimal>(type: "numeric", nullable: true),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: true),
                     PropertyCode = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -493,7 +562,7 @@ namespace LocaGuest.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     EventType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     PageName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
@@ -524,7 +593,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     PeriodMonth = table.Column<int>(type: "integer", nullable: false),
                     TotalValue = table.Column<int>(type: "integer", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -556,7 +625,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     HeaderNavigation = table.Column<bool>(type: "boolean", nullable: false),
                     AllowTracking = table.Column<bool>(type: "boolean", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -580,7 +649,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Currency = table.Column<string>(type: "text", nullable: false),
                     SidebarNavigation = table.Column<bool>(type: "boolean", nullable: false),
                     HeaderNavigation = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -605,7 +674,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Role = table.Column<string>(type: "text", nullable: true),
                     Bio = table.Column<string>(type: "text", nullable: true),
                     PhotoUrl = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -661,7 +730,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     SignatureStatus = table.Column<int>(type: "integer", nullable: false),
                     SignedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Notes = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -805,7 +874,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     AcceptedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     RemovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -839,7 +907,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     StripeCustomerId = table.Column<string>(type: "text", nullable: true),
                     StripeSubscriptionId = table.Column<string>(type: "text", nullable: true),
                     StripeLatestInvoiceId = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -868,6 +936,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Charges = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
+                    OnHoldUntilUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CurrentContractId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
@@ -915,7 +984,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     SharedWithUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Permission = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -941,7 +1010,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     VersionNumber = table.Column<int>(type: "integer", nullable: false),
                     ChangeDescription = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     SnapshotJson = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -971,7 +1040,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     IsEdited = table.Column<bool>(type: "boolean", nullable: false),
                     EditedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RentabilityScenarioId = table.Column<Guid>(type: "uuid", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -999,7 +1068,6 @@ namespace LocaGuest.Infrastructure.Migrations
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsUsed = table.Column<bool>(type: "boolean", nullable: false),
                     UsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -1027,7 +1095,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     Value = table.Column<int>(type: "integer", nullable: false),
                     Metadata = table.Column<string>(type: "text", nullable: true),
                     Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -1055,14 +1123,40 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ContractParticipants_ContractId",
+                table: "ContractParticipants",
+                column: "ContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractParticipants_ContractId_OrganizationId_StartDate",
+                table: "ContractParticipants",
+                columns: new[] { "ContractId", "OrganizationId", "StartDate" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractParticipants_EndDate",
+                table: "ContractParticipants",
+                column: "EndDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractParticipants_OrganizationId",
+                table: "ContractParticipants",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContractParticipants_StartDate",
+                table: "ContractParticipants",
+                column: "StartDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_contracts_OrganizationId",
+                table: "contracts",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_contracts_RenterTenantId",
                 table: "contracts",
                 column: "RenterTenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_contracts_TenantId",
-                table: "contracts",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_inventory_entries_ContractId",
@@ -1070,14 +1164,14 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_inventory_entries_OrganizationId",
+                table: "inventory_entries",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_inventory_entries_RenterTenantId",
                 table: "inventory_entries",
                 column: "RenterTenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_inventory_entries_TenantId",
-                table: "inventory_entries",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_inventory_exits_ContractId",
@@ -1090,14 +1184,14 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "InventoryEntryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_inventory_exits_OrganizationId",
+                table: "inventory_exits",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_inventory_exits_RenterTenantId",
                 table: "inventory_exits",
                 column: "RenterTenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_inventory_exits_TenantId",
-                table: "inventory_exits",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_invitation_tokens_Email",
@@ -1143,10 +1237,15 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_ContractId_Month_Year",
+                name: "IX_Payments_ContractId_Month_Year_PaymentType",
                 table: "Payments",
-                columns: new[] { "ContractId", "Month", "Year" },
+                columns: new[] { "ContractId", "Month", "Year", "PaymentType" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_OrganizationId",
+                table: "Payments",
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_PropertyId",
@@ -1159,25 +1258,25 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_TenantId",
-                table: "Payments",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_plans_Code",
                 table: "plans",
                 column: "Code",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_properties_TenantId",
+                name: "IX_properties_OrganizationId",
                 table: "properties",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_property_rooms_CurrentContractId",
                 table: "property_rooms",
                 column: "CurrentContractId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_property_rooms_OnHoldUntilUtc",
+                table: "property_rooms",
+                column: "OnHoldUntilUtc");
 
             migrationBuilder.CreateIndex(
                 name: "IX_property_rooms_PropertyId",
@@ -1190,19 +1289,40 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "PropertyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_rentability_scenarios_TenantId",
+                name: "IX_rentability_scenarios_OrganizationId",
                 table: "rentability_scenarios",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_rentability_scenarios_TenantId_UserId",
+                name: "IX_rentability_scenarios_OrganizationId_UserId",
                 table: "rentability_scenarios",
-                columns: new[] { "TenantId", "UserId" });
+                columns: new[] { "OrganizationId", "UserId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_rentability_scenarios_TenantId_UserId_IsBase",
+                name: "IX_rentability_scenarios_OrganizationId_UserId_IsBase",
                 table: "rentability_scenarios",
-                columns: new[] { "TenantId", "UserId", "IsBase" });
+                columns: new[] { "OrganizationId", "UserId", "IsBase" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentInvoiceLines_OrganizationId",
+                table: "RentInvoiceLines",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentInvoiceLines_RentInvoiceId",
+                table: "RentInvoiceLines",
+                column: "RentInvoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentInvoiceLines_RentInvoiceId_OrganizationId",
+                table: "RentInvoiceLines",
+                columns: new[] { "RentInvoiceId", "OrganizationId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentInvoiceLines_Status",
+                table: "RentInvoiceLines",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RentInvoices_ContractId",
@@ -1221,6 +1341,11 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "DueDate");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RentInvoices_OrganizationId",
+                table: "RentInvoices",
+                column: "OrganizationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RentInvoices_PropertyId",
                 table: "RentInvoices",
                 column: "PropertyId");
@@ -1229,11 +1354,6 @@ namespace LocaGuest.Infrastructure.Migrations
                 name: "IX_RentInvoices_Status",
                 table: "RentInvoices",
                 column: "Status");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_RentInvoices_TenantId",
-                table: "RentInvoices",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_scenario_shares_ScenarioId",
@@ -1261,6 +1381,11 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "RentabilityScenarioId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_subscriptions_OrganizationId_UserId",
+                table: "subscriptions",
+                columns: new[] { "OrganizationId", "UserId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_subscriptions_PlanId",
                 table: "subscriptions",
                 column: "PlanId");
@@ -1269,11 +1394,6 @@ namespace LocaGuest.Infrastructure.Migrations
                 name: "IX_subscriptions_StripeSubscriptionId",
                 table: "subscriptions",
                 column: "StripeSubscriptionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_subscriptions_TenantId_UserId",
-                table: "subscriptions",
-                columns: new[] { "TenantId", "UserId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_team_members_OrganizationId",
@@ -1297,9 +1417,9 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tenants_TenantId",
+                name: "IX_tenants_OrganizationId",
                 table: "tenants",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_tracking_events_EventType",
@@ -1312,19 +1432,19 @@ namespace LocaGuest.Infrastructure.Migrations
                 columns: new[] { "EventType", "Timestamp" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_tracking_events_TenantId",
+                name: "IX_tracking_events_OrganizationId",
                 table: "tracking_events",
-                column: "TenantId");
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_tracking_events_TenantId_Timestamp",
+                name: "IX_tracking_events_OrganizationId_Timestamp",
                 table: "tracking_events",
-                columns: new[] { "TenantId", "Timestamp" });
+                columns: new[] { "OrganizationId", "Timestamp" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_tracking_events_TenantId_UserId_Timestamp",
+                name: "IX_tracking_events_OrganizationId_UserId_Timestamp",
                 table: "tracking_events",
-                columns: new[] { "TenantId", "UserId", "Timestamp" });
+                columns: new[] { "OrganizationId", "UserId", "Timestamp" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_tracking_events_Timestamp",
@@ -1337,10 +1457,15 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_usage_aggregates_TenantId_UserId_Dimension_PeriodYear_Perio~",
+                name: "IX_usage_aggregates_OrganizationId_UserId_Dimension_PeriodYear~",
                 table: "usage_aggregates",
-                columns: new[] { "TenantId", "UserId", "Dimension", "PeriodYear", "PeriodMonth" },
+                columns: new[] { "OrganizationId", "UserId", "Dimension", "PeriodYear", "PeriodMonth" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_usage_events_OrganizationId_SubscriptionId",
+                table: "usage_events",
+                columns: new[] { "OrganizationId", "SubscriptionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_usage_events_SubscriptionId",
@@ -1348,14 +1473,9 @@ namespace LocaGuest.Infrastructure.Migrations
                 column: "SubscriptionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_usage_events_TenantId_SubscriptionId",
-                table: "usage_events",
-                columns: new[] { "TenantId", "SubscriptionId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_user_settings_TenantId_UserId",
+                name: "IX_user_settings_OrganizationId_UserId",
                 table: "user_settings",
-                columns: new[] { "TenantId", "UserId" },
+                columns: new[] { "OrganizationId", "UserId" },
                 unique: true);
         }
 
@@ -1370,6 +1490,9 @@ namespace LocaGuest.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "contract_required_documents");
+
+            migrationBuilder.DropTable(
+                name: "ContractParticipants");
 
             migrationBuilder.DropTable(
                 name: "Documents");
@@ -1397,6 +1520,9 @@ namespace LocaGuest.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "PropertyImages");
+
+            migrationBuilder.DropTable(
+                name: "RentInvoiceLines");
 
             migrationBuilder.DropTable(
                 name: "RentInvoices");

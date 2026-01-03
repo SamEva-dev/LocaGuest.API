@@ -15,7 +15,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IOrganizationRepository> _organizationRepositoryMock;
-    private readonly Mock<ITenantContext> _tenantContextMock;
+    private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<ILogger<UpdateOrganizationSettingsCommandHandler>> _loggerMock;
     private readonly UpdateOrganizationSettingsCommandHandler _handler;
 
@@ -23,15 +23,15 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _organizationRepositoryMock = new Mock<IOrganizationRepository>();
-        _tenantContextMock = new Mock<ITenantContext>();
+        _orgContextMock = new Mock<IOrganizationContext>();
         _loggerMock = new Mock<ILogger<UpdateOrganizationSettingsCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Organizations).Returns(_organizationRepositoryMock.Object);
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(true);
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
 
         _handler = new UpdateOrganizationSettingsCommandHandler(
             _unitOfWorkMock.Object,
-            _tenantContextMock.Object,
+            _orgContextMock.Object,
             _loggerMock.Object);
     }
 
@@ -157,7 +157,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
     public async Task Handle_WhenNotAuthenticated_ReturnsFailure()
     {
         // Arrange
-        _tenantContextMock.Setup(x => x.IsAuthenticated).Returns(false);
+        _orgContextMock.Setup(x => x.IsAuthenticated).Returns(false);
 
         var command = new UpdateOrganizationSettingsCommand
         {

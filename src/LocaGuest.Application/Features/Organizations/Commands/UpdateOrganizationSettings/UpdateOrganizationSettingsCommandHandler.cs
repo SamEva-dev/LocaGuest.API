@@ -9,16 +9,16 @@ namespace LocaGuest.Application.Features.Organizations.Commands.UpdateOrganizati
 public class UpdateOrganizationSettingsCommandHandler : IRequestHandler<UpdateOrganizationSettingsCommand, Result<OrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<UpdateOrganizationSettingsCommandHandler> _logger;
 
     public UpdateOrganizationSettingsCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<UpdateOrganizationSettingsCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -30,7 +30,7 @@ public class UpdateOrganizationSettingsCommandHandler : IRequestHandler<UpdateOr
         {
             _logger.LogInformation("Updating organization settings for {OrganizationId}", request.OrganizationId);
 
-            if (!_tenantContext.IsAuthenticated)
+            if (!_orgContext.IsAuthenticated)
             {
                 return Result.Failure<OrganizationDto>("User not authenticated");
             }

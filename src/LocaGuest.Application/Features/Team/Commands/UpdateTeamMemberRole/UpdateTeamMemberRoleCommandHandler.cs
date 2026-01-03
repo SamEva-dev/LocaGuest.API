@@ -10,16 +10,16 @@ namespace LocaGuest.Application.Features.Team.Commands.UpdateTeamMemberRole;
 public class UpdateTeamMemberRoleCommandHandler : IRequestHandler<UpdateTeamMemberRoleCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<UpdateTeamMemberRoleCommandHandler> _logger;
 
     public UpdateTeamMemberRoleCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         ILogger<UpdateTeamMemberRoleCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -31,7 +31,7 @@ public class UpdateTeamMemberRoleCommandHandler : IRequestHandler<UpdateTeamMemb
             return Result.Failure($"Invalid role: {request.NewRole}");
         }
 
-        var organizationId = _tenantContext.TenantId;
+        var organizationId = _orgContext.OrganizationId;
         if (!organizationId.HasValue || organizationId.Value == Guid.Empty)
         {
             return Result.Failure("Organization context not found");

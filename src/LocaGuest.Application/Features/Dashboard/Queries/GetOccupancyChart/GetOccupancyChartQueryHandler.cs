@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,16 +12,16 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetOccupancyChart;
 public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQuery, Result<OccupancyChartDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetOccupancyChartQueryHandler> _logger;
 
     public GetOccupancyChartQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetOccupancyChartQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -28,7 +29,7 @@ public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQu
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<OccupancyChartDto>("User not authenticated");
 
             var monthlyData = new List<MonthlyOccupancy>();
@@ -80,7 +81,7 @@ public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQu
                 }
             }
 
-            _logger.LogInformation("Retrieved occupancy chart for year {Year} for tenant {TenantId}", request.Year, _tenantContext.TenantId);
+            _logger.LogInformation("Retrieved occupancy chart for year {Year}", request.Year);
 
             return Result.Success(new OccupancyChartDto
             {
@@ -89,7 +90,7 @@ public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQu
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving occupancy chart for year {Year} and tenant {TenantId}", request.Year, _tenantContext.TenantId);
+            _logger.LogError(ex, "Error retrieving occupancy chart for year {Year}", request.Year);
             return Result.Failure<OccupancyChartDto>($"Error retrieving occupancy chart: {ex.Message}");
         }
     }

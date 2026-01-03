@@ -9,18 +9,18 @@ namespace LocaGuest.Application.Features.PropertyImages.Commands.DeleteAllProper
 public class DeleteAllPropertyImagesCommandHandler : IRequestHandler<DeleteAllPropertyImagesCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly IFileStorageService _fileStorage;
     private readonly ILogger<DeleteAllPropertyImagesCommandHandler> _logger;
 
     public DeleteAllPropertyImagesCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         IFileStorageService fileStorage,
         ILogger<DeleteAllPropertyImagesCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _fileStorage = fileStorage;
         _logger = logger;
     }
@@ -29,7 +29,7 @@ public class DeleteAllPropertyImagesCommandHandler : IRequestHandler<DeleteAllPr
     {
         // Vérifier que la propriété existe et appartient au tenant
         var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
-        if (property == null || property.TenantId.ToString() != _tenantContext.TenantId.ToString())
+        if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure("Propriété non trouvée");
         }

@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -10,16 +11,16 @@ namespace LocaGuest.Application.Features.Tenants.Commands.ChangeTenantStatus;
 public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStatusCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ChangeTenantStatusCommandHandler> _logger;
 
     public ChangeTenantStatusCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<ChangeTenantStatusCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -27,7 +28,7 @@ public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStat
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated)
+            if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<bool>("User not authenticated");
 
             var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);

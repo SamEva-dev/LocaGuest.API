@@ -35,7 +35,7 @@ public class GetCommandAuditLogQueryHandler : IRequestHandler<GetCommandAuditLog
                 entity.CommandData,
                 entity.UserId,
                 entity.UserEmail,
-                entity.TenantId,
+                entity.OrganizationId,
                 entity.ExecutedAt,
                 entity.DurationMs,
                 entity.Success,

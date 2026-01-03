@@ -36,7 +36,7 @@ public class TrackingMiddleware
         HttpContext context,
         IServiceScopeFactory serviceScopeFactory,
         ICurrentUserService currentUserService,
-        ITenantContext tenantContext)
+        IOrganizationContext orgContext)
     {
         var stopwatch = Stopwatch.StartNew();
         var path = context.Request.Path.Value ?? string.Empty;
@@ -58,13 +58,13 @@ public class TrackingMiddleware
         {
             try
             {
-                var tenantId = tenantContext.TenantId;
+                var organizationId = orgContext.OrganizationId;
                 var userId = currentUserService.UserId;
 
-                if (tenantId.HasValue && userId.HasValue)
+                if (organizationId.HasValue && userId.HasValue)
                 {
                     var trackingEvent = TrackingEvent.Create(
-                        tenantId: tenantId.Value,
+                        organizationId: organizationId.Value,
                         userId: userId.Value,
                         eventType: TrackingEventTypes.ApiRequest,
                         ipAddress: currentUserService.IpAddress ?? "unknown",

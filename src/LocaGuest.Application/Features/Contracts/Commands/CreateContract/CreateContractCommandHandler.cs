@@ -14,18 +14,18 @@ namespace LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 public class CreateContractCommandHandler : IRequestHandler<CreateContractCommand, Result<ContractDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<CreateContractCommandHandler> _logger;
 
     public CreateContractCommandHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<CreateContractCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
     }
@@ -35,7 +35,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
         try
         {
             // Validate tenant authentication
-            if (!_tenantContext.IsAuthenticated)
+            if (!_orgContext.IsAuthenticated)
                 return Result.Failure<ContractDto>("User not authenticated");
 
             // Vérifier que la propriété existe
@@ -115,7 +115,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
 
             // ✅ QUICK WIN: Generate automatic code
             var code = await _numberSequenceService.GenerateNextCodeAsync(
-                _tenantContext.TenantId!.Value,
+                _orgContext.OrganizationId!.Value,
                 EntityPrefixes.Contract,
                 cancellationToken);
 

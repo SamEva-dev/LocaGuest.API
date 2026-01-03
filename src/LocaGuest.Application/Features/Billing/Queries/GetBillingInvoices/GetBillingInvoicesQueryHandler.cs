@@ -10,18 +10,18 @@ public class GetBillingInvoicesQueryHandler : IRequestHandler<GetBillingInvoices
 {
     private readonly IStripeService _stripeService;
     private readonly ISubscriptionService _subscriptionService;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetBillingInvoicesQueryHandler> _logger;
 
     public GetBillingInvoicesQueryHandler(
         IStripeService stripeService,
         ISubscriptionService subscriptionService,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetBillingInvoicesQueryHandler> logger)
     {
         _stripeService = stripeService;
         _subscriptionService = subscriptionService;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -29,10 +29,10 @@ public class GetBillingInvoicesQueryHandler : IRequestHandler<GetBillingInvoices
     {
         try
         {
-            if (!_tenantContext.IsAuthenticated || !_tenantContext.UserId.HasValue)
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
                 return Result.Failure<List<BillingInvoiceDto>>("User not authenticated");
 
-            var userId = _tenantContext.UserId.Value;
+            var userId = _currentUserService.UserId.Value;
             var subscription = await _subscriptionService.GetActiveSubscriptionAsync(userId);
 
             if (subscription == null || string.IsNullOrEmpty(subscription.StripeCustomerId))

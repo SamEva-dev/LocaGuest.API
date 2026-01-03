@@ -40,8 +40,8 @@ public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, Resul
             if (request.UserId.HasValue)
                 query = query.Where(x => x.UserId == request.UserId);
 
-            if (request.TenantId.HasValue)
-                query = query.Where(x => x.TenantId == request.TenantId);
+            if (request.OrganizationId.HasValue)
+                query = query.Where(x => x.OrganizationId == request.OrganizationId);
 
             if (!string.IsNullOrWhiteSpace(request.CorrelationId))
                 query = query.Where(x => x.CorrelationId == request.CorrelationId);
@@ -62,7 +62,7 @@ public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, Resul
                     entity.Id,
                     entity.UserId,
                     entity.UserEmail,
-                    entity.TenantId,
+                    entity.OrganizationId,
                     entity.Action,
                     entity.EntityType,
                     entity.EntityId,

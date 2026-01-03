@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Payments;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -11,22 +12,22 @@ namespace LocaGuest.Application.Features.Payments.Queries.GetOverduePayments;
 public class GetOverduePaymentsQueryHandler : IRequestHandler<GetOverduePaymentsQuery, Result<List<PaymentDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITenantContext _tenantContext;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetOverduePaymentsQueryHandler> _logger;
 
     public GetOverduePaymentsQueryHandler(
         IUnitOfWork unitOfWork,
-        ITenantContext tenantContext,
+        ICurrentUserService currentUserService,
         ILogger<GetOverduePaymentsQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _tenantContext = tenantContext;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task<Result<List<PaymentDto>>> Handle(GetOverduePaymentsQuery request, CancellationToken cancellationToken)
     {
-        if (!_tenantContext.IsAuthenticated)
+        if (!_currentUserService.IsAuthenticated)
         {
             return Result<List<PaymentDto>>.Failure<List<PaymentDto>>("User not authenticated");
         }
