@@ -27,12 +27,8 @@ public sealed class ProvisioningOrganizationsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProvisionOrganizationResponseDto>> Provision(
         [FromBody] ProvisionOrganizationBody request,
-        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(idempotencyKey))
-            return BadRequest(new { message = "Idempotency-Key header is required." });
-
         var result = await _mediator.Send(
             new ProvisionOrganizationCommand(
                 OrganizationName: request.OrganizationName,
@@ -40,7 +36,7 @@ public sealed class ProvisioningOrganizationsController : ControllerBase
                 OrganizationPhone: request.OrganizationPhone,
                 OwnerUserId: request.OwnerUserId,
                 OwnerEmail: request.OwnerEmail,
-                IdempotencyKey: idempotencyKey!),
+                IdempotencyKey: Request.Headers["Idempotency-Key"].ToString()),
             ct);
 
         if (result.IsFailure)

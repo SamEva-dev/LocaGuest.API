@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LocaGuest.Application;
@@ -13,10 +14,11 @@ public static class DependencyInjection
             
             // Add Audit Behavior (logs all commands)
             cfg.AddOpenBehavior(typeof(Common.Behaviours.AuditBehavior<,>));
+
+            cfg.AddOpenBehavior(typeof(Common.Behaviours.ValidationBehavior<,>));
         });
 
-        // FluentValidation (if needed later)
-        // services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         // AutoMapper (if needed later)
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);

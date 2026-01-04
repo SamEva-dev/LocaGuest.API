@@ -211,6 +211,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             b.Property(x => x.RequestHash).HasColumnName("request_hash").IsRequired();
 
             b.Property(x => x.ResponseJson).HasColumnName("response_json").IsRequired();
+            b.Property(x => x.ResponseBodyBase64).HasColumnName("response_body_base64").IsRequired();
+            b.Property(x => x.ResponseContentType).HasColumnName("response_content_type").IsRequired();
             b.Property(x => x.StatusCode).HasColumnName("status_code").IsRequired();
 
             b.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();

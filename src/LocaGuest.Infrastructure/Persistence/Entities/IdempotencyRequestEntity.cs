@@ -9,6 +9,8 @@ public sealed class IdempotencyRequestEntity
     public string RequestHash { get; set; } = string.Empty;
 
     public string ResponseJson { get; set; } = string.Empty;
+    public string ResponseBodyBase64 { get; set; } = string.Empty;
+    public string ResponseContentType { get; set; } = string.Empty;
     public int StatusCode { get; set; }
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

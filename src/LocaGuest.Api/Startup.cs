@@ -1,5 +1,6 @@
 using LocaGuest.Api.Middleware;
 using LocaGuest.Api.Services;
+using LocaGuest.Api.Common;
 using LocaGuest.Application;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
@@ -9,10 +10,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using LocaGuest.Infrastructure.BackgroundServices;
 using LocaGuest.Infrastructure.Jobs;
+using LocaGuest.Api.Common.Swagger;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,7 +36,10 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Controllers with JSON configuration
-        services.AddControllers()
+        services.AddControllers(options =>
+            {
+                options.Conventions.Add(new VersionedApiRouteConvention("v1"));
+            })
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
@@ -41,12 +47,44 @@ public class Startup
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             });
 
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var correlationId = context.HttpContext.Items["X-Correlation-Id"]?.ToString();
+                if (string.IsNullOrWhiteSpace(correlationId))
+                    correlationId = context.HttpContext.TraceIdentifier;
+
+                var errors = context.ModelState
+                    .Where(kvp => kvp.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
+
+                var problem = new ValidationProblemDetails(errors)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Validation Error",
+                    Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                };
+
+                problem.Extensions["correlationId"] = correlationId;
+
+                return new ObjectResult(problem)
+                {
+                    StatusCode = problem.Status,
+                    ContentTypes = { "application/problem+json" }
+                };
+            };
+        });
+
         // Swagger
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new() { Title = "LocaGuest API", Version = "v1" });
             c.CustomSchemaIds(type => type.FullName);
+            c.OperationFilter<IdempotencyKeyOperationFilter>();
             c.AddSecurityDefinition("Bearer", new()
             {
                 Description = "JWT Authorization header using the Bearer scheme",
@@ -140,6 +178,32 @@ public class Startup
 
         services.AddRateLimiter(options =>
         {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var method = httpContext.Request.Method;
+                if (HttpMethods.IsGet(method) || HttpMethods.IsHead(method) || HttpMethods.IsOptions(method))
+                    return RateLimitPartition.GetNoLimiter("read");
+
+                var user = httpContext.User;
+                var clientId =
+                    user.FindFirst("azp")?.Value
+                    ?? user.FindFirst("client_id")?.Value
+                    ?? user.FindFirst("sub")?.Value
+                    ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: clientId,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    });
+            });
+
             options.AddPolicy("ProvisioningLimiter", httpContext =>
             {
                 var user = httpContext.User;
@@ -313,6 +377,7 @@ public class Startup
 
         // Middleware
         app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<IdempotencyMiddleware>();
         if (!env.IsDevelopment() && env.EnvironmentName != "Testing")
         {
             app.UseMiddleware<ExceptionHandlingMiddleware>();

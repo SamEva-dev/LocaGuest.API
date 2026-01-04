@@ -22,18 +22,14 @@ public sealed class ProvisioningInvitationsController : ControllerBase
     [HttpPost("consume")]
     public async Task<ActionResult<ConsumeInvitationResponseDto>> Consume(
         [FromBody] ConsumeInvitationBody request,
-        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(idempotencyKey))
-            return BadRequest(new { message = "Idempotency-Key header is required." });
-
         var result = await _mediator.Send(
             new ConsumeInvitationCommand(
                 Token: request.Token,
                 UserId: request.UserId,
                 UserEmail: request.UserEmail,
-                IdempotencyKey: idempotencyKey!),
+                IdempotencyKey: Request.Headers["Idempotency-Key"].ToString()),
             ct);
 
         if (result.IsFailure)
