@@ -28,22 +28,22 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
         
         await context.Database.EnsureCreatedAsync();
         
-        context.Tenants.RemoveRange(context.Tenants);
+        context.Occupants.RemoveRange(context.Occupants);
         await context.SaveChangesAsync();
 
-        var tenant1 = Tenant.Create(
+        var tenant1 = Occupant.Create(
             "John Doe",
             "john.doe@test.com",
             "0612345678"
         );
 
-        var tenant2 = Tenant.Create(
+        var tenant2 = Occupant.Create(
             "Jane Smith",
             "jane.smith@test.com",
             "0623456789"
         );
 
-        context.Tenants.AddRange(tenant1, tenant2);
+        context.Occupants.AddRange(tenant1, tenant2);
         await context.SaveChangesAsync();
     }
 
@@ -88,7 +88,7 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
         // Arrange
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
-        var tenant = context.Tenants.First();
+        var tenant = context.Occupants.First();
 
         // Act
         var response = await _client.GetAsync($"/api/tenants/{tenant.Id}");

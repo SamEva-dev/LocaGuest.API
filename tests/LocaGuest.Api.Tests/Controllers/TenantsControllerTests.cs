@@ -20,14 +20,14 @@ namespace LocaGuest.Api.Tests.Controllers;
 public class TenantsControllerTests : BaseTestFixture
 {
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<ILogger<TenantsController>> _loggerMock;
-    private readonly TenantsController _controller;
+    private readonly Mock<ILogger<OccupantsController>> _loggerMock;
+    private readonly OccupantsController _controller;
 
     public TenantsControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
-        _loggerMock = new Mock<ILogger<TenantsController>>();
-        _controller = new TenantsController(_mediatorMock.Object, _loggerMock.Object);
+        _loggerMock = new Mock<ILogger<OccupantsController>>();
+        _controller = new OccupantsController(_mediatorMock.Object, _loggerMock.Object);
     }
 
     #region GetTenants Tests

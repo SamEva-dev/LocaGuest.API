@@ -8,7 +8,7 @@ public class AddendumConfiguration : IEntityTypeConfiguration<Addendum>
 {
     public void Configure(EntityTypeBuilder<Addendum> builder)
     {
-        builder.ToTable("Addendums");
+        builder.ToTable("addendums", schema: "lease");
 
         builder.HasKey(a => a.Id);
 

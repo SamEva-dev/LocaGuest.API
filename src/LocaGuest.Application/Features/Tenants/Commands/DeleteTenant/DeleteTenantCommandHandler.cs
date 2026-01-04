@@ -24,7 +24,7 @@ public class DeleteTenantCommandHandler : IRequestHandler<DeleteTenantCommand, R
     {
         try
         {
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure<DeleteTenantResult>($"Tenant with ID {request.TenantId} not found");
 
@@ -90,7 +90,7 @@ public class DeleteTenantCommandHandler : IRequestHandler<DeleteTenantCommand, R
             }
 
             // Supprimer le locataire
-            _unitOfWork.Tenants.Remove(tenant);
+            _unitOfWork.Occupants.Remove(tenant);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

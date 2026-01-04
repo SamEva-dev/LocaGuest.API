@@ -15,7 +15,7 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IContractRepository> _contractRepositoryMock;
     private readonly Mock<IPropertyRepository> _propertyRepositoryMock;
-    private readonly Mock<ITenantRepository> _tenantRepositoryMock;
+    private readonly Mock<IOccupantRepository> _tenantRepositoryMock;
     private readonly Mock<ILogger<CancelContractCommandHandler>> _loggerMock;
     private readonly CancelContractCommandHandler _handler;
 
@@ -24,12 +24,12 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _contractRepositoryMock = new Mock<IContractRepository>();
         _propertyRepositoryMock = new Mock<IPropertyRepository>();
-        _tenantRepositoryMock = new Mock<ITenantRepository>();
+        _tenantRepositoryMock = new Mock<IOccupantRepository>();
         _loggerMock = new Mock<ILogger<CancelContractCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Contracts).Returns(_contractRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
-        _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.Occupants).Returns(_tenantRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.CommitAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         _handler = new CancelContractCommandHandler(_unitOfWorkMock.Object, _loggerMock.Object);
@@ -89,7 +89,7 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
         property.AddRoom("R2", 400m);
         property.ReserveAllRooms(contract.Id);
 
-        var tenant = Tenant.Create(fullName: "John Doe", email: "john@doe.com");
+        var tenant = Occupant.Create(fullName: "John Doe", email: "john@doe.com");
         tenant.SetReserved();
 
         _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
@@ -104,7 +104,7 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
         result.IsSuccess.Should().BeTrue();
         property.Status.Should().Be(PropertyStatus.Vacant);
         property.Rooms.All(r => r.Status == PropertyRoomStatus.Available).Should().BeTrue();
-        tenant.Status.Should().Be(TenantStatus.Inactive);
+        tenant.Status.Should().Be(OccupantStatus.Inactive);
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -8,7 +8,7 @@ public class RentInvoiceConfiguration : IEntityTypeConfiguration<RentInvoice>
 {
     public void Configure(EntityTypeBuilder<RentInvoice> builder)
     {
-        builder.ToTable("RentInvoices");
+        builder.ToTable("rent_invoices", schema: "finance");
 
         builder.HasKey(ri => ri.Id);
 

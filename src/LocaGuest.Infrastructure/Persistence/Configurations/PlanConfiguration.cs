@@ -8,7 +8,7 @@ public class PlanConfiguration : IEntityTypeConfiguration<Plan>
 {
     public void Configure(EntityTypeBuilder<Plan> builder)
     {
-        builder.ToTable("Plans");
+        builder.ToTable("plans", schema: "billing");
         
         builder.HasKey(p => p.Id);
         

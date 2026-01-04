@@ -54,7 +54,7 @@ public static class DbSeeder
         await context.SaveChangesAsync();
 
         // Créer les locataires
-        var tenants = new List<Tenant>
+        var tenants = new List<Occupant>
         {
             //CreateTenant("Marie Dupont", "marie.dupont@email.com", "0612345678"),
             //CreateTenant("Pierre Martin", "pierre.martin@email.com", "0623456789"),
@@ -75,7 +75,7 @@ public static class DbSeeder
             tenant.ClearDomainEvents();
         }
 
-        context.Tenants.AddRange(tenants);
+        context.Occupants.AddRange(tenants);
         await context.SaveChangesAsync();
 
         // Créer les contrats (associer propriétés occupées avec locataires)
@@ -185,9 +185,9 @@ public static class DbSeeder
         return property;
     }
 
-    private static Tenant CreateTenant(string fullName, string email, string phone)
+    private static Occupant CreateTenant(string fullName, string email, string phone)
     {
-        var tenant = Tenant.Create(fullName, email, phone);
+        var tenant = Occupant.Create(fullName, email, phone);
         tenant.SetMoveInDate(DateTime.UtcNow.AddMonths(-new Random().Next(6, 30)));
         return tenant;
     }

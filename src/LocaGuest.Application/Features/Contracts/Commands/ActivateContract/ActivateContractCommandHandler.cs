@@ -36,8 +36,8 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
             if (property == null)
                 return Result.Failure("Property not found");
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
-            if (tenant == null)
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            if (occupant == null)
                 return Result.Failure("Tenant not found");
 
             if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
@@ -61,7 +61,7 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
                 property.SetStatus(PropertyStatus.Active);
             }
 
-            tenant.SetActive();
+            occupant.SetActive();
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

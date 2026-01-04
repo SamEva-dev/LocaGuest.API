@@ -51,7 +51,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 .Where(p => propertyIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
 
-            var tenants = await _unitOfWork.Tenants.Query()
+            var tenants = await _unitOfWork.Occupants.Query()
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 

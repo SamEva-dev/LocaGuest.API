@@ -3,11 +3,11 @@ using LocaGuest.Domain.Aggregates.TenantAggregate.Events;
 
 namespace LocaGuest.Domain.Aggregates.TenantAggregate;
 
-public class Tenant : AuditableEntity
+public class Occupant : AuditableEntity
 {
     /// <summary>
     /// Auto-generated unique code (e.g., T0001-L0001)
-    /// Format: {TenantCode}-L{Number}
+    /// Format: {OccupantCode}-L{Number}
     /// </summary>
     public string Code { get; private set; } = string.Empty;
     
@@ -15,7 +15,7 @@ public class Tenant : AuditableEntity
     public string Email { get; private set; } = string.Empty;
     public string? Phone { get; private set; }
     public DateTime? MoveInDate { get; private set; }
-    public TenantStatus Status { get; private set; }
+    public OccupantStatus Status { get; private set; }
     public string? Notes { get; private set; }
     
     // 📋 Informations personnelles détaillées
@@ -36,7 +36,7 @@ public class Tenant : AuditableEntity
     public decimal? MonthlyIncome { get; private set; }
     
     /// <summary>
-    /// Associated Property ID - Tenant can be associated to a property before contract creation
+    /// Associated Property ID - Occupant can be associated to a property before contract creation
     /// </summary>
     public Guid? PropertyId { get; private set; }
     
@@ -45,21 +45,21 @@ public class Tenant : AuditableEntity
     /// </summary>
     public string? PropertyCode { get; private set; }
 
-    private Tenant() { } // EF
+    private Occupant() { } // EF
 
-    public static Tenant Create(string fullName, string email, string? phone = null)
+    public static Occupant Create(string fullName, string email, string? phone = null)
     {
-        var tenant = new Tenant
+        var occupant = new Occupant
         {
             Id = Guid.NewGuid(),
             FullName = fullName,
             Email = email,
             Phone = phone,
-            Status = TenantStatus.Inactive
+            Status = OccupantStatus.Inactive
         };
 
-        tenant.AddDomainEvent(new TenantCreated(tenant.Id, tenant.FullName, tenant.Email));
-        return tenant;
+        occupant.AddDomainEvent(new OccupantCreated(occupant.Id, occupant.FullName, occupant.Email));
+        return occupant;
     }
 
     /// <summary>
@@ -84,15 +84,15 @@ public class Tenant : AuditableEntity
 
     public void Deactivate()
     {
-        if (Status == TenantStatus.Inactive) return;
-        Status = TenantStatus.Inactive;
+        if (Status == OccupantStatus.Inactive) return;
+        Status = OccupantStatus.Inactive;
         AddDomainEvent(new TenantDeactivated(Id));
     }
 
     public void Reactivate()
     {
-        if (Status == TenantStatus.Active) return;
-        Status = TenantStatus.Active;
+        if (Status == OccupantStatus.Active) return;
+        Status = OccupantStatus.Active;
     }
 
     public void UpdateContact(string? email = null, string? phone = null)
@@ -102,7 +102,7 @@ public class Tenant : AuditableEntity
     }
     
     /// <summary>
-    /// Update tenant detailed information
+    /// Update occupant detailed information
     /// </summary>
     public void UpdateDetails(
         DateTime? dateOfBirth = null,
@@ -143,7 +143,7 @@ public class Tenant : AuditableEntity
     }
     
     /// <summary>
-    /// Associate this tenant to a property
+    /// Associate this occupant to a property
     /// </summary>
     public void AssociateToProperty(Guid propertyId, string propertyCode)
     {
@@ -166,11 +166,11 @@ public class Tenant : AuditableEntity
     /// </summary>
     public void SetReserved()
     {
-        if (Status == TenantStatus.Active)
-            throw new InvalidOperationException("Cannot reserve an active tenant");
+        if (Status == OccupantStatus.Active)
+            throw new InvalidOperationException("Cannot reserve an active occupant");
             
-        Status = TenantStatus.Reserved;
-        AddDomainEvent(new TenantStatusChanged(Id, TenantStatus.Reserved));
+        Status = OccupantStatus.Reserved;
+        AddDomainEvent(new OccupantStatusChanged(Id, OccupantStatus.Reserved));
     }
     
     /// <summary>
@@ -179,8 +179,8 @@ public class Tenant : AuditableEntity
     /// </summary>
     public void SetActive()
     {
-        Status = TenantStatus.Active;
-        AddDomainEvent(new TenantStatusChanged(Id, TenantStatus.Active));
+        Status = OccupantStatus.Active;
+        AddDomainEvent(new OccupantStatusChanged(Id, OccupantStatus.Active));
     }
     
     /// <summary>
@@ -189,7 +189,7 @@ public class Tenant : AuditableEntity
     /// </summary>
     public bool IsAvailableForNewContract()
     {
-        return Status == TenantStatus.Inactive;
+        return Status == OccupantStatus.Inactive;
     }
     
     /// <summary>
@@ -197,11 +197,11 @@ public class Tenant : AuditableEntity
     /// </summary>
     public bool HasActiveOrReservedStatus()
     {
-        return Status == TenantStatus.Active || Status == TenantStatus.Reserved;
+        return Status == OccupantStatus.Active || Status == OccupantStatus.Reserved;
     }
 }
 
-public enum TenantStatus
+public enum OccupantStatus
 {
     Active,      // Locataire avec contrat actif (occupant actuel)
     Reserved,    // Locataire avec contrat signé (futur occupant)

@@ -123,12 +123,12 @@ public class AdminController : ControllerBase
                     _logger.LogInformation("✅ Images deleted");
                 }
 
-                // 6. Tenants
-                if (_context.Tenants.Any())
+                // 6. Occupants
+                if (_context.Occupants.Any())
                 {
-                    _context.Tenants.RemoveRange(_context.Tenants);
+                    _context.Occupants.RemoveRange(_context.Occupants);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("✅ Tenants deleted");
+                    _logger.LogInformation("✅ Occupants deleted");
                 }
 
                 // 7. Rentability Scenarios
@@ -158,7 +158,7 @@ public class AdminController : ControllerBase
                 {
                     _context.OrganizationSequences.RemoveRange(_context.OrganizationSequences);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("✅ Tenant sequences deleted");
+                    _logger.LogInformation("✅ Occupant sequences deleted");
                 }
 
                 if (_context.Organizations.Any())
@@ -181,8 +181,8 @@ public class AdminController : ControllerBase
                     deletedTables = new[] 
                     { 
                         "InventoryExits", "InventoryEntries", "Payments", "Contracts", 
-                        "Documents", "Properties", "PropertyRooms", "PropertyImages", "Tenants", "RentabilityScenarios",
-                        "InvitationTokens", "TeamMembers", "TenantSequences", "Organizations", "RentInvoices"
+                        "Documents", "Properties", "PropertyRooms", "PropertyImages", "Occupants", "RentabilityScenarios",
+                        "InvitationTokens", "TeamMembers", "OccupantSequences", "Organizations", "RentInvoices"
                     }
                 });
             }
@@ -209,7 +209,7 @@ public class AdminController : ControllerBase
     {
         try
         {
-            var tenantId = User.FindFirst("organization_id")?.Value ?? User.FindFirst("organizationId")?.Value;
+            var occupantId = User.FindFirst("organization_id")?.Value ?? User.FindFirst("organizationId")?.Value;
             var userId = User.FindFirst("sub")?.Value
                          ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
 
@@ -218,7 +218,7 @@ public class AdminController : ControllerBase
                 Auth = new
                 {
                     UserId = userId,
-                    TenantId = tenantId
+                    TenantId = occupantId
                 },
 
                 Organizations = new
@@ -233,8 +233,8 @@ public class AdminController : ControllerBase
                 },
                 Tenants = new
                 {
-                    Raw = await _context.Tenants.IgnoreQueryFilters().CountAsync(),
-                    Filtered = await _context.Tenants.CountAsync()
+                    Raw = await _context.Occupants.IgnoreQueryFilters().CountAsync(),
+                    Filtered = await _context.Occupants.CountAsync()
                 },
                 Contracts = new
                 {

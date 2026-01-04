@@ -51,7 +51,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
     public DbSet<PropertyImage> PropertyImages => Set<PropertyImage>();
-    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Occupant> Occupants => Set<Occupant>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ContractParticipant> ContractParticipants => Set<ContractParticipant>();
     public DbSet<Addendum> Addendums => Set<Addendum>();
@@ -83,7 +83,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasSequence<long>("organization_number_seq", schema: "core")
+        modelBuilder.HasSequence<long>("organization_number_seq", schema: "org")
             .StartsAt(1)
             .IncrementsBy(1);
 
@@ -99,7 +99,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Organization (Multi-tenant root entity)
         modelBuilder.Entity<Organization>(entity =>
         {
-            entity.ToTable("organizations");
+            entity.ToTable("organizations", schema: "org");
             entity.HasKey(o => o.Id);
             entity.Property(o => o.Number).IsRequired().ValueGeneratedNever(); // Manually managed
             entity.HasIndex(o => o.Number).IsUnique();
@@ -118,7 +118,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // OrganizationSequence (Numbering service per organization)
         modelBuilder.Entity<OrganizationSequence>(entity =>
         {
-            entity.ToTable("tenant_sequences");
+            entity.ToTable("tenant_sequences", schema: "org");
             entity.HasKey(ts => new { ts.OrganizationId, ts.EntityPrefix });
             entity.Property(ts => ts.OrganizationId).IsRequired();
             entity.Property(ts => ts.EntityPrefix).IsRequired().HasMaxLength(10);
@@ -130,7 +130,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // TeamMember (Members of an organization)
         modelBuilder.Entity<TeamMember>(entity =>
         {
-            entity.ToTable("team_members");
+            entity.ToTable("team_members", schema: "org");
             entity.HasKey(tm => tm.Id);
             entity.Property(tm => tm.UserId).IsRequired();
             entity.Property(tm => tm.OrganizationId).IsRequired();
@@ -157,7 +157,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // InvitationToken (Secure tokens for team invitations)
         modelBuilder.Entity<InvitationToken>(entity =>
         {
-            entity.ToTable("invitation_tokens");
+            entity.ToTable("invitation_tokens", schema: "org");
             entity.HasKey(it => it.Id);
             entity.Property(it => it.TeamMemberId).IsRequired();
             entity.Property(it => it.Token).IsRequired().HasMaxLength(64);
@@ -180,7 +180,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 
         modelBuilder.Entity<Invitation>(entity =>
         {
-            entity.ToTable("invitations", schema: "core");
+            entity.ToTable("invitations", schema: "org");
             entity.HasKey(i => i.Id);
 
             entity.Property(i => i.OrganizationId).IsRequired();
@@ -203,7 +203,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
 
         modelBuilder.Entity<IdempotencyRequestEntity>(b =>
         {
-            b.ToTable("idempotency_requests", schema: "core");
+            b.ToTable("idempotency_requests", schema: "ops");
             b.HasKey(x => x.Id);
 
             b.Property(x => x.ClientId).HasColumnName("client_id").IsRequired();
@@ -222,7 +222,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Property
         modelBuilder.Entity<Property>(entity =>
         {
-            entity.ToTable("properties");
+            entity.ToTable("properties", schema: "locaguest");
             entity.HasKey(p => p.Id);
             entity.Property(p => p.OrganizationId).IsRequired();
             entity.HasIndex(p => p.OrganizationId);
@@ -266,11 +266,19 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                 .HasForeignKey(r => r.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<PropertyImage>(entity =>
+        {
+            entity.ToTable("property_images", schema: "locaguest");
+            entity.HasKey(pi => pi.Id);
+            entity.Property(pi => pi.PropertyId).IsRequired();
+            entity.HasIndex(pi => pi.PropertyId);
+        });
         
         // PropertyRoom (Chambres de colocation)
         modelBuilder.Entity<PropertyRoom>(entity =>
         {
-            entity.ToTable("property_rooms");
+            entity.ToTable("property_rooms", schema: "locaguest");
             entity.HasKey(r => r.Id);
             entity.Property(r => r.PropertyId).IsRequired();
             entity.HasIndex(r => r.PropertyId);
@@ -289,9 +297,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         });
 
         // Tenant (Locataire - à ne pas confondre avec TenantId multi-tenant)
-        modelBuilder.Entity<Tenant>(entity =>
+        modelBuilder.Entity<Occupant>(entity =>
         {
-            entity.ToTable("tenants");
+            entity.ToTable("occupants", schema: "locaguest");
             entity.HasKey(t => t.Id);
             entity.Property(t => t.OrganizationId).IsRequired();
             entity.HasIndex(t => t.OrganizationId);
@@ -304,7 +312,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Contract
         modelBuilder.Entity<Contract>(entity =>
         {
-            entity.ToTable("contracts");
+            entity.ToTable("contracts", schema: "lease");
             entity.HasKey(c => c.Id);
             entity.Property(c => c.OrganizationId).IsRequired();
             entity.HasIndex(c => c.OrganizationId);
@@ -328,7 +336,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             // Configure RequiredDocuments as owned entity collection
             entity.OwnsMany(c => c.RequiredDocuments, rd =>
             {
-                rd.ToTable("contract_required_documents");
+                rd.ToTable("required_documents", schema: "lease");
                 rd.WithOwner().HasForeignKey("ContractId");
                 rd.Property<Guid>("ContractId");
                 rd.HasKey("ContractId", "Type");
@@ -346,7 +354,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // ContractPayment (old/deprecated - use PaymentAggregate.Payment instead)
         modelBuilder.Entity<ContractPayment>(entity =>
         {
-            entity.ToTable("contract_payments");
+            entity.ToTable("contract_payments", schema: "finance");
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
             entity.Ignore(p => p.DomainEvents);
@@ -355,7 +363,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // UserSettings
         modelBuilder.Entity<UserSettings>(entity =>
         {
-            entity.ToTable("user_settings");
+            entity.ToTable("user_settings", schema: "iam");
             entity.HasKey(us => us.Id);
             entity.Property(us => us.OrganizationId).IsRequired();
             entity.HasIndex(us => new { us.OrganizationId, us.UserId }).IsUnique();
@@ -367,10 +375,59 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Ignore(us => us.DomainEvents);
         });
 
+        modelBuilder.Entity<UserProfile>(entity =>
+        {
+            entity.ToTable("user_profiles", schema: "iam");
+            entity.HasKey(up => up.Id);
+            entity.Property(up => up.OrganizationId).IsRequired();
+            entity.HasIndex(up => new { up.OrganizationId, up.UserId }).IsUnique();
+            entity.Property(up => up.UserId).IsRequired().HasMaxLength(100);
+            entity.Property(up => up.FirstName).IsRequired().HasMaxLength(200);
+            entity.Property(up => up.LastName).IsRequired().HasMaxLength(200);
+            entity.Property(up => up.Email).IsRequired().HasMaxLength(200);
+            entity.Property(up => up.Phone).HasMaxLength(50);
+            entity.Property(up => up.Company).HasMaxLength(200);
+            entity.Property(up => up.Role).HasMaxLength(50);
+            entity.Property(up => up.Bio).HasMaxLength(2000);
+            entity.Property(up => up.PhotoUrl).HasMaxLength(500);
+            entity.Ignore(up => up.DomainEvents);
+        });
+
+        modelBuilder.Entity<UserPreferences>(entity =>
+        {
+            entity.ToTable("user_preferences", schema: "iam");
+            entity.HasKey(up => up.Id);
+            entity.Property(up => up.OrganizationId).IsRequired();
+            entity.HasIndex(up => new { up.OrganizationId, up.UserId }).IsUnique();
+            entity.Property(up => up.UserId).IsRequired().HasMaxLength(100);
+            entity.Property(up => up.Language).IsRequired().HasMaxLength(10);
+            entity.Property(up => up.Timezone).IsRequired().HasMaxLength(100);
+            entity.Property(up => up.DateFormat).IsRequired().HasMaxLength(20);
+            entity.Property(up => up.Currency).IsRequired().HasMaxLength(10);
+            entity.Ignore(up => up.DomainEvents);
+        });
+
+        modelBuilder.Entity<NotificationSettings>(entity =>
+        {
+            entity.ToTable("notification_settings", schema: "iam");
+            entity.HasKey(ns => ns.Id);
+            entity.Property(ns => ns.OrganizationId).IsRequired();
+            entity.HasIndex(ns => new { ns.OrganizationId, ns.UserId }).IsUnique();
+            entity.Property(ns => ns.UserId).IsRequired().HasMaxLength(100);
+            entity.Ignore(ns => ns.DomainEvents);
+        });
+
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.ToTable("user_sessions", schema: "iam");
+            entity.HasKey(us => us.Id);
+            entity.Property(us => us.UserId).IsRequired().HasMaxLength(100);
+        });
+
         // RentabilityScenario
         modelBuilder.Entity<RentabilityScenario>(entity =>
         {
-            entity.ToTable("rentability_scenarios");
+            entity.ToTable("rentability_scenarios", schema: "analytics");
             entity.HasKey(rs => rs.Id);
             entity.Property(rs => rs.OrganizationId).IsRequired();
             entity.HasIndex(rs => rs.OrganizationId);
@@ -443,7 +500,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // ScenarioVersion
         modelBuilder.Entity<ScenarioVersion>(entity =>
         {
-            entity.ToTable("scenario_versions");
+            entity.ToTable("scenario_versions", schema: "analytics");
             entity.HasKey(sv => sv.Id);
             entity.Property(sv => sv.ChangeDescription).IsRequired().HasMaxLength(500);
             entity.Property(sv => sv.SnapshotJson).IsRequired().HasColumnType("text");
@@ -454,7 +511,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // ScenarioShare
         modelBuilder.Entity<ScenarioShare>(entity =>
         {
-            entity.ToTable("scenario_shares");
+            entity.ToTable("scenario_shares", schema: "analytics");
             entity.HasKey(ss => ss.Id);
             entity.Property(ss => ss.Permission).IsRequired().HasMaxLength(20);
             entity.HasIndex(ss => ss.ScenarioId);
@@ -466,7 +523,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Plan (configuration globale, pas de TenantId)
         modelBuilder.Entity<Plan>(entity =>
         {
-            entity.ToTable("plans");
+            entity.ToTable("plans", schema: "billing");
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Code).IsRequired().HasMaxLength(50);
             entity.HasIndex(p => p.Code).IsUnique();
@@ -476,7 +533,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // Subscription (par utilisateur/tenant)
         modelBuilder.Entity<Subscription>(entity =>
         {
-            entity.ToTable("subscriptions");
+            entity.ToTable("subscriptions", schema: "billing");
             entity.HasKey(s => s.Id);
             entity.Property(s => s.OrganizationId).IsRequired();
             entity.HasIndex(s => new { s.OrganizationId, s.UserId });
@@ -487,7 +544,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // UsageEvent
         modelBuilder.Entity<UsageEvent>(entity =>
         {
-            entity.ToTable("usage_events");
+            entity.ToTable("usage_events", schema: "billing");
             entity.HasKey(ue => ue.Id);
             entity.Property(ue => ue.OrganizationId).IsRequired();
             entity.HasIndex(ue => new { ue.OrganizationId, ue.SubscriptionId });
@@ -497,7 +554,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // UsageAggregate
         modelBuilder.Entity<UsageAggregate>(entity =>
         {
-            entity.ToTable("usage_aggregates");
+            entity.ToTable("usage_aggregates", schema: "billing");
             entity.HasKey(ua => ua.Id);
             entity.Property(ua => ua.OrganizationId).IsRequired();
             entity.HasIndex(ua => new { ua.OrganizationId, ua.UserId, ua.Dimension, ua.PeriodYear, ua.PeriodMonth }).IsUnique();
@@ -507,7 +564,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // TrackingEvent (Analytics)
         modelBuilder.Entity<TrackingEvent>(entity =>
         {
-            entity.ToTable("tracking_events");
+            entity.ToTable("tracking_events", schema: "analytics");
             entity.HasKey(te => te.Id);
             
             entity.Property(te => te.OrganizationId).IsRequired();
@@ -536,7 +593,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // ✅ InventoryEntry (EDL Entrée)
         modelBuilder.Entity<InventoryEntry>(entity =>
         {
-            entity.ToTable("inventory_entries");
+            entity.ToTable("inventory_entries", schema: "inventory");
             entity.HasKey(ie => ie.Id);
             
             // TenantId (string) hérité de AuditableEntity pour multi-tenant
@@ -568,7 +625,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             // Items as owned entities
             entity.OwnsMany(ie => ie.Items, item =>
             {
-                item.ToTable("inventory_items");
+                item.ToTable("inventory_items", schema: "inventory");
                 item.WithOwner().HasForeignKey("InventoryEntryId");
                 item.Property<Guid>("InventoryEntryId");
                 item.HasKey("InventoryEntryId", "RoomName", "ElementName");
@@ -592,7 +649,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         // ✅ InventoryExit (EDL Sortie)
         modelBuilder.Entity<InventoryExit>(entity =>
         {
-            entity.ToTable("inventory_exits");
+            entity.ToTable("inventory_exits", schema: "inventory");
             entity.HasKey(ie => ie.Id);
             
             // TenantId (string) hérité de AuditableEntity pour multi-tenant
@@ -628,7 +685,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             // Comparisons as owned entities
             entity.OwnsMany(ie => ie.Comparisons, comp =>
             {
-                comp.ToTable("inventory_comparisons");
+                comp.ToTable("inventory_comparisons", schema: "inventory");
                 comp.WithOwner().HasForeignKey("InventoryExitId");
                 comp.Property<Guid>("InventoryExitId");
                 comp.HasKey("InventoryExitId", "RoomName", "ElementName");
@@ -649,7 +706,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             // Degradations as owned entities
             entity.OwnsMany(ie => ie.Degradations, deg =>
             {
-                deg.ToTable("inventory_degradations");
+                deg.ToTable("inventory_degradations", schema: "inventory");
                 deg.WithOwner().HasForeignKey("InventoryExitId");
                 deg.Property<Guid>("InventoryExitId");
                 deg.HasKey("InventoryExitId", "RoomName", "ElementName");
@@ -675,6 +732,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceConfiguration());
         modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceLineConfiguration());
         modelBuilder.ApplyConfiguration(new Persistence.Configurations.ContractParticipantConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.DocumentConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.AddendumConfiguration());
+        modelBuilder.ApplyConfiguration(new Persistence.Configurations.PlanConfiguration());
     }
     
     /// <summary>
@@ -687,7 +747,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         var tenantEntityTypes = new[]
         {
             typeof(Property),
-            typeof(Tenant),
+            typeof(Occupant),
             typeof(Contract),
             typeof(ContractParticipant),
             typeof(Document),

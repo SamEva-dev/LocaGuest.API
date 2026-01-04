@@ -69,7 +69,7 @@ public class TerminateContractCommandHandler : IRequestHandler<TerminateContract
             if (property == null)
                 return Result.Failure("Property not found");
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure("Tenant not found");
 
@@ -126,7 +126,7 @@ public class TerminateContractCommandHandler : IRequestHandler<TerminateContract
                 {
                     // Si le contrat terminé était le seul actif, le locataire peut être encore Active ici.
                     // SetReserved() n'accepte pas un tenant Active.
-                    if (tenant.Status == TenantStatus.Active)
+                    if (tenant.Status == OccupantStatus.Active)
                     {
                         tenant.Deactivate();
                     }

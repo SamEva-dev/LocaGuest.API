@@ -15,7 +15,7 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IContractRepository> _contractRepositoryMock;
     private readonly Mock<IPropertyRepository> _propertyRepositoryMock;
-    private readonly Mock<ITenantRepository> _tenantRepositoryMock;
+    private readonly Mock<IOccupantRepository> _tenantRepositoryMock;
     private readonly Mock<ILogger<UpdateContractCommandHandler>> _loggerMock;
     private readonly UpdateContractCommandHandler _handler;
 
@@ -24,12 +24,12 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _contractRepositoryMock = new Mock<IContractRepository>();
         _propertyRepositoryMock = new Mock<IPropertyRepository>();
-        _tenantRepositoryMock = new Mock<ITenantRepository>();
+        _tenantRepositoryMock = new Mock<IOccupantRepository>();
         _loggerMock = new Mock<ILogger<UpdateContractCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Contracts).Returns(_contractRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
-        _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.Occupants).Returns(_tenantRepositoryMock.Object);
 
         _handler = new UpdateContractCommandHandler(
             _unitOfWorkMock.Object,
@@ -63,7 +63,7 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
 
         _tenantRepositoryMock
             .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Tenant>());
+            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Occupant>());
 
         _unitOfWorkMock
             .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
@@ -128,7 +128,7 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
 
         _tenantRepositoryMock
             .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Tenant>());
+            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Occupant>());
 
         _unitOfWorkMock
             .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))

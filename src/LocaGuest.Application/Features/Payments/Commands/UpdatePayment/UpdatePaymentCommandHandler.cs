@@ -97,7 +97,7 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
             _logger.LogInformation("Payment updated: {PaymentId}", paymentId);
 
             // Récupérer le tenant pour enrichir le DTO
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
 
             // Send email notification if payment is fully paid
             if (payment.IsPaid() && tenant?.Email != null && payment.PaymentDate.HasValue)

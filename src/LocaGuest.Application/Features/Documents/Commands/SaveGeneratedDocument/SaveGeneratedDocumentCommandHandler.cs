@@ -89,7 +89,7 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
 
             if (request.TenantId.HasValue)
             {
-                var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId.Value, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId.Value, cancellationToken);
                 tenantName = tenant?.FullName;
             }
 

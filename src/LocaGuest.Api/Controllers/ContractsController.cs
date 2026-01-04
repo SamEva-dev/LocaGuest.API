@@ -113,7 +113,7 @@ public class ContractsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all contracts for a specific tenant
+    /// Get all contracts for a specific occupant
     /// </summary>
     [HttpGet("tenant/{tenantId}")]
     [ProducesResponseType(typeof(List<LocaGuest.Application.DTOs.Contracts.ContractDto>), StatusCodes.Status200OK)]

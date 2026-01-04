@@ -63,9 +63,9 @@ public class DocumentsIntegrationTests : IDisposable
     public async Task CreateDocument_ThenGetAll_ShouldReturnDocument()
     {
         // Arrange - Create a tenant first
-        var tenant = Tenant.Create("John Doe", "john.doe@test.com", "+33123456789");
+        var tenant = Occupant.Create("John Doe", "john.doe@test.com", "+33123456789");
         tenant.SetCode("T0001-L0001");
-        await _unitOfWork.Tenants.AddAsync(tenant);
+        await _unitOfWork.Occupants.AddAsync(tenant);
         await _unitOfWork.CommitAsync();
 
         // Act - Save a document
@@ -115,9 +115,9 @@ public class DocumentsIntegrationTests : IDisposable
     public async Task CreateDocument_ThenGetByTenant_ShouldReturnDocument()
     {
         // Arrange - Create a tenant
-        var tenant = Tenant.Create("Jane Smith", "jane.smith@test.com", "+33987654321");
+        var tenant = Occupant.Create("Jane Smith", "jane.smith@test.com", "+33987654321");
         tenant.SetCode("T0001-L0002");
-        await _unitOfWork.Tenants.AddAsync(tenant);
+        await _unitOfWork.Occupants.AddAsync(tenant);
         await _unitOfWork.CommitAsync();
 
         // Act - Save a document
@@ -160,13 +160,13 @@ public class DocumentsIntegrationTests : IDisposable
     public async Task MultiTenant_Isolation_ShouldOnlyReturnOwnDocuments()
     {
         // Arrange - Create two tenants (simulating two different locataires)
-        var tenant1 = Tenant.Create("User1 Test1", "user1@test.com", "+33111111111");
+        var tenant1 = Occupant.Create("User1 Test1", "user1@test.com", "+33111111111");
         tenant1.SetCode("T0001-L0003");
-        await _unitOfWork.Tenants.AddAsync(tenant1);
+        await _unitOfWork.Occupants.AddAsync(tenant1);
 
-        var tenant2 = Tenant.Create("User2 Test2", "user2@test.com", "+33222222222");
+        var tenant2 = Occupant.Create("User2 Test2", "user2@test.com", "+33222222222");
         tenant2.SetCode("T0001-L0004");
-        await _unitOfWork.Tenants.AddAsync(tenant2);
+        await _unitOfWork.Occupants.AddAsync(tenant2);
         await _unitOfWork.CommitAsync();
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(

@@ -29,7 +29,7 @@ public class GetAvailableTenantsQueryHandler : IRequestHandler<GetAvailableTenan
 
             // ✅ Récupérer UNIQUEMENT les locataires qui ne sont associés à AUCUN bien
             // Un locataire ne peut être associé qu'à un seul bien à la fois
-            var availableTenants = await _unitOfWork.Tenants.Query()
+            var availableTenants = await _unitOfWork.Occupants.Query()
                 .Where(t => t.PropertyId == null)
                 .Select(t => new TenantDto
                 {

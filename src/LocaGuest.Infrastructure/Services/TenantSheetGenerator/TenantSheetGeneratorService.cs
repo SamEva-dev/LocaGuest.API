@@ -19,7 +19,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
     }
 
     public Task<byte[]> GenerateTenantSheetPdfAsync(
-        Tenant tenant,
+        Occupant tenant,
         Property? associatedProperty,
         string currentUserFullName,
         string currentUserEmail,
@@ -80,7 +80,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
         });
     }
 
-    private static void ComposeContent(IContainer container, Tenant tenant, Property? property)
+    private static void ComposeContent(IContainer container, Occupant tenant, Property? property)
     {
         container.Column(col =>
         {
@@ -116,7 +116,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
             });
     }
 
-    private static void ComposeIdentity(IContainer container, Tenant tenant)
+    private static void ComposeIdentity(IContainer container, Occupant tenant)
     {
         ComposeCard(container, "Identité", c =>
         {
@@ -145,7 +145,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
         });
     }
 
-    private static void ComposeContact(IContainer container, Tenant tenant)
+    private static void ComposeContact(IContainer container, Occupant tenant)
     {
         ComposeCard(container, "Contact", c =>
         {
@@ -171,7 +171,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
         });
     }
 
-    private static void ComposeAddress(IContainer container, Tenant tenant)
+    private static void ComposeAddress(IContainer container, Occupant tenant)
     {
         if (string.IsNullOrWhiteSpace(tenant.Address) && string.IsNullOrWhiteSpace(tenant.City) && string.IsNullOrWhiteSpace(tenant.PostalCode) && string.IsNullOrWhiteSpace(tenant.Country))
             return;
@@ -193,7 +193,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
         });
     }
 
-    private static void ComposeAssociatedProperty(IContainer container, Tenant tenant, Property property)
+    private static void ComposeAssociatedProperty(IContainer container, Occupant tenant, Property property)
     {
         ComposeCard(container, "Bien associé", c =>
         {
@@ -220,7 +220,7 @@ public class TenantSheetGeneratorService : ITenantSheetGeneratorService
         });
     }
 
-    private static void ComposeProfessional(IContainer container, Tenant tenant)
+    private static void ComposeProfessional(IContainer container, Occupant tenant)
     {
         if (string.IsNullOrWhiteSpace(tenant.Occupation) && !tenant.MonthlyIncome.HasValue)
             return;

@@ -45,7 +45,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 return Result.Failure<ContractDto>("Property not found");
 
             // Vérifier que le locataire existe
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             
             if (tenant == null)
                 return Result.Failure<ContractDto>("Tenant not found");

@@ -37,7 +37,7 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
                 .Distinct()
                 .ToList();
 
-            var tenants = await _unitOfWork.Tenants.Query()
+            var tenants = await _unitOfWork.Occupants.Query()
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 

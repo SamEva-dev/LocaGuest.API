@@ -30,7 +30,7 @@ public class GetTenantQueryHandler : IRequestHandler<GetTenantQuery, Result<Tena
                 return Result.Failure<TenantDetailDto>($"Invalid tenant ID format: {request.Id}");
             }
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
 
             if (tenant == null)
             {

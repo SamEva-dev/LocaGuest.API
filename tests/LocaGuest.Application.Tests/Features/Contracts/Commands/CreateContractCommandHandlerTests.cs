@@ -19,7 +19,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IContractRepository> _contractRepositoryMock;
     private readonly Mock<IPropertyRepository> _propertyRepositoryMock;
-    private readonly Mock<ITenantRepository> _tenantRepositoryMock;
+    private readonly Mock<IOccupantRepository> _tenantRepositoryMock;
     private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateContractCommandHandler>> _loggerMock;
@@ -30,13 +30,13 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _contractRepositoryMock = new Mock<IContractRepository>();
         _propertyRepositoryMock = new Mock<IPropertyRepository>();
-        _tenantRepositoryMock = new Mock<ITenantRepository>();
+        _tenantRepositoryMock = new Mock<IOccupantRepository>();
         _orgContextMock = new Mock<IOrganizationContext>();
         _loggerMock = new Mock<ILogger<CreateContractCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Contracts).Returns(_contractRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
-        _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.Occupants).Returns(_tenantRepositoryMock.Object);
         _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
         _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
@@ -67,7 +67,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
             bedrooms: 2,
             bathrooms: 1);
 
-        var tenant = Tenant.Create(fullName: "Test Tenant", email: "tenant@test.com");
+        var tenant = Occupant.Create(fullName: "Test Tenant", email: "tenant@test.com");
 
         var command = new CreateContractCommand
         {

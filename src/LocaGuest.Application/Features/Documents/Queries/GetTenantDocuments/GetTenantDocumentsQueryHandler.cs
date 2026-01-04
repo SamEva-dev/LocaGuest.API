@@ -27,7 +27,7 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
             var documents = await _unitOfWork.Documents.GetByTenantIdAsync(tenantId, cancellationToken);
 
             // Load tenant and property names
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
             
             var documentDtos = documents.Select(d => new DocumentDto
             {

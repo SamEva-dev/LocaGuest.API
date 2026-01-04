@@ -45,7 +45,7 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
                 .ToList();
 
             // Get tenants and properties for names
-            var tenants = await _unitOfWork.Tenants.GetAllAsync(cancellationToken);
+            var tenants = await _unitOfWork.Occupants.GetAllAsync(cancellationToken);
             var properties = await _unitOfWork.Properties.GetAllAsync(cancellationToken);
 
             var tenantDict = tenants.ToDictionary(t => t.Id, t => t.FullName);

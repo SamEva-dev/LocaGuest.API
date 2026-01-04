@@ -39,7 +39,7 @@ public class GenerateQuittanceCommandHandler : IRequestHandler<GenerateQuittance
             var tenantId = Guid.Parse(request.TenantId);
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
 
             if (tenant == null || property == null)

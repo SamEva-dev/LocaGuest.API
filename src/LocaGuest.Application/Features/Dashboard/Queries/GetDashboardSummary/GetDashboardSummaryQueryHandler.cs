@@ -44,7 +44,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                            c.EndDate >= startDate)
                 .ToListAsync(cancellationToken);
 
-            var tenantsCount = await _unitOfWork.Tenants.Query()
+            var tenantsCount = await _unitOfWork.Occupants.Query()
                 .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
                 .CountAsync(cancellationToken);
 

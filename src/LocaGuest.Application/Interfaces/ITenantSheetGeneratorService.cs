@@ -6,7 +6,7 @@ namespace LocaGuest.Application.Interfaces;
 public interface ITenantSheetGeneratorService
 {
     Task<byte[]> GenerateTenantSheetPdfAsync(
-        Tenant tenant,
+        Occupant tenant,
         Property? associatedProperty,
         string currentUserFullName,
         string currentUserEmail,

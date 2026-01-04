@@ -3,23 +3,21 @@ using System;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Migrations.AuditDb
+namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20260103181240_RenameTenantIdToOrganizationId_Audit")]
-    partial class RenameTenantIdToOrganizationId_Audit
+    partial class AuditDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("audit")
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -118,7 +116,7 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs", "audit");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Audit.CommandAuditLog", b =>
@@ -193,7 +191,7 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CommandAuditLogs", (string)null);
+                    b.ToTable("CommandAuditLogs", "audit");
                 });
 #pragma warning restore 612, 618
         }

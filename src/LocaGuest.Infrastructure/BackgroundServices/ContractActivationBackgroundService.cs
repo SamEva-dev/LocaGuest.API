@@ -92,7 +92,7 @@ public class ContractActivationBackgroundService : BackgroundService
                     cancellationToken);
 
                 // Charger le locataire associé
-                var tenant = await context.Tenants.FindAsync(contract.RenterTenantId);
+                var tenant = await context.Occupants.FindAsync(contract.RenterTenantId);
                 if (tenant != null)
                 {
                     tenant.SetActive();
@@ -156,7 +156,7 @@ public class ContractActivationBackgroundService : BackgroundService
                     cancellationToken);
 
                 // Charger le locataire associé
-                var tenant = await context.Tenants.FindAsync(contract.RenterTenantId);
+                var tenant = await context.Occupants.FindAsync(contract.RenterTenantId);
                 if (tenant != null)
                 {
                     // Vérifier si le locataire a d'autres contrats actifs

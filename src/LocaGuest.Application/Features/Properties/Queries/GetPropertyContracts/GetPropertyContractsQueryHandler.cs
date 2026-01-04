@@ -51,7 +51,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
 
             // Charger les noms des locataires
             var tenantIds = contracts.Select(c => c.TenantId).Distinct().ToList();
-            var tenants = await _unitOfWork.Tenants.Query()
+            var tenants = await _unitOfWork.Occupants.Query()
                 .Where(t => tenantIds.Contains(t.Id))
                 .Select(t => new { t.Id, t.FullName })
                 .ToListAsync(cancellationToken);

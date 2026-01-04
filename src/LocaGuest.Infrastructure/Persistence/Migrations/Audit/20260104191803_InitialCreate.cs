@@ -3,16 +3,20 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Migrations.AuditDb
+namespace LocaGuest.Infrastructure.Persistence.Migrations.Audit
 {
     /// <inheritdoc />
-    public partial class InitialCreate_Audit : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "audit");
+
             migrationBuilder.CreateTable(
                 name: "AuditLogs",
+                schema: "audit",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -43,6 +47,7 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
             migrationBuilder.CreateTable(
                 name: "CommandAuditLogs",
+                schema: "audit",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -68,66 +73,79 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_Action",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "Action");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_CorrelationId",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_EntityType",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "EntityType");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_EntityType_EntityId",
+                schema: "audit",
                 table: "AuditLogs",
                 columns: new[] { "EntityType", "EntityId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_TenantId",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_Timestamp",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "Timestamp");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_UserId",
+                schema: "audit",
                 table: "AuditLogs",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_CommandName",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "CommandName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_CorrelationId",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_ExecutedAt",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "ExecutedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_Success",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "Success");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_TenantId",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommandAuditLogs_UserId",
+                schema: "audit",
                 table: "CommandAuditLogs",
                 column: "UserId");
         }
@@ -136,10 +154,12 @@ namespace LocaGuest.Infrastructure.Migrations.AuditDb
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AuditLogs");
+                name: "AuditLogs",
+                schema: "audit");
 
             migrationBuilder.DropTable(
-                name: "CommandAuditLogs");
+                name: "CommandAuditLogs",
+                schema: "audit");
         }
     }
 }

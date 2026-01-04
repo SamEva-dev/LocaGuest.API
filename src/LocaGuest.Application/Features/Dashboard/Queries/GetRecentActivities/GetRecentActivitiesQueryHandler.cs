@@ -43,8 +43,8 @@ public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActiviti
             }
 
             // Get recent tenants
-            var recentTenants = await _unitOfWork.Tenants.Query()
-                .Where(t => t.Status == TenantStatus.Active)
+            var recentTenants = await _unitOfWork.Occupants.Query()
+                .Where(t => t.Status == OccupantStatus.Active)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(5)
                 .ToListAsync(cancellationToken);

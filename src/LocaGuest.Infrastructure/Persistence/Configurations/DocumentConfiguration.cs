@@ -8,7 +8,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 {
     public void Configure(EntityTypeBuilder<Document> builder)
     {
-        builder.ToTable("Documents");
+        builder.ToTable("documents", schema: "doc");
 
         builder.HasKey(d => d.Id);
 

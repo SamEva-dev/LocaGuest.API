@@ -1,5 +1,5 @@
 using LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
-using LocaGuest.Application.Features.Tenants.Commands.ChangeTenantStatus;
+using LocaGuest.Application.Features.Tenants.Commands.ChangeOccupantStatus;
 using LocaGuest.Application.Features.Tenants.Commands.DeleteTenant;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenants;
 using LocaGuest.Application.Features.Tenants.Queries.GetTenant;
@@ -15,14 +15,14 @@ namespace LocaGuest.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class TenantsController : ControllerBase
+public class OccupantsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ILogger<TenantsController> _logger;
+    private readonly ILogger<OccupantsController> _logger;
 
-    public TenantsController(
+    public OccupantsController(
         IMediator mediator, 
-        ILogger<TenantsController> logger)
+        ILogger<OccupantsController> logger)
     {
         _mediator = mediator;
         _logger = logger;
@@ -151,12 +151,12 @@ public class TenantsController : ControllerBase
             return BadRequest(new { message = "Invalid tenant ID format" });
 
         if (string.IsNullOrWhiteSpace(request.Status) ||
-            !Enum.TryParse<TenantStatus>(request.Status, true, out var statusEnum))
+            !Enum.TryParse<OccupantStatus>(request.Status, true, out var statusEnum))
         {
             return BadRequest(new { message = "Invalid status" });
         }
 
-        var command = new ChangeTenantStatusCommand
+        var command = new ChangeOccupantStatusCommand
         {
             TenantId = tenantGuid,
             Status = statusEnum

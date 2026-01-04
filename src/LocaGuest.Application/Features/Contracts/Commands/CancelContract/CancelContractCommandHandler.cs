@@ -39,7 +39,7 @@ public class CancelContractCommandHandler : IRequestHandler<CancelContractComman
             if (property == null)
                 return Result.Failure("Property not found");
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure("Tenant not found");
 
@@ -82,7 +82,7 @@ public class CancelContractCommandHandler : IRequestHandler<CancelContractComman
                 var hasOtherSignedContractsForTenant = contractsForTenant.Any(c => c.Id != contract.Id && c.Status == ContractStatus.Signed);
                 if (hasOtherSignedContractsForTenant)
                 {
-                    if (tenant.Status == TenantStatus.Active)
+                    if (tenant.Status == OccupantStatus.Active)
                     {
                         tenant.Deactivate();
                     }

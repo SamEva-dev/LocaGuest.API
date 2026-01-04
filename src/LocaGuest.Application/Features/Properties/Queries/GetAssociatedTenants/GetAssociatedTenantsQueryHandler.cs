@@ -28,7 +28,7 @@ public class GetAssociatedTenantsQueryHandler : IRequestHandler<GetAssociatedTen
             var propertyId = Guid.Parse(request.PropertyId);
 
             // Get tenants that are currently associated to this property
-            var tenants = await _unitOfWork.Tenants.Query()
+            var tenants = await _unitOfWork.Occupants.Query()
                 .Where(t => t.PropertyId == propertyId)
                 .OrderBy(t => t.FullName)
                 .Select(t => new TenantDto

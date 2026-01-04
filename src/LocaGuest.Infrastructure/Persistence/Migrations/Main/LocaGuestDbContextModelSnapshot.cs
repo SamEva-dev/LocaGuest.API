@@ -4,20 +4,17 @@ using System.Collections.Generic;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LocaGuest.Infrastructure.Migrations
+namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    [Migration("20260103230328_P03_Invitations_Tier1")]
-    partial class P03_Invitations_Tier1
+    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,7 +23,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.HasSequence("organization_number_seq", "core");
+            modelBuilder.HasSequence("organization_number_seq", "org");
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Addendum", b =>
                 {
@@ -35,7 +32,8 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AttachedDocumentIds")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<Guid>("ContractId")
                         .HasColumnType("uuid");
@@ -49,7 +47,8 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("EffectiveDate")
                         .HasColumnType("timestamp with time zone");
@@ -61,37 +60,45 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<decimal?>("NewCharges")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("NewClauses")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime?>("NewEndDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("NewRent")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<Guid?>("NewRoomId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("OccupantChanges")
-                        .HasColumnType("text");
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
 
                     b.Property<decimal?>("OldCharges")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("OldClauses")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime?>("OldEndDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("OldRent")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<Guid?>("OldRoomId")
                         .HasColumnType("uuid");
@@ -101,22 +108,35 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<int>("SignatureStatus")
-                        .HasColumnType("integer");
+                    b.Property<string>("SignatureStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("SignedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("Addendums");
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("EffectiveDate");
+
+                    b.HasIndex("SignatureStatus");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("addendums", "lease");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
@@ -217,7 +237,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("RenterTenantId");
 
-                    b.ToTable("contracts", (string)null);
+                    b.ToTable("contracts", "lease");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.ContractParticipant", b =>
@@ -275,7 +295,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("ContractId", "OrganizationId", "StartDate")
                         .IsUnique();
 
-                    b.ToTable("ContractParticipants", (string)null);
+                    b.ToTable("contract_participants", "lease");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.ContractPayment", b =>
@@ -307,7 +327,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("contract_payments", (string)null);
+                    b.ToTable("contract_payments", "finance");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.DocumentAggregate.Document", b =>
@@ -319,12 +339,15 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<Guid?>("AssociatedTenantId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid?>("ContractId")
                         .HasColumnType("uuid");
@@ -337,24 +360,29 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
 
                     b.Property<bool>("IsArchived")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -377,12 +405,27 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Documents");
+                    b.HasIndex("AssociatedTenantId");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsArchived");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("documents", "doc");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryEntry", b =>
@@ -460,7 +503,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("RenterTenantId");
 
-                    b.ToTable("inventory_entries", (string)null);
+                    b.ToTable("inventory_entries", "inventory");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryExit", b =>
@@ -553,7 +596,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("RenterTenantId");
 
-                    b.ToTable("inventory_exits", (string)null);
+                    b.ToTable("inventory_exits", "inventory");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.OrganizationAggregate.Organization", b =>
@@ -639,7 +682,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("Number")
                         .IsUnique();
 
-                    b.ToTable("organizations", (string)null);
+                    b.ToTable("organizations", "org");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PaymentAggregate.Payment", b =>
@@ -729,7 +772,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("ContractId", "Month", "Year", "PaymentType")
                         .IsUnique();
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("payments", "finance");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoice", b =>
@@ -810,7 +853,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("ContractId", "Month", "Year")
                         .IsUnique();
 
-                    b.ToTable("RentInvoices", (string)null);
+                    b.ToTable("rent_invoices", "finance");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoiceLine", b =>
@@ -877,7 +920,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("RentInvoiceId", "OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("RentInvoiceLines", (string)null);
+                    b.ToTable("rent_invoice_lines", "finance");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.Property", b =>
@@ -1077,7 +1120,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("properties", (string)null);
+                    b.ToTable("properties", "locaguest");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.PropertyImage", b =>
@@ -1115,7 +1158,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("PropertyImages");
+                    b.ToTable("property_images", "locaguest");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.PropertyRoom", b =>
@@ -1162,7 +1205,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("property_rooms", (string)null);
+                    b.ToTable("property_rooms", "locaguest");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.RentabilityScenario", b =>
@@ -1410,7 +1453,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "UserId", "IsBase");
 
-                    b.ToTable("rentability_scenarios", (string)null);
+                    b.ToTable("rentability_scenarios", "analytics");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioComment", b =>
@@ -1515,7 +1558,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("ScenarioId", "SharedWithUserId");
 
-                    b.ToTable("scenario_shares", (string)null);
+                    b.ToTable("scenario_shares", "analytics");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.RentabilityAggregate.ScenarioVersion", b =>
@@ -1559,7 +1602,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("ScenarioId");
 
-                    b.ToTable("scenario_versions", (string)null);
+                    b.ToTable("scenario_versions", "analytics");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Plan", b =>
@@ -1569,7 +1612,7 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("AnnualPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -1585,7 +1628,8 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("HasAdvancedComparison")
                         .HasColumnType("boolean");
@@ -1660,27 +1704,32 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("MonthlyPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
                     b.Property<string>("StripeAnnualPriceId")
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("StripeMonthlyPriceId")
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("plans", (string)null);
+                    b.HasIndex("SortOrder");
+
+                    b.ToTable("plans", "billing");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.Subscription", b =>
@@ -1750,7 +1799,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "UserId");
 
-                    b.ToTable("subscriptions", (string)null);
+                    b.ToTable("subscriptions", "billing");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.UsageAggregate", b =>
@@ -1802,7 +1851,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "UserId", "Dimension", "PeriodYear", "PeriodMonth")
                         .IsUnique();
 
-                    b.ToTable("usage_aggregates", (string)null);
+                    b.ToTable("usage_aggregates", "billing");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.SubscriptionAggregate.UsageEvent", b =>
@@ -1852,10 +1901,10 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "SubscriptionId");
 
-                    b.ToTable("usage_events", (string)null);
+                    b.ToTable("usage_events", "billing");
                 });
 
-            modelBuilder.Entity("LocaGuest.Domain.Aggregates.TenantAggregate.Tenant", b =>
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.TenantAggregate.Occupant", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1947,7 +1996,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("tenants", (string)null);
+                    b.ToTable("occupants", "locaguest");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.NotificationSettings", b =>
@@ -2010,11 +2059,15 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("NotificationSettings");
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("notification_settings", "iam");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserPreferences", b =>
@@ -2032,21 +2085,24 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<bool>("DarkMode")
                         .HasColumnType("boolean");
 
                     b.Property<string>("DateFormat")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("HeaderNavigation")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Language")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2062,15 +2118,20 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Timezone")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserPreferences");
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("user_preferences", "iam");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserProfile", b =>
@@ -2080,10 +2141,12 @@ namespace LocaGuest.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Company")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2094,11 +2157,13 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2108,27 +2173,35 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Role")
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserProfiles");
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("user_profiles", "iam");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserSession", b =>
@@ -2168,11 +2241,12 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserSessions");
+                    b.ToTable("user_sessions", "iam");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.UserAggregate.UserSettings", b =>
@@ -2259,7 +2333,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("OrganizationId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("user_settings", (string)null);
+                    b.ToTable("user_settings", "iam");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Analytics.TrackingEvent", b =>
@@ -2333,7 +2407,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "UserId", "Timestamp");
 
-                    b.ToTable("tracking_events", (string)null);
+                    b.ToTable("tracking_events", "analytics");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Entities.Invitation", b =>
@@ -2397,7 +2471,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId", "Email", "Status");
 
-                    b.ToTable("invitations", "core");
+                    b.ToTable("invitations", "org");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Entities.InvitationToken", b =>
@@ -2455,7 +2529,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("invitation_tokens", (string)null);
+                    b.ToTable("invitation_tokens", "org");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Entities.OrganizationSequence", b =>
@@ -2484,7 +2558,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("tenant_sequences", (string)null);
+                    b.ToTable("tenant_sequences", "org");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Entities.TeamMember", b =>
@@ -2546,7 +2620,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("UserId", "OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("team_members", (string)null);
+                    b.ToTable("team_members", "org");
                 });
 
             modelBuilder.Entity("LocaGuest.Infrastructure.Persistence.Entities.IdempotencyRequestEntity", b =>
@@ -2592,7 +2666,7 @@ namespace LocaGuest.Infrastructure.Migrations
                     b.HasIndex("ClientId", "IdempotencyKey")
                         .IsUnique();
 
-                    b.ToTable("idempotency_requests", "core");
+                    b.ToTable("idempotency_requests", "ops");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Addendum", b =>
@@ -2626,7 +2700,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                             b1.HasKey("ContractId", "Type");
 
-                            b1.ToTable("contract_required_documents", (string)null);
+                            b1.ToTable("required_documents", "lease");
 
                             b1.WithOwner()
                                 .HasForeignKey("ContractId");
@@ -2677,7 +2751,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                             b1.HasKey("InventoryEntryId", "RoomName", "ElementName");
 
-                            b1.ToTable("inventory_items", (string)null);
+                            b1.ToTable("inventory_items", "inventory");
 
                             b1.WithOwner()
                                 .HasForeignKey("InventoryEntryId");
@@ -2718,7 +2792,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                             b1.HasKey("InventoryExitId", "RoomName", "ElementName");
 
-                            b1.ToTable("inventory_degradations", (string)null);
+                            b1.ToTable("inventory_degradations", "inventory");
 
                             b1.WithOwner()
                                 .HasForeignKey("InventoryExitId");
@@ -2753,7 +2827,7 @@ namespace LocaGuest.Infrastructure.Migrations
 
                             b1.HasKey("InventoryExitId", "RoomName", "ElementName");
 
-                            b1.ToTable("inventory_comparisons", (string)null);
+                            b1.ToTable("inventory_comparisons", "inventory");
 
                             b1.WithOwner()
                                 .HasForeignKey("InventoryExitId");

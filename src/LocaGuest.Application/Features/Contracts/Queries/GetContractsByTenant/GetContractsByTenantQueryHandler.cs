@@ -28,7 +28,7 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
                 return Result.Failure<List<ContractDto>>("Invalid tenant ID format");
             }
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure<List<ContractDto>>("Tenant not found");

@@ -26,7 +26,7 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<Pa
     {
         try
         {
-            var query = _unitOfWork.Tenants.Query();
+            var query = _unitOfWork.Occupants.Query();
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))
@@ -38,7 +38,7 @@ public class GetTenantsQueryHandler : IRequestHandler<GetTenantsQuery, Result<Pa
             }
 
             if (!string.IsNullOrWhiteSpace(request.Status) &&
-                Enum.TryParse<TenantStatus>(request.Status, ignoreCase: true, out var status))
+                Enum.TryParse<OccupantStatus>(request.Status, ignoreCase: true, out var status))
             {
                 query = query.Where(t => t.Status == status);
             }

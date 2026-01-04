@@ -24,7 +24,7 @@ public class GetTenantPaymentStatsQueryHandler : IRequestHandler<GetTenantPaymen
     {
         try
         {
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure<TenantPaymentStatsDto>($"Tenant with ID {request.TenantId} not found");
 

@@ -53,7 +53,7 @@ public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCo
             }
 
             // Load tenant (renter)
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
             if (tenant == null)
             {
                 _logger.LogWarning("Tenant not found: {TenantId}", tenantId);

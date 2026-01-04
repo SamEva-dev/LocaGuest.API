@@ -70,7 +70,7 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
                 return Result.Failure($"Property with ID {propertyId} not found");
             }
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId.Value, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId.Value, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure($"Tenant with ID {tenantId} not found");

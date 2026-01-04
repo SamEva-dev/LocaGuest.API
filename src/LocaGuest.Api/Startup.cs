@@ -10,12 +10,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using LocaGuest.Infrastructure.BackgroundServices;
 using LocaGuest.Infrastructure.Jobs;
-using System.Security.Cryptography;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -23,9 +23,6 @@ namespace LocaGuest.Api;
 
 public class Startup
 {
-    private readonly Dictionary<string, (List<SecurityKey> Keys, DateTime Expiry)> _jwksCache = new();
-    private readonly object _jwksCacheLock = new();
-
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration;
@@ -81,7 +78,7 @@ public class Startup
         services.AddScoped<LocaGuest.Domain.Repositories.IUnitOfWork, LocaGuest.Infrastructure.Repositories.UnitOfWork>();
         services.AddScoped<LocaGuest.Domain.Repositories.IPropertyRepository, LocaGuest.Infrastructure.Repositories.PropertyRepository>();
         services.AddScoped<LocaGuest.Domain.Repositories.IContractRepository, LocaGuest.Infrastructure.Repositories.ContractRepository>();
-        services.AddScoped<LocaGuest.Domain.Repositories.ITenantRepository, LocaGuest.Infrastructure.Repositories.TenantRepository>();
+        services.AddScoped<LocaGuest.Domain.Repositories.IOccupantRepository, LocaGuest.Infrastructure.Repositories.TenantRepository>();
         services.AddScoped<LocaGuest.Domain.Repositories.ISubscriptionRepository, LocaGuest.Infrastructure.Repositories.SubscriptionRepository>();
 
         // Application Services
@@ -199,7 +196,14 @@ public class Startup
     private void ConfigureJwtAuthentication(IServiceCollection services)
     {
         var jwtSettings = Configuration.GetSection("Jwt");
-        var authGateUrl = Configuration["AuthGate:Url"] ?? "https://localhost:8081";
+
+        services.AddHttpClient(nameof(AuthGateJwksProvider))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            });
+
+        services.AddSingleton<AuthGateJwksProvider>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -222,70 +226,9 @@ public class Startup
                 {
                     OnMessageReceived = context =>
                     {
-                        List<SecurityKey>? signingKeys = null;
-
-                        lock (_jwksCacheLock)
-                        {
-                            if (_jwksCache.TryGetValue("keys", out var cached) && cached.Expiry > DateTime.UtcNow)
-                            {
-                                signingKeys = cached.Keys;
-                            }
-                        }
-
-                        if (signingKeys == null)
-                        {
-                            try
-                            {
-                                using var httpClient = new HttpClient(new HttpClientHandler
-                                {
-                                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-                                });
-
-                                var jwksJson = httpClient.GetStringAsync($"{authGateUrl}/.well-known/jwks.json").Result;
-                                var jwksDoc = System.Text.Json.JsonDocument.Parse(jwksJson);
-                                var keys = jwksDoc.RootElement.GetProperty("keys").EnumerateArray();
-
-                                signingKeys = new List<SecurityKey>();
-                                foreach (var key in keys)
-                                {
-                                    var n = key.GetProperty("n").GetString();
-                                    var e = key.GetProperty("e").GetString();
-                                    var kid = key.GetProperty("kid").GetString();
-
-                                    if (n != null && e != null)
-                                    {
-                                        var nBytes = Base64UrlDecode(n);
-                                        var eBytes = Base64UrlDecode(e);
-
-                                        var rsa = RSA.Create();
-                                        rsa.ImportParameters(new RSAParameters
-                                        {
-                                            Modulus = nBytes,
-                                            Exponent = eBytes
-                                        });
-
-                                        signingKeys.Add(new RsaSecurityKey(rsa) { KeyId = kid });
-                                    }
-                                }
-
-                                if (signingKeys.Any())
-                                {
-                                    lock (_jwksCacheLock)
-                                    {
-                                        _jwksCache["keys"] = (signingKeys, DateTime.UtcNow.AddMinutes(5));
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Failed to load RSA keys from AuthGate JWKS");
-                            }
-                        }
-
-                        if (signingKeys != null && signingKeys.Any())
-                        {
-                            context.Options.TokenValidationParameters.IssuerSigningKeys = signingKeys;
-                        }
+                        var jwksProvider = context.HttpContext.RequestServices.GetRequiredService<AuthGateJwksProvider>();
+                        context.Options.TokenValidationParameters.IssuerSigningKeyResolver =
+                            (token, securityToken, kid, validationParameters) => jwksProvider.GetSigningKeys(kid);
 
                         return Task.CompletedTask;
                     },
@@ -318,17 +261,6 @@ public class Startup
             });
     }
 
-    private static byte[] Base64UrlDecode(string base64Url)
-    {
-        var base64 = base64Url.Replace('-', '+').Replace('_', '/');
-        switch (base64.Length % 4)
-        {
-            case 2: base64 += "=="; break;
-            case 3: base64 += "="; break;
-        }
-        return Convert.FromBase64String(base64);
-    }
-
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         EnsureLocaguestLogDirectories();
@@ -339,6 +271,14 @@ public class Startup
         forwardedHeadersOptions.KnownNetworks.Clear();
         forwardedHeadersOptions.KnownProxies.Clear();
         app.UseForwardedHeaders(forwardedHeadersOptions);
+
+        var forceHttpsConfigured = Configuration.GetValue<bool?>("Security:ForceHttps");
+        var forceHttps = forceHttpsConfigured ?? env.IsProduction();
+        if (forceHttps)
+        {
+            app.UseHsts();
+            app.UseHttpsRedirection();
+        }
 
         if (env.IsDevelopment() || env.EnvironmentName == "Testing")
         {

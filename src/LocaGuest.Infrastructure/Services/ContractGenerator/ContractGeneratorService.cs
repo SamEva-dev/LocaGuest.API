@@ -22,7 +22,7 @@ public class ContractGeneratorService : IContractGeneratorService
     }
 
     public async Task<byte[]> GenerateContractPdfAsync(
-        Tenant tenant,
+        Occupant tenant,
         Property property,
         string currentUserFullName,
         string currentUserEmail,
@@ -315,7 +315,7 @@ public class ContractGeneratorService : IContractGeneratorService
     }
 
     private ContractModel BuildContractModel(
-        Tenant tenant,
+        Occupant tenant,
         Property property,
         string currentUserFullName,
         string currentUserEmail,

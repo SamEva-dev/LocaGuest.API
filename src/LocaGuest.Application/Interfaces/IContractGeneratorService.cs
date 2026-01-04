@@ -7,7 +7,7 @@ namespace LocaGuest.Application.Interfaces;
 public interface IContractGeneratorService
 {
     Task<byte[]> GenerateContractPdfAsync(
-        Tenant tenant,
+        Occupant tenant,
         Property property,
         string currentUserFullName,
         string currentUserEmail,

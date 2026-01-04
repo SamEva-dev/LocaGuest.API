@@ -50,7 +50,7 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
             if (contract == null)
                 return Result.Failure<Guid>("Contract not found");
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
 
             if (tenant == null || property == null)

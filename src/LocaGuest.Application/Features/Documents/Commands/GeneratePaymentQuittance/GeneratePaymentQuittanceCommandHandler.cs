@@ -47,7 +47,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
             if (payment.ReceiptId.HasValue)
                 return Result.Success(payment.ReceiptId.Value);
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(payment.PropertyId, cancellationToken);
 
             if (tenant == null || property == null)

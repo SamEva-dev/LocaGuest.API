@@ -7,7 +7,7 @@ public interface IUnitOfWork : IDisposable
 {
     IPropertyRepository Properties { get; }
     IPropertyImageRepository PropertyImages { get; }
-    ITenantRepository Tenants { get; }
+    IOccupantRepository Occupants { get; }
     ITeamMemberRepository TeamMembers { get; }
     IInvitationTokenRepository InvitationTokens { get; }
     IInvitationRepository Invitations { get; }

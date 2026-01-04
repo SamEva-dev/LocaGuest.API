@@ -19,6 +19,8 @@ public class AuditDbContext : DbContext, IAuditDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasDefaultSchema("audit");
         
         // AuditLog configuration
         modelBuilder.Entity<AuditLog>(entity =>

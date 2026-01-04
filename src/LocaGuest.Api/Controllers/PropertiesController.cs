@@ -279,7 +279,7 @@ public class PropertiesController : ControllerBase
             }
 
             // ✅ CASCADE: Dissocier les locataires associés au bien
-            var associatedTenants = await _context.Tenants
+            var associatedTenants = await _context.Occupants
                 .Where(t => t.PropertyId == propertyGuid)
                 .ToListAsync();
                 

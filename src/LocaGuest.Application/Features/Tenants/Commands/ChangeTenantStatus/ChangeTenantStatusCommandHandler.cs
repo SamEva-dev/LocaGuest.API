@@ -6,32 +6,32 @@ using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace LocaGuest.Application.Features.Tenants.Commands.ChangeTenantStatus;
+namespace LocaGuest.Application.Features.Tenants.Commands.ChangeOccupantStatus;
 
-public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStatusCommand, Result<bool>>
+public class ChangeOccupantStatusCommandHandler : IRequestHandler<ChangeOccupantStatusCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ILogger<ChangeTenantStatusCommandHandler> _logger;
+    private readonly ILogger<ChangeOccupantStatusCommandHandler> _logger;
 
-    public ChangeTenantStatusCommandHandler(
+    public ChangeOccupantStatusCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<ChangeTenantStatusCommandHandler> logger)
+        ILogger<ChangeOccupantStatusCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
     }
 
-    public async Task<Result<bool>> Handle(ChangeTenantStatusCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(ChangeOccupantStatusCommand request, CancellationToken cancellationToken)
     {
         try
         {
             if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<bool>("User not authenticated");
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure<bool>($"Tenant with ID {request.TenantId} not found");
 
@@ -44,15 +44,15 @@ public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStat
 
             switch (request.Status)
             {
-                case TenantStatus.Inactive:
+                case OccupantStatus.Inactive:
                     tenant.Deactivate();
                     break;
 
-                case TenantStatus.Active:
+                case OccupantStatus.Active:
                     tenant.SetActive();
                     break;
 
-                case TenantStatus.Reserved:
+                case OccupantStatus.Reserved:
                     tenant.SetReserved();
                     break;
 

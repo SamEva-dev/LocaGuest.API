@@ -8,7 +8,7 @@ public class ContractParticipantConfiguration : IEntityTypeConfiguration<Contrac
 {
     public void Configure(EntityTypeBuilder<ContractParticipant> builder)
     {
-        builder.ToTable("ContractParticipants");
+        builder.ToTable("contract_participants", schema: "lease");
 
         builder.HasKey(p => p.Id);
 

@@ -24,7 +24,7 @@ public class GetTenantContractsQueryHandler : IRequestHandler<GetTenantContracts
     {
         try
         {
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
                 return Result.Failure<List<ContractListDto>>($"Tenant with ID {request.TenantId} not found");
 

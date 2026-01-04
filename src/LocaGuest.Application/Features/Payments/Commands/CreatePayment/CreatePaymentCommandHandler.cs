@@ -41,7 +41,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             }
 
             // 2. Vérifier que le locataire existe
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure<PaymentDto>("Tenant not found");

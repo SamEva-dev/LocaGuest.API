@@ -42,7 +42,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
             
             foreach (var tenantId in tenantIds)
             {
-                var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
                 if (tenant != null)
                 {
                     tenants[tenantId] = tenant.FullName;

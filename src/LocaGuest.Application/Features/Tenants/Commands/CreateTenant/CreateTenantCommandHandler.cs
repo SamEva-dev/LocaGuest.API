@@ -48,7 +48,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             _logger.LogInformation("Generated code for new tenant: {Code}", code);
 
             // Create tenant entity using factory method
-            var tenant = Tenant.Create(fullName, request.Email, request.Phone);
+            var tenant = Occupant.Create(fullName, request.Email, request.Phone);
 
             // ✅ Set the generated code
             tenant.SetCode(code);
@@ -70,7 +70,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             );
 
             // Add to context
-            await _unitOfWork.Tenants.AddAsync(tenant, cancellationToken);
+            await _unitOfWork.Occupants.AddAsync(tenant, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Tenant created successfully: {TenantId} - {TenantName}", tenant.Id, tenant.FullName);

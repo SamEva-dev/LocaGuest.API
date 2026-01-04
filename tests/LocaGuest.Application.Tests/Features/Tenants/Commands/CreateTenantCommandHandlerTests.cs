@@ -15,7 +15,7 @@ namespace LocaGuest.Application.Tests.Features.Tenants.Commands;
 public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly Mock<ITenantRepository> _tenantRepositoryMock;
+    private readonly Mock<IOccupantRepository> _tenantRepositoryMock;
     private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
     private readonly Mock<ILogger<CreateTenantCommandHandler>> _loggerMock;
@@ -24,12 +24,12 @@ public class CreateTenantCommandHandlerTests : BaseApplicationTestFixture
     public CreateTenantCommandHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
-        _tenantRepositoryMock = new Mock<ITenantRepository>();
+        _tenantRepositoryMock = new Mock<IOccupantRepository>();
         _orgContextMock = new Mock<IOrganizationContext>();
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _loggerMock = new Mock<ILogger<CreateTenantCommandHandler>>();
 
-        _unitOfWorkMock.Setup(x => x.Tenants).Returns(_tenantRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.Occupants).Returns(_tenantRepositoryMock.Object);
         _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
         _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock.Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))

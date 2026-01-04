@@ -16,7 +16,7 @@ public class UnitOfWork : IUnitOfWork
     private IContractRepository? _contracts;
     private IContractParticipantRepository? _contractParticipants;
     private IAddendumRepository? _addendums;
-    private ITenantRepository? _tenants;
+    private IOccupantRepository? _tenants;
     private ITeamMemberRepository? _teamMembers;
     private IInvitationTokenRepository? _invitationTokens;
     private IInvitationRepository? _invitations;
@@ -60,7 +60,7 @@ public class UnitOfWork : IUnitOfWork
     public IInventoryExitRepository InventoryExits =>
         _inventoryExits ??= new InventoryExitRepository(_context);
 
-    public ITenantRepository Tenants => 
+    public IOccupantRepository Occupants => 
         _tenants ??= new TenantRepository(_context);
 
     public ITeamMemberRepository TeamMembers => 

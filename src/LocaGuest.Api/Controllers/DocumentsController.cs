@@ -106,7 +106,7 @@ public class DocumentsController : ControllerBase
             if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
             if (tenant == null)
                 return NotFound(new { message = "Tenant not found" });
 
@@ -250,7 +250,7 @@ public class DocumentsController : ControllerBase
             }
 
             // Load tenant
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(dto.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(dto.TenantId, cancellationToken);
             if (tenant == null)
             {
                 _logger.LogWarning("Tenant not found: {TenantId}", dto.TenantId);
@@ -703,7 +703,7 @@ public class DocumentsController : ControllerBase
             if (contract == null)
                 return NotFound(new { message = "Contract not found" });
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
             if (tenant == null)
                 return NotFound(new { message = "Tenant not found" });
 

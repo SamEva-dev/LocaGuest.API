@@ -47,7 +47,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
             foreach (var contract in contractsList)
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
 
                 if (property == null || tenant == null)
                     continue;
@@ -84,7 +84,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
             foreach (var contract in expiringContracts)
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
 
                 if (property == null || tenant == null)
                     continue;

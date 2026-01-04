@@ -34,7 +34,7 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
                 .Take(request.PageSize))
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Tenants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
 
                 dtos.Add(new ContractListDto
                 {
