@@ -11,10 +11,8 @@ using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Features.Properties.Queries.GetProperty;
 using LocaGuest.Application.Services;
-using LocaGuest.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -25,26 +23,14 @@ public class PropertiesControllerTests : BaseTestFixture
 {
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<PropertiesController>> _loggerMock;
-    private readonly LocaGuestDbContext _dbContext;
     private readonly PropertiesController _controller;
 
     public PropertiesControllerTests()
     {
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<PropertiesController>>();
-        
-        // Create in-memory database for tests
-        var options = new DbContextOptionsBuilder<LocaGuestDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        var mediatorForDbMock = new Mock<IMediator>();
-        var currentUserServiceMock = new Mock<ICurrentUserService>();
-        var orgContextMock = new Mock<IOrganizationContext>();
-        
-        _dbContext = new LocaGuestDbContext(options, mediatorForDbMock.Object, currentUserServiceMock.Object, orgContextMock.Object);
-        
-        _controller = new PropertiesController(_mediatorMock.Object, _loggerMock.Object, _dbContext);
+
+        _controller = new PropertiesController(_mediatorMock.Object, _loggerMock.Object);
     }
 
     #region GetProperties Tests

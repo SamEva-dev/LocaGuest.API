@@ -1,4 +1,5 @@
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
+using LocaGuest.Application.Features.Properties.Commands.DeleteProperty;
 using LocaGuest.Application.Features.Properties.Commands.UpdateProperty;
 using LocaGuest.Application.Features.Properties.Commands.UpdatePropertyStatus;
 using LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
@@ -10,11 +11,9 @@ using LocaGuest.Application.Features.Properties.Queries.GetFinancialSummary;
 using LocaGuest.Application.Features.Properties.Queries.GetAssociatedTenants;
 using LocaGuest.Application.Features.Tenants.Queries.GetAvailableTenants;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
-using LocaGuest.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -25,16 +24,13 @@ public class PropertiesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<PropertiesController> _logger;
-    private readonly LocaGuestDbContext _context;
 
     public PropertiesController(
         IMediator mediator, 
-        ILogger<PropertiesController> logger,
-        LocaGuestDbContext context)
+        ILogger<PropertiesController> logger)
     {
         _mediator = mediator;
         _logger = logger;
-        _context = context;
     }
 
     [HttpGet]
@@ -212,103 +208,24 @@ public class PropertiesController : ControllerBase
         if (!Guid.TryParse(id, out var propertyGuid))
             return BadRequest(new { message = "Invalid property ID format" });
 
-        var property = await _context.Properties.FindAsync(propertyGuid);
-        if (property == null)
-            return NotFound(new { message = "Property not found" });
+        var result = await _mediator.Send(new DeletePropertyCommand { PropertyId = propertyGuid });
 
-        // ✅ VALIDATION: Vérifier qu'il n'y a pas de contrats actifs ou signés
-        var activeContracts = await _context.Contracts
-            .Where(c => c.PropertyId == propertyGuid &&
-                       (c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Active ||
-                        c.Status == Domain.Aggregates.ContractAggregate.ContractStatus.Signed))
-            .ToListAsync();
-
-        if (activeContracts.Any())
+        if (!result.IsSuccess)
         {
-            return BadRequest(new { 
-                message = $"Impossible de supprimer le bien. Il possède {activeContracts.Count} contrat(s) actif(s) ou signé(s). Veuillez d'abord résilier ces contrats.",
-                activeContractsCount = activeContracts.Count
-            });
+            if (string.Equals(result.ErrorMessage, "Property not found", StringComparison.Ordinal))
+                return NotFound(new { message = result.ErrorMessage });
+
+            return BadRequest(new { message = result.ErrorMessage });
         }
 
-        try
+        return Ok(new
         {
-            // ✅ CASCADE: Récupérer tous les contrats (Draft, Cancelled, Expired, Terminated)
-            var allContracts = await _context.Contracts
-                .Include(c => c.Payments)
-                .Where(c => c.PropertyId == propertyGuid)
-                .ToListAsync();
-
-            int deletedPayments = 0;
-            int deletedDocuments = 0;
-
-            foreach (var contract in allContracts)
-            {
-                // TODO: Migrate to new PaymentAggregate system
-                // Old ContractPayment system is deprecated
-                // Supprimer les paiements (temporarily disabled - use new payment system)
-                // if (contract.Payments.Any())
-                // {
-                //     deletedPayments += contract.Payments.Count;
-                // }
-
-                // Supprimer les documents du contrat
-                var contractDocuments = await _context.Documents
-                    .Where(d => d.ContractId == contract.Id)
-                    .ToListAsync();
-                    
-                if (contractDocuments.Any())
-                {
-                    _context.Documents.RemoveRange(contractDocuments);
-                    deletedDocuments += contractDocuments.Count;
-                }
-            }
-
-            // Supprimer les contrats
-            _context.Contracts.RemoveRange(allContracts);
-
-            // ✅ CASCADE: Supprimer les documents directement liés au bien
-            var propertyDocuments = await _context.Documents
-                .Where(d => d.PropertyId == propertyGuid)
-                .ToListAsync();
-                
-            if (propertyDocuments.Any())
-            {
-                _context.Documents.RemoveRange(propertyDocuments);
-                deletedDocuments += propertyDocuments.Count;
-            }
-
-            // ✅ CASCADE: Dissocier les locataires associés au bien
-            var associatedTenants = await _context.Occupants
-                .Where(t => t.PropertyId == propertyGuid)
-                .ToListAsync();
-                
-            foreach (var tenant in associatedTenants)
-            {
-                tenant.DissociateFromProperty();
-            }
-
-            // Supprimer le bien
-            _context.Properties.Remove(property);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation(
-                "✅ Bien {PropertyCode} supprimé avec succès. Contrats: {ContractCount}, Paiements: {PaymentCount}, Documents: {DocumentCount}, Locataires dissociés: {TenantCount}",
-                property.Code, allContracts.Count, deletedPayments, deletedDocuments, associatedTenants.Count);
-                
-            return Ok(new { 
-                message = "Bien supprimé avec succès", 
-                id = property.Id,
-                deletedContracts = allContracts.Count,
-                deletedPayments,
-                deletedDocuments,
-                dissociatedTenants = associatedTenants.Count
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Erreur lors de la suppression du bien {PropertyId}", propertyGuid);
-            return StatusCode(500, new { message = "Erreur lors de la suppression du bien", error = ex.Message });
-        }
+            message = "Bien supprimé avec succès",
+            id = result.Data!.Id,
+            deletedContracts = result.Data.DeletedContracts,
+            deletedPayments = result.Data.DeletedPayments,
+            deletedDocuments = result.Data.DeletedDocuments,
+            dissociatedTenants = result.Data.DissociatedTenants
+        });
     }
 }

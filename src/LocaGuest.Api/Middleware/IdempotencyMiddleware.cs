@@ -1,10 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using LocaGuest.Application.Common.Exceptions;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Exceptions;
-using LocaGuest.Infrastructure.Persistence;
-using LocaGuest.Infrastructure.Persistence.Entities;
-using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace LocaGuest.Api.Middleware;
 
@@ -19,7 +18,7 @@ public sealed class IdempotencyMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, LocaGuestDbContext db)
+    public async Task InvokeAsync(HttpContext context, IIdempotencyStore store)
     {
         try
         {
@@ -45,9 +44,7 @@ public sealed class IdempotencyMiddleware
             var clientId = GetClientId(context);
             var requestHash = ComputeRequestHash(context.Request.Method, context.Request.Path, context.Request.QueryString, bodyBytes);
 
-            var existing = await db.IdempotencyRequests
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ClientId == clientId && x.IdempotencyKey == idempotencyKey, context.RequestAborted);
+            var existing = await store.GetAsync(clientId, idempotencyKey, context.RequestAborted);
 
             if (existing is not null)
             {
@@ -57,25 +54,24 @@ public sealed class IdempotencyMiddleware
                 if (existing.StatusCode == 0)
                     throw new IdempotencyConflictException("Idempotency-Key request is still in progress.");
 
+                Log.Information(
+                    "idempotency.replay correlationId={CorrelationId} clientId={ClientId} idempotencyKey={IdempotencyKey} method={Method} path={Path} statusCode={StatusCode}",
+                    context.Items["X-Correlation-Id"]?.ToString() ?? context.TraceIdentifier,
+                    clientId,
+                    idempotencyKey,
+                    context.Request.Method,
+                    context.Request.Path.Value,
+                    existing.StatusCode);
+
                 await ReplayAsync(context, existing);
                 return;
             }
 
-            var placeholder = new IdempotencyRequestEntity
-            {
-                ClientId = clientId,
-                IdempotencyKey = idempotencyKey,
-                RequestHash = requestHash,
-                StatusCode = 0,
-                ResponseJson = string.Empty,
-                ResponseBodyBase64 = string.Empty,
-                ResponseContentType = string.Empty,
-                CreatedAtUtc = DateTime.UtcNow,
-                CompletedAtUtc = DateTime.MinValue
-            };
-
-            db.IdempotencyRequests.Add(placeholder);
-            await db.SaveChangesAsync(context.RequestAborted);
+            var placeholder = await store.CreatePlaceholderAsync(
+                clientId,
+                idempotencyKey,
+                requestHash,
+                context.RequestAborted);
 
             var originalBody = context.Response.Body;
             await using var mem = new MemoryStream();
@@ -89,15 +85,22 @@ public sealed class IdempotencyMiddleware
                 var responseBytes = mem.ToArray();
                 var contentType = context.Response.ContentType ?? "";
 
-                var entity = await db.IdempotencyRequests
-                    .FirstAsync(x => x.Id == placeholder.Id, context.RequestAborted);
+                await store.CompleteAsync(
+                    placeholder.Id,
+                    context.Response.StatusCode,
+                    contentType,
+                    Convert.ToBase64String(responseBytes),
+                    responseJson: string.Empty,
+                    context.RequestAborted);
 
-                entity.StatusCode = context.Response.StatusCode;
-                entity.ResponseContentType = contentType;
-                entity.ResponseBodyBase64 = Convert.ToBase64String(responseBytes);
-                entity.CompletedAtUtc = DateTime.UtcNow;
-
-                await db.SaveChangesAsync(context.RequestAborted);
+                Log.Information(
+                    "idempotency.stored correlationId={CorrelationId} clientId={ClientId} idempotencyKey={IdempotencyKey} method={Method} path={Path} statusCode={StatusCode}",
+                    context.Items["X-Correlation-Id"]?.ToString() ?? context.TraceIdentifier,
+                    clientId,
+                    idempotencyKey,
+                    context.Request.Method,
+                    context.Request.Path.Value,
+                    context.Response.StatusCode);
 
                 mem.Position = 0;
                 await mem.CopyToAsync(originalBody, context.RequestAborted);
@@ -106,14 +109,7 @@ public sealed class IdempotencyMiddleware
             {
                 try
                 {
-                    var entity = await db.IdempotencyRequests
-                        .FirstOrDefaultAsync(x => x.Id == placeholder.Id, context.RequestAborted);
-
-                    if (entity != null)
-                    {
-                        db.IdempotencyRequests.Remove(entity);
-                        await db.SaveChangesAsync(context.RequestAborted);
-                    }
+                    await store.DeleteAsync(placeholder.Id, context.RequestAborted);
                 }
                 catch
                 {
@@ -129,6 +125,13 @@ public sealed class IdempotencyMiddleware
         }
         catch (IdempotencyConflictException ex)
         {
+            Log.Warning(
+                "idempotency.conflict correlationId={CorrelationId} method={Method} path={Path} message={Message}",
+                context.Items["X-Correlation-Id"]?.ToString() ?? context.TraceIdentifier,
+                context.Request.Method,
+                context.Request.Path.Value,
+                ex.Message);
+
             await WriteProblemDetailsAsync(
                 context,
                 StatusCodes.Status409Conflict,
@@ -197,7 +200,7 @@ public sealed class IdempotencyMiddleware
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static async Task ReplayAsync(HttpContext context, IdempotencyRequestEntity existing)
+    private static async Task ReplayAsync(HttpContext context, IdempotencyRecord existing)
     {
         context.Response.StatusCode = existing.StatusCode;
 
@@ -208,10 +211,8 @@ public sealed class IdempotencyMiddleware
         {
             var bytes = Convert.FromBase64String(existing.ResponseBodyBase64);
             await context.Response.Body.WriteAsync(bytes, context.RequestAborted);
-            return;
         }
-
-        if (!string.IsNullOrWhiteSpace(existing.ResponseJson))
+        else if (!string.IsNullOrWhiteSpace(existing.ResponseJson))
         {
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(existing.ResponseJson, context.RequestAborted);

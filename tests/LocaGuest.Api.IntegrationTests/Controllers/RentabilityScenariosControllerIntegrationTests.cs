@@ -2,6 +2,7 @@ using FluentAssertions;
 using LocaGuest.Api.IntegrationTests.Infrastructure;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using Xunit;
 
 namespace LocaGuest.Api.IntegrationTests.Controllers;
@@ -37,7 +38,13 @@ public class RentabilityScenariosControllerIntegrationTests : IClassFixture<Loca
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/rentability-scenarios", scenario);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/rentability-scenarios")
+        {
+            Content = JsonContent.Create(scenario)
+        };
+        request.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(request);
 
         // Assert - Endpoint may not be fully implemented
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.BadRequest, HttpStatusCode.NotFound);
@@ -50,7 +57,10 @@ public class RentabilityScenariosControllerIntegrationTests : IClassFixture<Loca
         var invalidId = Guid.NewGuid();
 
         // Act
-        var response = await _client.PostAsync($"/api/rentability-scenarios/{invalidId}/clone", null);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/rentability-scenarios/{invalidId}/clone");
+        request.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(request);
 
         // Assert
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.BadRequest);
@@ -63,7 +73,10 @@ public class RentabilityScenariosControllerIntegrationTests : IClassFixture<Loca
         var invalidId = Guid.NewGuid();
 
         // Act
-        var response = await _client.DeleteAsync($"/api/rentability-scenarios/{invalidId}");
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/rentability-scenarios/{invalidId}");
+        request.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(request);
 
         // Assert
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.NoContent);

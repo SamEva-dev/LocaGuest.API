@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LocaGuest.Api.IntegrationTests.Infrastructure;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,10 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
     private async Task SeedTestDataAsync()
     {
         using var scope = _factory.Services.CreateScope();
+        var org = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>()
+            .Set(org, isAuthenticated: true);
+
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
         
         await context.Database.EnsureCreatedAsync();
@@ -37,11 +42,17 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
             "0612345678"
         );
 
+        tenant1.SetOrganizationId(org);
+        tenant1.SetCode("T0001-L0001");
+
         var tenant2 = Occupant.Create(
             "Jane Smith",
             "jane.smith@test.com",
             "0623456789"
         );
+
+        tenant2.SetOrganizationId(org);
+        tenant2.SetCode("T0001-L0002");
 
         context.Occupants.AddRange(tenant1, tenant2);
         await context.SaveChangesAsync();
@@ -51,7 +62,7 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
     public async Task GetTenants_ReturnsSuccessStatusCode()
     {
         // Act
-        var response = await _client.GetAsync("/api/tenants?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/occupants?page=1&pageSize=10");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -61,7 +72,7 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
     public async Task GetTenants_ReturnsPagedResult()
     {
         // Act
-        var response = await _client.GetAsync("/api/tenants?page=1&pageSize=10");
+        var response = await _client.GetAsync("/api/occupants?page=1&pageSize=10");
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert
@@ -74,7 +85,7 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
     public async Task GetTenants_WithSearch_FiltersResults()
     {
         // Act
-        var response = await _client.GetAsync("/api/tenants?search=John");
+        var response = await _client.GetAsync("/api/occupants?search=John");
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert
@@ -87,11 +98,15 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
     {
         // Arrange
         using var scope = _factory.Services.CreateScope();
+        var org = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>()
+            .Set(org, isAuthenticated: true);
+
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
         var tenant = context.Occupants.First();
 
         // Act
-        var response = await _client.GetAsync($"/api/tenants/{tenant.Id}");
+        var response = await _client.GetAsync($"/api/occupants/{tenant.Id}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -106,7 +121,7 @@ public class TenantsControllerIntegrationTests : IClassFixture<LocaGuestWebAppli
         var invalidId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/tenants/{invalidId}");
+        var response = await _client.GetAsync($"/api/occupants/{invalidId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

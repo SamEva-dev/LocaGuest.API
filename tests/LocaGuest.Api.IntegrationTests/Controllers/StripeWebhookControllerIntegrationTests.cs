@@ -19,11 +19,14 @@ public class StripeWebhookControllerIntegrationTests : IClassFixture<LocaGuestWe
     public async Task HandleWebhook_RouteExists()
     {
         // Arrange
-        var content = new StringContent("{}", Encoding.UTF8, "application/json");
-        content.Headers.Add("Stripe-Signature", "test_signature");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/webhooks/stripe")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        request.Headers.TryAddWithoutValidation("Stripe-Signature", $"t=1700000000,v1=test-{Guid.NewGuid():N}");
 
         // Act
-        var response = await _client.PostAsync("/api/stripe-webhook", content);
+        var response = await _client.SendAsync(request);
 
         // Assert - Route may or may not be implemented
         response.StatusCode.Should().BeOneOf(
@@ -39,10 +42,13 @@ public class StripeWebhookControllerIntegrationTests : IClassFixture<LocaGuestWe
     public async Task HandleWebhook_WithoutSignature_HandlesGracefully()
     {
         // Arrange
-        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/webhooks/stripe")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
 
         // Act
-        var response = await _client.PostAsync("/api/stripe-webhook", content);
+        var response = await _client.SendAsync(request);
 
         // Assert - May not be implemented
         response.StatusCode.Should().BeOneOf(
@@ -57,11 +63,14 @@ public class StripeWebhookControllerIntegrationTests : IClassFixture<LocaGuestWe
     public async Task HandleWebhook_WithInvalidSignature_HandlesGracefully()
     {
         // Arrange
-        var content = new StringContent("{\"type\":\"payment_intent.succeeded\"}", Encoding.UTF8, "application/json");
-        content.Headers.Add("Stripe-Signature", "invalid_signature");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/webhooks/stripe")
+        {
+            Content = new StringContent("{\"type\":\"payment_intent.succeeded\"}", Encoding.UTF8, "application/json")
+        };
+        request.Headers.TryAddWithoutValidation("Stripe-Signature", $"t=1700000000,v1=invalid-{Guid.NewGuid():N}");
 
         // Act
-        var response = await _client.PostAsync("/api/stripe-webhook", content);
+        var response = await _client.SendAsync(request);
 
         // Assert - May not be implemented
         response.StatusCode.Should().BeOneOf(

@@ -1,6 +1,7 @@
 namespace LocaGuest.Application.Services;
 
 public record StripeCheckoutSession(string Id, string Url);
+public record StripeCheckoutSessionSummary(string? Status, string? CustomerEmail, string? SubscriptionId);
 public record StripeInvoice(string Id, DateTime Created, string? Description, long AmountPaid, string Currency, string Status, string? InvoicePdf);
 public record StripePaymentMethod(string Id, string Brand, string Last4, long ExpMonth, long ExpYear);
 
@@ -44,4 +45,6 @@ public interface IStripeService
     /// Handles Stripe webhook events
     /// </summary>
     Task HandleWebhookEventAsync(string payload, string signature, CancellationToken cancellationToken = default);
+
+    Task<StripeCheckoutSessionSummary> GetCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 }

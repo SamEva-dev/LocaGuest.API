@@ -1,6 +1,7 @@
 using FluentAssertions;
 using LocaGuest.Api.IntegrationTests.Infrastructure;
 using System.Net;
+using System.Net.Http.Headers;
 using Xunit;
 
 namespace LocaGuest.Api.IntegrationTests.Controllers;
@@ -64,7 +65,10 @@ public class ContractsControllerIntegrationTests : IClassFixture<LocaGuestWebApp
         var invalidId = Guid.NewGuid();
 
         // Act
-        var response = await _client.PostAsync($"/api/contracts/{invalidId}/terminate", null);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/contracts/{invalidId}/terminate");
+        request.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(request);
 
         // Assert - Endpoint should exist
         response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);

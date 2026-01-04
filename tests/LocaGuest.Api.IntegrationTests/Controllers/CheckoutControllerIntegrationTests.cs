@@ -27,7 +27,13 @@ public class CheckoutControllerIntegrationTests : IClassFixture<LocaGuestWebAppl
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/checkout/create-session", request);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/checkout/create-session")
+        {
+            Content = JsonContent.Create(request)
+        };
+        httpRequest.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(httpRequest);
 
         // Assert - May require Stripe configuration
         response.StatusCode.Should().NotBe(HttpStatusCode.NotFound);
@@ -40,7 +46,13 @@ public class CheckoutControllerIntegrationTests : IClassFixture<LocaGuestWebAppl
         var request = new { };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/checkout/create-session", request);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/checkout/create-session")
+        {
+            Content = JsonContent.Create(request)
+        };
+        httpRequest.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(httpRequest);
 
         // Assert
         response.StatusCode.Should().BeOneOf(
@@ -53,7 +65,10 @@ public class CheckoutControllerIntegrationTests : IClassFixture<LocaGuestWebAppl
     public async Task CheckoutController_HandlesRequests()
     {
         // Act
-        var response = await _client.PostAsync("/api/checkout/create-session", null);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/checkout/create-session");
+        httpRequest.Headers.TryAddWithoutValidation("Idempotency-Key", $"test-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(httpRequest);
 
         // Assert - Endpoint may or may not be fully implemented
         response.StatusCode.Should().BeOneOf(

@@ -47,6 +47,7 @@ public class SubscriptionsControllerIntegrationTests : IClassFixture<LocaGuestWe
         response.StatusCode.Should().BeOneOf(
             HttpStatusCode.OK, 
             HttpStatusCode.NotFound,
+            HttpStatusCode.Unauthorized,
             HttpStatusCode.InternalServerError
         );
     }

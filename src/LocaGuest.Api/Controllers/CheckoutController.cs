@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Stripe;
-using Stripe.Checkout;
-using LocaGuest.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using LocaGuest.Application.Features.Billing.Commands.CreateCheckoutSession;
+using LocaGuest.Application.Features.Billing.Commands.CreatePortalSession;
+using LocaGuest.Application.Features.Billing.Queries.GetCheckoutSession;
+using MediatR;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -14,20 +13,17 @@ namespace LocaGuest.Api.Controllers;
 public class CheckoutController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly ILocaGuestDbContext _context;
+    private readonly IMediator _mediator;
     private readonly ILogger<CheckoutController> _logger;
 
     public CheckoutController(
         IConfiguration configuration,
-        ILocaGuestDbContext context,
+        IMediator mediator,
         ILogger<CheckoutController> logger)
     {
         _configuration = configuration;
-        _context = context;
+        _mediator = mediator;
         _logger = logger;
-        
-        // Configure Stripe
-        StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
     }
 
     /// <summary>
@@ -36,83 +32,24 @@ public class CheckoutController : ControllerBase
     [HttpPost("create-session")]
     public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateCheckoutRequest request)
     {
-        var userId = GetUserId();
-        var user = User;
-
-        try
+        var command = new CreateCheckoutSessionCommand
         {
-            // Récupérer le plan
-            var plan = await _context.Plans
-                .FirstOrDefaultAsync(p => p.Id == request.PlanId);
+            PlanId = request.PlanId.ToString(),
+            IsAnnual = request.IsAnnual,
+            SuccessUrl = _configuration["Stripe:SuccessUrl"],
+            CancelUrl = _configuration["Stripe:CancelUrl"]
+        };
 
-            if (plan == null)
-            {
-                return NotFound(new { error = "Plan not found" });
-            }
+        var result = await _mediator.Send(command);
 
-            // Déterminer le price ID selon la période
-            var priceId = request.IsAnnual 
-                ? plan.StripeAnnualPriceId 
-                : plan.StripeMonthlyPriceId;
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
 
-            if (string.IsNullOrEmpty(priceId))
-            {
-                return BadRequest(new { error = "Stripe price not configured for this plan" });
-            }
-
-            var email = user.FindFirst(ClaimTypes.Email)?.Value;
-
-            // Créer la session Checkout
-            var options = new SessionCreateOptions
-            {
-                PaymentMethodTypes = new List<string> { "card" },
-                LineItems = new List<SessionLineItemOptions>
-                {
-                    new SessionLineItemOptions
-                    {
-                        Price = priceId,
-                        Quantity = 1,
-                    },
-                },
-                Mode = "subscription",
-                SuccessUrl = _configuration["Stripe:SuccessUrl"] + "?session_id={CHECKOUT_SESSION_ID}",
-                CancelUrl = _configuration["Stripe:CancelUrl"],
-                CustomerEmail = email,
-                ClientReferenceId = userId.ToString(),
-                SubscriptionData = new SessionSubscriptionDataOptions
-                {
-                    Metadata = new Dictionary<string, string>
-                    {
-                        { "user_id", userId.ToString() },
-                        { "plan_id", plan.Id.ToString() },
-                        { "plan_code", plan.Code }
-                    },
-                    TrialPeriodDays = 14, // 14 jours d'essai gratuit
-                },
-                Metadata = new Dictionary<string, string>
-                {
-                    { "user_id", userId.ToString() },
-                    { "plan_id", plan.Id.ToString() }
-                }
-            };
-
-            var service = new SessionService();
-            var session = await service.CreateAsync(options);
-
-            _logger.LogInformation("Checkout session created: {SessionId} for user {UserId} and plan {PlanCode}",
-                session.Id, userId, plan.Code);
-
-            return Ok(new
-            {
-                sessionId = session.Id,
-                url = session.Url
-            });
-        }
-        catch (StripeException e)
+        return Ok(new
         {
-            _logger.LogError(e, "Stripe error creating checkout session");
-            return StatusCode(500, new { error = e.Message });
-        }
+            sessionId = result.Data!.SessionId,
+            url = result.Data.CheckoutUrl
+        });
     }
 
     /// <summary>
@@ -121,23 +58,17 @@ public class CheckoutController : ControllerBase
     [HttpGet("session/{sessionId}")]
     public async Task<IActionResult> GetSession(string sessionId)
     {
-        try
-        {
-            var service = new SessionService();
-            var session = await service.GetAsync(sessionId);
+        var result = await _mediator.Send(new GetCheckoutSessionQuery { SessionId = sessionId });
 
-            return Ok(new
-            {
-                status = session.PaymentStatus,
-                customerEmail = session.CustomerEmail,
-                subscriptionId = session.SubscriptionId
-            });
-        }
-        catch (StripeException e)
+        if (!result.IsSuccess)
+            return StatusCode(500, new { error = result.ErrorMessage });
+
+        return Ok(new
         {
-            _logger.LogError(e, "Error retrieving session");
-            return StatusCode(500, new { error = e.Message });
-        }
+            status = result.Data!.Status,
+            customerEmail = result.Data.CustomerEmail,
+            subscriptionId = result.Data.SubscriptionId
+        });
     }
 
     /// <summary>
@@ -146,46 +77,15 @@ public class CheckoutController : ControllerBase
     [HttpPost("create-portal-session")]
     public async Task<IActionResult> CreatePortalSession()
     {
-        var userId = GetUserId();
-
-        try
+        var result = await _mediator.Send(new CreatePortalSessionCommand
         {
-            // Récupérer l'abonnement actif de l'utilisateur
-            var subscription = await _context.Subscriptions
-                .Include(s => s.Plan)
-                .FirstOrDefaultAsync(s => s.UserId == userId && s.Status == "active");
+            ReturnUrl = _configuration["Stripe:CancelUrl"]
+        });
 
-            if (subscription == null || string.IsNullOrEmpty(subscription.StripeCustomerId))
-            {
-                return BadRequest(new { error = "No active subscription found" });
-            }
+        if (!result.IsSuccess)
+            return BadRequest(new { error = result.ErrorMessage });
 
-            var options = new Stripe.BillingPortal.SessionCreateOptions
-            {
-                Customer = subscription.StripeCustomerId,
-                ReturnUrl = _configuration["Stripe:CancelUrl"], // Return to pricing page
-            };
-
-            var service = new Stripe.BillingPortal.SessionService();
-            var portalSession = await service.CreateAsync(options);
-
-            return Ok(new { url = portalSession.Url });
-        }
-        catch (StripeException e)
-        {
-            _logger.LogError(e, "Error creating portal session");
-            return StatusCode(500, new { error = e.Message });
-        }
-    }
-
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in claims");
-        }
-        return userId;
+        return Ok(new { url = result.Data!.Url });
     }
 }
 

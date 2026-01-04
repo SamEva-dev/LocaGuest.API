@@ -98,6 +98,25 @@ public class StripeService : IStripeService
         }
     }
 
+    public async Task<StripeCheckoutSessionSummary> GetCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var service = new SessionService();
+            var session = await service.GetAsync(sessionId, cancellationToken: cancellationToken);
+
+            return new StripeCheckoutSessionSummary(
+                Status: session.PaymentStatus,
+                CustomerEmail: session.CustomerEmail,
+                SubscriptionId: session.SubscriptionId);
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Stripe error retrieving checkout session {SessionId}", sessionId);
+            throw;
+        }
+    }
+
     public async Task<string> CreatePortalSessionAsync(string customerId, string returnUrl, CancellationToken cancellationToken = default)
     {
         try

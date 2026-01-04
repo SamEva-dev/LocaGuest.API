@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
-using LocaGuest.Application.Common.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -13,20 +13,17 @@ namespace LocaGuest.Api.Tests.Controllers;
 public class CheckoutControllerTests : BaseTestFixture
 {
     private readonly Mock<IConfiguration> _configurationMock;
-    private readonly Mock<ILocaGuestDbContext> _contextMock;
+    private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<CheckoutController>> _loggerMock;
     private readonly CheckoutController _controller;
 
     public CheckoutControllerTests()
     {
         _configurationMock = new Mock<IConfiguration>();
-        _contextMock = new Mock<ILocaGuestDbContext>();
+        _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<CheckoutController>>();
-        
-        // Mock Stripe:SecretKey configuration
-        _configurationMock.Setup(c => c["Stripe:SecretKey"]).Returns("test_key");
-        
-        _controller = new CheckoutController(_configurationMock.Object, _contextMock.Object, _loggerMock.Object);
+
+        _controller = new CheckoutController(_configurationMock.Object, _mediatorMock.Object, _loggerMock.Object);
     }
 
     [Fact]

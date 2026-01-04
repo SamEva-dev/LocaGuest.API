@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using LocaGuest.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using LocaGuest.Application.Features.Subscriptions.Queries.CheckFeature;
+using LocaGuest.Application.Features.Subscriptions.Queries.CheckQuota;
+using LocaGuest.Application.Features.Subscriptions.Queries.GetActivePlans;
+using LocaGuest.Application.Features.Subscriptions.Queries.GetCurrentSubscription;
+using LocaGuest.Application.Features.Subscriptions.Queries.GetUsage;
+using MediatR;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -11,15 +14,12 @@ namespace LocaGuest.Api.Controllers;
 [Authorize]
 public class SubscriptionsController : ControllerBase
 {
-    private readonly ILocaGuestDbContext _context;
-    private readonly ISubscriptionService _subscriptionService;
+    private readonly IMediator _mediator;
 
     public SubscriptionsController(
-        ILocaGuestDbContext context,
-        ISubscriptionService subscriptionService)
+        IMediator mediator)
     {
-        _context = context;
-        _subscriptionService = subscriptionService;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -29,12 +29,12 @@ public class SubscriptionsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPlans()
     {
-        var plans = await _context.Plans
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.SortOrder)
-            .ToListAsync();
+        var result = await _mediator.Send(new GetActivePlansQuery());
 
-        return Ok(plans);
+        if (!result.IsSuccess)
+            return StatusCode(500, new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -43,22 +43,17 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("current")]
     public async Task<IActionResult> GetCurrentSubscription()
     {
-        var userId = GetUserId();
-        var subscription = await _subscriptionService.GetActiveSubscriptionAsync(userId);
+        var result = await _mediator.Send(new GetCurrentSubscriptionQuery());
 
-        if (subscription == null)
+        if (!result.IsSuccess)
         {
-            // Retourner le plan Free par défaut
-            var freePlan = await _subscriptionService.GetPlanAsync(userId);
-            return Ok(new
-            {
-                plan = freePlan,
-                status = "free",
-                isActive = true
-            });
+            if (string.Equals(result.ErrorMessage, "User not authenticated", StringComparison.Ordinal))
+                return Unauthorized();
+
+            return BadRequest(new { error = result.ErrorMessage });
         }
 
-        return Ok(subscription);
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -67,38 +62,17 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("usage")]
     public async Task<IActionResult> GetUsage()
     {
-        var userId = GetUserId();
-        var plan = await _subscriptionService.GetPlanAsync(userId);
+        var result = await _mediator.Send(new GetUsageQuery());
 
-        var usage = new
+        if (!result.IsSuccess)
         {
-            scenarios = new
-            {
-                current = await _subscriptionService.GetUsageAsync(userId, "scenarios"),
-                limit = plan.MaxScenarios,
-                unlimited = plan.MaxScenarios == int.MaxValue
-            },
-            exports = new
-            {
-                current = await _subscriptionService.GetUsageAsync(userId, "exports"),
-                limit = plan.HasUnlimitedExports ? int.MaxValue : plan.MaxExportsPerMonth,
-                unlimited = plan.HasUnlimitedExports
-            },
-            aiSuggestions = new
-            {
-                current = await _subscriptionService.GetUsageAsync(userId, "ai_suggestions"),
-                limit = plan.HasUnlimitedAi ? int.MaxValue : plan.MaxAiSuggestionsPerMonth,
-                unlimited = plan.HasUnlimitedAi
-            },
-            shares = new
-            {
-                current = await _subscriptionService.GetUsageAsync(userId, "shares"),
-                limit = plan.MaxShares,
-                unlimited = plan.MaxShares == int.MaxValue
-            }
-        };
+            if (string.Equals(result.ErrorMessage, "User not authenticated", StringComparison.Ordinal))
+                return Unauthorized();
 
-        return Ok(usage);
+            return BadRequest(new { error = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -107,10 +81,17 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("features/{featureName}")]
     public async Task<IActionResult> CheckFeature(string featureName)
     {
-        var userId = GetUserId();
-        var hasAccess = await _subscriptionService.CanAccessFeatureAsync(userId, featureName);
+        var result = await _mediator.Send(new CheckFeatureQuery(featureName));
 
-        return Ok(new { feature = featureName, hasAccess });
+        if (!result.IsSuccess)
+        {
+            if (string.Equals(result.ErrorMessage, "User not authenticated", StringComparison.Ordinal))
+                return Unauthorized();
+
+            return BadRequest(new { error = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -119,25 +100,16 @@ public class SubscriptionsController : ControllerBase
     [HttpGet("quota/{dimension}")]
     public async Task<IActionResult> CheckQuota(string dimension)
     {
-        var userId = GetUserId();
-        var hasQuota = await _subscriptionService.CheckQuotaAsync(userId, dimension);
-        var currentUsage = await _subscriptionService.GetUsageAsync(userId, dimension);
+        var result = await _mediator.Send(new CheckQuotaQuery(dimension));
 
-        return Ok(new
+        if (!result.IsSuccess)
         {
-            dimension,
-            hasQuota,
-            currentUsage
-        });
-    }
+            if (string.Equals(result.ErrorMessage, "User not authenticated", StringComparison.Ordinal))
+                return Unauthorized();
 
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in claims");
+            return BadRequest(new { error = result.ErrorMessage });
         }
-        return userId;
+
+        return Ok(result.Data);
     }
 }

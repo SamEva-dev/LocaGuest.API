@@ -1,8 +1,8 @@
 using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
-using LocaGuest.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using Moq;
 using Xunit;
 
@@ -10,15 +10,13 @@ namespace LocaGuest.Api.Tests.Controllers;
 
 public class SubscriptionsControllerTests : BaseTestFixture
 {
-    private readonly Mock<ILocaGuestDbContext> _contextMock;
-    private readonly Mock<ISubscriptionService> _subscriptionServiceMock;
+    private readonly Mock<IMediator> _mediatorMock;
     private readonly SubscriptionsController _controller;
 
     public SubscriptionsControllerTests()
     {
-        _contextMock = new Mock<ILocaGuestDbContext>();
-        _subscriptionServiceMock = new Mock<ISubscriptionService>();
-        _controller = new SubscriptionsController(_contextMock.Object, _subscriptionServiceMock.Object);
+        _mediatorMock = new Mock<IMediator>();
+        _controller = new SubscriptionsController(_mediatorMock.Object);
     }
 
     [Fact]
@@ -40,8 +38,7 @@ public class SubscriptionsControllerTests : BaseTestFixture
     {
         // Assert
         _controller.Should().NotBeNull();
-        _contextMock.Should().NotBeNull();
-        _subscriptionServiceMock.Should().NotBeNull();
+        _mediatorMock.Should().NotBeNull();
     }
 
     [Fact]

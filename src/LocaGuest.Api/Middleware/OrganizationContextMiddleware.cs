@@ -25,7 +25,7 @@ public sealed class OrganizationContextMiddleware
         }
 
         // Exception contrôlée : provisioning token (M2M)
-        var scope = user.FindFirst("scope")?.Value ?? string.Empty;
+        var scope = user?.FindFirst("scope")?.Value ?? string.Empty;
         var isProvisioning = scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Contains("locaguest.provisioning");
 
@@ -39,8 +39,8 @@ public sealed class OrganizationContextMiddleware
 
         // Mode standard : org obligatoire
         var val =
-            user.FindFirstValue("organization_id")
-            ?? user.FindFirstValue("organizationId");
+            user?.FindFirstValue("organization_id")
+            ?? user?.FindFirstValue("organizationId");
 
         if (!Guid.TryParse(val, out var parsed))
         {

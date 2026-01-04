@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using Xunit;
 
 namespace LocaGuest.Api.Tests.Controllers;
@@ -43,6 +44,19 @@ public class OrganizationsControllerTests : BaseTestFixture
             _loggerMock.Object, 
             _fileStorageServiceMock.Object,
             _configuration);
+
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Role, "SuperAdmin")
+        }, authenticationType: "Test");
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(identity)
+            }
+        };
     }
 
     #region GetAllOrganizations Tests
@@ -156,7 +170,7 @@ public class OrganizationsControllerTests : BaseTestFixture
         var organizationId = Guid.NewGuid();
 
         // Act
-        var result = await _controller.UploadLogo(organizationId, null);
+        var result = await _controller.UploadLogo(organizationId, null!);
 
         // Assert
         result.Should().BeOfType<BadRequestObjectResult>();

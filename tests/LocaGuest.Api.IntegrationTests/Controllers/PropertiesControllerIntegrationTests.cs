@@ -2,6 +2,7 @@ using FluentAssertions;
 using LocaGuest.Api.IntegrationTests.Infrastructure;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -27,6 +28,10 @@ public class PropertiesControllerIntegrationTests : IClassFixture<LocaGuestWebAp
     private async Task SeedTestDataAsync()
     {
         using var scope = _factory.Services.CreateScope();
+        var org = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>()
+            .Set(org, isAuthenticated: true);
+
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
         
         // Ensure database is created
@@ -48,6 +53,8 @@ public class PropertiesControllerIntegrationTests : IClassFixture<LocaGuestWebAp
             1
         );
 
+        property1.SetOrganizationId(org);
+
         var property2 = Property.Create(
             "Test House 1",
             "456 Test Avenue",
@@ -58,6 +65,8 @@ public class PropertiesControllerIntegrationTests : IClassFixture<LocaGuestWebAp
             3,
             2
         );
+
+        property2.SetOrganizationId(org);
 
         context.Properties.AddRange(property1, property2);
         await context.SaveChangesAsync();
@@ -105,6 +114,10 @@ public class PropertiesControllerIntegrationTests : IClassFixture<LocaGuestWebAp
     {
         // Arrange
         using var scope = _factory.Services.CreateScope();
+        var org = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>()
+            .Set(org, isAuthenticated: true);
+
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
         var property = context.Properties.First();
 
