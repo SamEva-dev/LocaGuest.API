@@ -12,6 +12,9 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         builder.HasKey(d => d.Id);
 
+        builder.Property(d => d.OrganizationId)
+            .IsRequired();
+
         builder.Property(d => d.Code)
             .IsRequired()
             .HasMaxLength(50);
@@ -51,7 +54,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
             .HasDefaultValue(false);
 
         // Indexes
-        builder.HasIndex(d => d.Code).IsUnique();
+        builder.HasIndex(d => new { d.OrganizationId, d.Code }).IsUnique();
         builder.HasIndex(d => d.AssociatedTenantId);
         builder.HasIndex(d => d.PropertyId);
         builder.HasIndex(d => d.Type);

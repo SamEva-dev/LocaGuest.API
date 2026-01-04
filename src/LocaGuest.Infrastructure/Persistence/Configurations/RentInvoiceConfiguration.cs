@@ -55,7 +55,7 @@ public class RentInvoiceConfiguration : IEntityTypeConfiguration<RentInvoice>
         builder.HasIndex(ri => ri.ContractId);
         builder.HasIndex(ri => ri.OrganizationId);
         builder.HasIndex(ri => ri.PropertyId);
-        builder.HasIndex(ri => new { ri.ContractId, ri.Month, ri.Year }).IsUnique();
+        builder.HasIndex(ri => new { ri.OrganizationId, ri.ContractId, ri.Month, ri.Year }).IsUnique();
         builder.HasIndex(ri => ri.Status);
         builder.HasIndex(ri => ri.DueDate);
     }

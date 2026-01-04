@@ -305,6 +305,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasIndex(t => t.OrganizationId);
             entity.Property(t => t.FullName).IsRequired().HasMaxLength(200);
             entity.Property(t => t.Email).IsRequired().HasMaxLength(200);
+            entity.HasIndex(t => new { t.OrganizationId, t.Email }).IsUnique();
+            entity.Property(t => t.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(t => new { t.OrganizationId, t.Code }).IsUnique();
             entity.Property(t => t.Phone).HasMaxLength(50);
             entity.Ignore(t => t.DomainEvents);
         });
@@ -316,6 +319,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.HasKey(c => c.Id);
             entity.Property(c => c.OrganizationId).IsRequired();
             entity.HasIndex(c => c.OrganizationId);
+            entity.Property(c => c.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(c => new { c.OrganizationId, c.Code }).IsUnique();
             entity.Property(c => c.RenterTenantId).IsRequired();
             entity.HasIndex(c => c.RenterTenantId);
             entity.Property(c => c.Rent).HasColumnType("decimal(18,2)");
@@ -349,6 +354,16 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             // Configure DocumentIds as a JSON column or ignore for now
             entity.Ignore(c => c.DocumentIds);
             entity.Ignore(c => c.DomainEvents);
+
+            entity.HasOne<Property>()
+                .WithMany()
+                .HasForeignKey(c => c.PropertyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Occupant>()
+                .WithMany()
+                .HasForeignKey(c => c.RenterTenantId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ContractPayment (old/deprecated - use PaymentAggregate.Payment instead)

@@ -71,7 +71,7 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.OrganizationId);
         builder.HasIndex(p => p.PropertyId);
         builder.HasIndex(p => p.ContractId);
-        builder.HasIndex(p => new { p.ContractId, p.Month, p.Year, p.PaymentType }).IsUnique();
+        builder.HasIndex(p => new { p.OrganizationId, p.ContractId, p.Month, p.Year, p.PaymentType }).IsUnique();
         builder.HasIndex(p => p.Status);
     }
 }
