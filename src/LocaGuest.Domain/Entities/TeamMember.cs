@@ -9,7 +9,6 @@ namespace LocaGuest.Domain.Entities;
 public class TeamMember : AuditableEntity
 {
     public Guid UserId { get; private set; }
-    public Guid OrganizationId { get; private set; }
     public string Role { get; private set; } = string.Empty; // Admin, Manager, Viewer, etc.
     public string UserEmail { get; private set; } = string.Empty; // Stocké pour éviter dépendance auth
     public Guid? InvitedBy { get; private set; }
@@ -32,7 +31,7 @@ public class TeamMember : AuditableEntity
     {
         Id = Guid.NewGuid();
         UserId = userId;
-        OrganizationId = organizationId;
+        SetOrganizationId(organizationId);
         Role = role ?? TeamRoles.Viewer;
         UserEmail = userEmail;
         InvitedBy = invitedBy;

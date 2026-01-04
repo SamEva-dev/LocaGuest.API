@@ -10,7 +10,6 @@ public class InvitationToken : AuditableEntity
     public Guid TeamMemberId { get; private set; }
     public string Token { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
-    public Guid OrganizationId { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public bool IsUsed { get; private set; }
     public DateTime? UsedAt { get; private set; }
@@ -29,7 +28,7 @@ public class InvitationToken : AuditableEntity
         Id = Guid.NewGuid();
         TeamMemberId = teamMemberId;
         Email = email;
-        OrganizationId = organizationId;
+        SetOrganizationId(organizationId);
         Token = GenerateSecureToken();
         ExpiresAt = DateTime.UtcNow.AddHours(expirationHours);
         IsUsed = false;

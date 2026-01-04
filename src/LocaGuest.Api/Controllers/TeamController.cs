@@ -47,7 +47,17 @@ public class TeamController : ControllerBase
         var result = await _mediator.Send(command);
 
         if (!result.IsSuccess)
+        {
+            if (string.Equals(
+                result.ErrorMessage,
+                "Invitations are managed by AuthGate. Use AuthGate /api/auth/invite to invite collaborators.",
+                StringComparison.Ordinal))
+            {
+                return StatusCode(StatusCodes.Status501NotImplemented, new { message = result.ErrorMessage });
+            }
+
             return BadRequest(new { message = result.ErrorMessage });
+        }
 
         return Ok(result.Data);
     }
