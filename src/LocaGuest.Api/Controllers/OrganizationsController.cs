@@ -6,6 +6,8 @@ using LocaGuest.Application.Features.Organizations.Queries.GetActiveOrganization
 using LocaGuest.Application.Features.Organizations.Queries.GetAllOrganizations;
 using LocaGuest.Application.Features.Organizations.Queries.GetCurrentOrganization;
 using LocaGuest.Application.Features.Organizations.Queries.GetOrganizationById;
+using LocaGuest.Application.Features.Organizations.Invitations.Commands.CreateInvitation;
+using LocaGuest.Application.Features.Organizations.Invitations.Commands.RevokeInvitation;
 using LocaGuest.Application.Common.Interfaces;
 using GetByIdDto = LocaGuest.Application.Features.Organizations.Queries.GetOrganizationById.OrganizationDto;
 using OrganizationDto = LocaGuest.Application.Features.Organizations.Commands.UpdateOrganizationSettings.OrganizationDto;
@@ -24,21 +26,25 @@ public class OrganizationsController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<OrganizationsController> _logger;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IConfiguration _configuration;
 
     public OrganizationsController(
         IMediator mediator, 
         ILogger<OrganizationsController> logger,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IConfiguration configuration)
     {
         _mediator = mediator;
         _logger = logger;
         _fileStorageService = fileStorageService;
+        _configuration = configuration;
     }
 
     /// <summary>
     /// Get all organizations
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = "SuperAdmin")]
     [ProducesResponseType(typeof(List<GetByIdDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllOrganizations()
     {
@@ -53,10 +59,49 @@ public class OrganizationsController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpPost("current/invitations")]
+    [ProducesResponseType(typeof(CreateInvitationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateInvitation([FromBody] CreateInvitationCommand command)
+    {
+        var result = await _mediator.Send(command);
+
+        if (result.IsFailure)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        var frontendUrl = _configuration["App:FrontendUrl"] ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(frontendUrl))
+            return BadRequest(new { error = "App:FrontendUrl is not configured" });
+
+        var token = result.Data?.Token ?? string.Empty;
+        var link = $"{frontendUrl.TrimEnd('/')}/register?mode=join&token={Uri.EscapeDataString(token)}";
+
+        return Ok(new
+        {
+            invitationId = result.Data?.InvitationId,
+            invitationLink = link,
+            expiresAtUtc = result.Data?.ExpiresAtUtc
+        });
+    }
+
+    [HttpPost("current/invitations/revoke/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RevokeInvitation(Guid id)
+    {
+        var result = await _mediator.Send(new RevokeInvitationCommand { InvitationId = id });
+
+        if (result.IsFailure)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return NoContent();
+    }
+
     /// <summary>
     /// Get only active organizations (filtered)
     /// </summary>
     [HttpGet("active")]
+    [Authorize(Policy = "SuperAdmin")]
     [ProducesResponseType(typeof(List<GetByIdDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetActiveOrganizations()
     {
@@ -101,6 +146,8 @@ public class OrganizationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrganizationById(Guid id)
     {
+        EnsureOrganizationAccess(id);
+
         var query = new GetOrganizationByIdQuery(id);
         var result = await _mediator.Send(query);
 
@@ -124,6 +171,8 @@ public class OrganizationsController : ControllerBase
     {
         try
         {
+            EnsureOrganizationAccess(id);
+
             // Validate file presence
             if (file == null || file.Length == 0)
             {
@@ -206,7 +255,7 @@ public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrg
     /// Create a new organization (called by AuthGate during registration)
     /// </summary>
     [HttpPost]
-    [AllowAnonymous] // Called by AuthGate service, not by user directly
+    [Authorize(Policy = "Provisioning")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateOrganization([FromBody] CreateOrganizationCommand command)
@@ -225,6 +274,7 @@ public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrg
     /// Delete (deactivate) an organization - Soft Delete
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteOrganization(Guid id)
@@ -245,6 +295,7 @@ public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrg
     /// Permanently delete an organization - Hard Delete (CANNOT BE UNDONE!)
     /// </summary>
     [HttpDelete("{id}/permanent")]
+    [Authorize(Policy = "SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> HardDeleteOrganization(Guid id)
@@ -269,5 +320,15 @@ public async Task<IActionResult> UpdateOrganizationSettings([FromBody] UpdateOrg
             throw new UnauthorizedAccessException("User ID not found in claims");
         }
         return userId;
+    }
+
+    private void EnsureOrganizationAccess(Guid organizationId)
+    {
+        if (User.IsInRole("SuperAdmin") || User.FindAll("roles").Any(r => r.Value == "SuperAdmin"))
+            return;
+
+        var claim = User.FindFirst("organization_id")?.Value ?? User.FindFirst("organizationId")?.Value;
+        if (!Guid.TryParse(claim, out var currentOrgId) || currentOrgId != organizationId)
+            throw new UnauthorizedAccessException("Cross-organization access is forbidden.");
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq.Expressions;
 using LocaGuest.Application.Services;
+using LocaGuest.Infrastructure.Persistence.Entities;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
@@ -43,6 +44,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     public DbSet<OrganizationSequence> OrganizationSequences => Set<OrganizationSequence>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<InvitationToken> InvitationTokens => Set<InvitationToken>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<IdempotencyRequestEntity> IdempotencyRequests => Set<IdempotencyRequestEntity>();
 
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<PropertyRoom> PropertyRooms => Set<PropertyRoom>();
@@ -78,6 +82,10 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasSequence<long>("organization_number_seq", schema: "core")
+            .StartsAt(1)
+            .IncrementsBy(1);
 
         var stringListComparer = new ValueComparer<List<string>>(
             (l1, l2) => (l1 ?? new List<string>()).SequenceEqual(l2 ?? new List<string>()),
@@ -168,6 +176,47 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
                   .WithMany()
                   .HasForeignKey(it => it.TeamMemberId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Invitation>(entity =>
+        {
+            entity.ToTable("invitations", schema: "core");
+            entity.HasKey(i => i.Id);
+
+            entity.Property(i => i.OrganizationId).IsRequired();
+            entity.Property(i => i.Email).IsRequired().HasMaxLength(200);
+            entity.Property(i => i.Role).IsRequired().HasMaxLength(50);
+            entity.Property(i => i.Status).IsRequired();
+            entity.Property(i => i.SecretHash).IsRequired().HasMaxLength(32);
+
+            entity.Property(i => i.ExpiresAtUtc).IsRequired();
+            entity.Property(i => i.CreatedAtUtc).IsRequired();
+            entity.Property(i => i.AcceptedAtUtc);
+            entity.Property(i => i.RevokedAtUtc);
+            entity.Property(i => i.CreatedByUserId);
+
+            entity.HasIndex(i => new { i.OrganizationId, i.Email, i.Status });
+            entity.HasIndex(i => i.ExpiresAtUtc);
+
+            entity.Ignore(i => i.DomainEvents);
+        });
+
+        modelBuilder.Entity<IdempotencyRequestEntity>(b =>
+        {
+            b.ToTable("idempotency_requests", schema: "core");
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.ClientId).HasColumnName("client_id").IsRequired();
+            b.Property(x => x.IdempotencyKey).HasColumnName("idempotency_key").IsRequired();
+            b.Property(x => x.RequestHash).HasColumnName("request_hash").IsRequired();
+
+            b.Property(x => x.ResponseJson).HasColumnName("response_json").IsRequired();
+            b.Property(x => x.StatusCode).HasColumnName("status_code").IsRequired();
+
+            b.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();
+            b.Property(x => x.CompletedAtUtc).HasColumnName("completed_at_utc").IsRequired();
+
+            b.HasIndex(x => new { x.ClientId, x.IdempotencyKey }).IsUnique();
         });
 
         // Property
@@ -685,7 +734,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
         var isAuthenticated = _orgContext?.IsAuthenticated == true;
         var bypass = _orgContext?.IsSystemContext == true && _orgContext?.CanBypassOrganizationFilter == true;
 
-        if (isAuthenticated && !orgId.HasValue)
+        if (isAuthenticated && !bypass && !orgId.HasValue && _orgContext?.IsSystemContext != true)
         {
             throw new UnauthorizedAccessException("Authenticated request is missing OrganizationId.");
         }

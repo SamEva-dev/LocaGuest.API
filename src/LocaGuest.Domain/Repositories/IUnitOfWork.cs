@@ -10,6 +10,7 @@ public interface IUnitOfWork : IDisposable
     ITenantRepository Tenants { get; }
     ITeamMemberRepository TeamMembers { get; }
     IInvitationTokenRepository InvitationTokens { get; }
+    IInvitationRepository Invitations { get; }
     IContractRepository Contracts { get; }
     IContractParticipantRepository ContractParticipants { get; }
     IAddendumRepository Addendums { get; }

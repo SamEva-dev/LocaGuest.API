@@ -17,26 +17,40 @@ public sealed class OrganizationContextMiddleware
         var user = context.User;
         var isAuthenticated = user?.Identity?.IsAuthenticated == true;
 
-        Guid? organizationId = null;
-
-        if (isAuthenticated)
+        if (!isAuthenticated)
         {
-            var val =
-                user.FindFirstValue("organization_id")
-                ?? user.FindFirstValue("organizationId");
-
-            if (!Guid.TryParse(val, out var parsed))
-            {
-                writer.Set(null, isAuthenticated: true);
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsJsonAsync(new { message = "Missing or invalid organization_id claim." });
-                return;
-            }
-
-            organizationId = parsed;
+            writer.Set(null, isAuthenticated: false);
+            await _next(context);
+            return;
         }
 
-        writer.Set(organizationId, isAuthenticated);
+        // Exception contrôlée : provisioning token (M2M)
+        var scope = user.FindFirst("scope")?.Value ?? string.Empty;
+        var isProvisioning = scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Contains("locaguest.provisioning");
+
+        if (isProvisioning)
+        {
+            // Pas d'orgId au début du provisioning (normal)
+            writer.Set(null, isAuthenticated: true, isSystemContext: true, canBypassOrganizationFilter: true);
+            await _next(context);
+            return;
+        }
+
+        // Mode standard : org obligatoire
+        var val =
+            user.FindFirstValue("organization_id")
+            ?? user.FindFirstValue("organizationId");
+
+        if (!Guid.TryParse(val, out var parsed))
+        {
+            writer.Set(null, isAuthenticated: true);
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { message = "Missing or invalid organization_id claim." });
+            return;
+        }
+
+        writer.Set(parsed, isAuthenticated: true);
 
         await _next(context);
     }

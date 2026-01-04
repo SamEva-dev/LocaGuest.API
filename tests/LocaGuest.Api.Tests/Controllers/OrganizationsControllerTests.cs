@@ -10,6 +10,7 @@ using LocaGuest.Application.Features.Organizations.Queries.GetAllOrganizations;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -21,6 +22,7 @@ public class OrganizationsControllerTests : BaseTestFixture
     private readonly Mock<IMediator> _mediatorMock;
     private readonly Mock<ILogger<OrganizationsController>> _loggerMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
+    private readonly IConfiguration _configuration;
     private readonly OrganizationsController _controller;
 
     public OrganizationsControllerTests()
@@ -28,10 +30,19 @@ public class OrganizationsControllerTests : BaseTestFixture
         _mediatorMock = new Mock<IMediator>();
         _loggerMock = new Mock<ILogger<OrganizationsController>>();
         _fileStorageServiceMock = new Mock<IFileStorageService>();
+
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["App:FrontendUrl"] = "http://localhost:4200"
+            })
+            .Build();
+
         _controller = new OrganizationsController(
             _mediatorMock.Object, 
             _loggerMock.Object, 
-            _fileStorageServiceMock.Object);
+            _fileStorageServiceMock.Object,
+            _configuration);
     }
 
     #region GetAllOrganizations Tests

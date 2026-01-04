@@ -78,7 +78,9 @@ public static class TeamRoles
     public const string Accountant = "Accountant"; // Accès finances uniquement
     public const string Viewer = "Viewer";         // Lecture seule
 
-    public static readonly string[] All = { Owner, Admin, Manager, Accountant, Viewer };
+    public const string Occupant = "Occupant";     // Occupant/Locataire - accès minimal
+
+    public static readonly string[] All = { Owner, Admin, Manager, Accountant, Viewer, Occupant };
 
     public static bool IsValid(string role)
     {

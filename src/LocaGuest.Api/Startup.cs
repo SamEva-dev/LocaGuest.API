@@ -16,6 +16,8 @@ using Microsoft.Extensions.Hosting;
 using LocaGuest.Infrastructure.Jobs;
 using System.Security.Cryptography;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace LocaGuest.Api;
 
@@ -122,7 +124,43 @@ public class Startup
             options.AddPolicy("Provisioning", policy =>
             {
                 policy.RequireAuthenticatedUser();
-                policy.RequireClaim("scope", "locaguest.provisioning");
+                policy.RequireAssertion(ctx =>
+                {
+                    var scope = ctx.User.FindFirst("scope")?.Value ?? string.Empty;
+                    return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Contains("locaguest.provisioning");
+                });
+            });
+
+            options.AddPolicy("SuperAdmin", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireAssertion(ctx =>
+                    ctx.User.FindAll("roles").Any(r => r.Value == "SuperAdmin") ||
+                    ctx.User.FindAll(ClaimTypes.Role).Any(r => r.Value == "SuperAdmin"));
+            });
+        });
+
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy("ProvisioningLimiter", httpContext =>
+            {
+                var user = httpContext.User;
+                var clientId =
+                    user.FindFirst("azp")?.Value
+                    ?? user.FindFirst("client_id")?.Value
+                    ?? user.FindFirst("sub")?.Value
+                    ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: clientId,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    });
             });
         });
 
@@ -355,6 +393,8 @@ public class Startup
         app.UseAuthentication();
         app.UseMiddleware<OrganizationContextMiddleware>();
         app.UseAuthorization();
+
+        app.UseRateLimiter();
 
         // Tracking middleware (after authentication)
         app.UseTracking();

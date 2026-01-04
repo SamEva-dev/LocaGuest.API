@@ -1,6 +1,7 @@
 using LocaGuest.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using LocaGuest.Application.Common.Exceptions;
 
 namespace LocaGuest.Api.Middleware;
 
@@ -58,6 +59,14 @@ public class ExceptionHandlingMiddleware
                 Detail = conflictEx.Message,
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.10",
                 Extensions = { ["code"] = conflictEx.Code, ["correlationId"] = correlationId }
+            },
+            IdempotencyConflictException idemEx => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Conflict",
+                Detail = idemEx.Message,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+                Extensions = { ["correlationId"] = correlationId }
             },
             ForbiddenException forbiddenEx => new ProblemDetails
             {

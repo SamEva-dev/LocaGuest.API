@@ -127,6 +127,9 @@ public static class DependencyInjection
         // File Storage Service
         services.AddScoped<IFileStorageService, FileStorageService>();
 
+        services.AddScoped<IProvisioningService, ProvisioningService>();
+        services.AddScoped<IInvitationProvisioningService, InvitationProvisioningService>();
+
         return services;
     }
 }
