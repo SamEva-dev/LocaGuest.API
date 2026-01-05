@@ -6,6 +6,7 @@ using LocaGuest.Application.Features.Team.Queries.GetTeamMembers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -27,6 +28,7 @@ public class TeamController : ControllerBase
     /// Récupère la liste des membres de l'équipe
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = Permissions.TeamRead)]
     public async Task<IActionResult> GetTeamMembers([FromQuery] bool activeOnly = true)
     {
         var query = new GetTeamMembersQuery { ActiveOnly = activeOnly };
@@ -42,6 +44,7 @@ public class TeamController : ControllerBase
     /// Invite un nouveau membre dans l'équipe
     /// </summary>
     [HttpPost("invite")]
+    [Authorize(Policy = Permissions.TeamManage)]
     public async Task<IActionResult> InviteTeamMember([FromBody] InviteTeamMemberCommand command)
     {
         var result = await _mediator.Send(command);
@@ -66,6 +69,7 @@ public class TeamController : ControllerBase
     /// Modifie le rôle d'un membre de l'équipe
     /// </summary>
     [HttpPut("{teamMemberId}/role")]
+    [Authorize(Policy = Permissions.TeamManage)]
     public async Task<IActionResult> UpdateTeamMemberRole(
         Guid teamMemberId, 
         [FromBody] UpdateTeamMemberRoleRequest request)
@@ -88,6 +92,7 @@ public class TeamController : ControllerBase
     /// Supprime un membre de l'équipe
     /// </summary>
     [HttpDelete("{teamMemberId}")]
+    [Authorize(Policy = Permissions.TeamManage)]
     public async Task<IActionResult> RemoveTeamMember(Guid teamMemberId)
     {
         var command = new RemoveTeamMemberCommand { TeamMemberId = teamMemberId };

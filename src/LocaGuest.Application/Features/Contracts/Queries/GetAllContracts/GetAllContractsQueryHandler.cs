@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,14 +10,14 @@ namespace LocaGuest.Application.Features.Contracts.Queries.GetAllContracts;
 
 public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery, Result<List<ContractDto>>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ILogger<GetAllContractsQueryHandler> _logger;
 
     public GetAllContractsQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ILogger<GetAllContractsQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
     {
         try
         {
-            var query = _unitOfWork.Contracts.Query();
+            var query = _readDb.Contracts.AsNoTracking();
 
             // Filtrer par statut
             if (!string.IsNullOrEmpty(request.Status) && Enum.TryParse<ContractStatus>(request.Status, out var status))
@@ -47,23 +47,21 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
             var propertyIds = contracts.Select(c => c.PropertyId).Distinct().ToList();
             var tenantIds = contracts.Select(c => c.RenterTenantId).Distinct().ToList();
 
-            var properties = await _unitOfWork.Properties.Query()
+            var properties = await _readDb.Properties.AsNoTracking()
                 .Where(p => propertyIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
 
-            var tenants = await _unitOfWork.Occupants.Query()
+            var tenants = await _readDb.Occupants.AsNoTracking()
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 
             var contractIds = contracts.Select(c => c.Id).ToList();
 
-            var inventoryEntries = await _unitOfWork.InventoryEntries.Query()
-                .AsNoTracking()
+            var inventoryEntries = await _readDb.InventoryEntries.AsNoTracking()
                 .Where(e => contractIds.Contains(e.ContractId))
                 .ToDictionaryAsync(e => e.ContractId, e => e.Id, cancellationToken);
 
-            var inventoryExits = await _unitOfWork.InventoryExits.Query()
-                .AsNoTracking()
+            var inventoryExits = await _readDb.InventoryExits.AsNoTracking()
                 .Where(e => contractIds.Contains(e.ContractId))
                 .ToDictionaryAsync(e => e.ContractId, e => e.Id, cancellationToken);
 

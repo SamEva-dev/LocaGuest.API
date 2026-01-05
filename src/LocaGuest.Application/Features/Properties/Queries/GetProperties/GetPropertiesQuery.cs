@@ -5,7 +5,7 @@ using MediatR;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetProperties;
 
-public record GetPropertiesQuery : IRequest<Result<PagedResult<PropertyDto>>>
+public record GetPropertiesQuery : IRequest<Result<PagedResult<PropertyListItemDto>>>
 {
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;

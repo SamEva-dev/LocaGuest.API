@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,14 +9,14 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
 
 public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActivitiesQuery, Result<List<ActivityDto>>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ILogger<GetRecentActivitiesQueryHandler> _logger;
 
     public GetRecentActivitiesQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ILogger<GetRecentActivitiesQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActiviti
             var activities = new List<ActivityDto>();
 
             // Get recent contracts
-            var recentContracts = await _unitOfWork.Contracts.Query()
+            var recentContracts = await _readDb.Contracts.AsNoTracking()
                 .OrderByDescending(c => c.CreatedAt)
                 .Take(5)
                 .ToListAsync(cancellationToken);
@@ -43,7 +43,7 @@ public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActiviti
             }
 
             // Get recent tenants
-            var recentTenants = await _unitOfWork.Occupants.Query()
+            var recentTenants = await _readDb.Occupants.AsNoTracking()
                 .Where(t => t.Status == OccupantStatus.Active)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(5)
@@ -60,7 +60,7 @@ public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActiviti
             }
 
             // Get recent properties
-            var recentProperties = await _unitOfWork.Properties.Query()
+            var recentProperties = await _readDb.Properties.AsNoTracking()
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(5)
                 .ToListAsync(cancellationToken);

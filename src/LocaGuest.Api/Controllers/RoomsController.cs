@@ -10,6 +10,7 @@ using LocaGuest.Application.Features.Rooms.Queries.GetAvailableRooms;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -92,6 +93,7 @@ public class RoomsController : ControllerBase
     /// POST /api/properties/{propertyId}/rooms
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = Permissions.RoomsWrite)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -129,6 +131,7 @@ public class RoomsController : ControllerBase
     /// PUT /api/properties/{propertyId}/rooms/{roomId}
     /// </summary>
     [HttpPut("{roomId:guid}")]
+    [Authorize(Policy = Permissions.RoomsWrite)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -167,6 +170,7 @@ public class RoomsController : ControllerBase
     /// DELETE /api/properties/{propertyId}/rooms/{roomId}
     /// </summary>
     [HttpDelete("{roomId:guid}")]
+    [Authorize(Policy = Permissions.RoomsWrite)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -192,6 +196,7 @@ public class RoomsController : ControllerBase
     /// POST /api/properties/{propertyId}/rooms/{roomId}/release
     /// </summary>
     [HttpPost("{roomId:guid}/release")]
+    [Authorize(Policy = Permissions.RoomsWrite)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -216,6 +221,7 @@ public class RoomsController : ControllerBase
     /// POST /api/properties/{propertyId}/rooms/{roomId}/status
     /// </summary>
     [HttpPost("{roomId:guid}/status")]
+    [Authorize(Policy = Permissions.RoomsWrite)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

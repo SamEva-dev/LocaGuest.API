@@ -39,10 +39,10 @@ public class Property : AuditableEntity
     private readonly List<PropertyImage> _images = new();
     public IReadOnlyCollection<PropertyImage> Images => _images.AsReadOnly();
     
-    // Pour Airbnb
-    public int? MinimumStay { get; private set; }
-    public int? MaximumStay { get; private set; }
-    public decimal? PricePerNight { get; private set; }
+    public PropertyAirbnbSettings AirbnbSettings { get; private set; } = new();
+    public PropertyDiagnostics Diagnostics { get; private set; } = new();
+    
+    // General property details (not Airbnb-specific)
     public int Bedrooms { get; private set; }
     public int Bathrooms { get; private set; }
     public decimal? Surface { get; private set; }
@@ -54,23 +54,12 @@ public class Property : AuditableEntity
     public decimal? Charges { get; private set; }
     public decimal? Deposit { get; private set; }
     public string? Description { get; private set; }
+    
     public List<string> ImageUrls { get; private set; } = new();
     public DateTime? UpdatedAt { get; set; }
 
     public string? EnergyClass { get; private set; }
     public int? ConstructionYear { get; private set; }
-    
-    // Diagnostics obligatoires
-    public string? DpeRating { get; private set; }  // A, B, C, D, E, F, G
-    public int? DpeValue { get; private set; }  // kWh/m²/an
-    public string? GesRating { get; private set; }  // A, B, C, D, E, F, G
-    public DateTime? ElectricDiagnosticDate { get; private set; }
-    public DateTime? ElectricDiagnosticExpiry { get; private set; }
-    public DateTime? GasDiagnosticDate { get; private set; }
-    public DateTime? GasDiagnosticExpiry { get; private set; }
-    public bool? HasAsbestos { get; private set; }
-    public DateTime? AsbestosDiagnosticDate { get; private set; }
-    public string? ErpZone { get; private set; }  // Zone de risques (ERP)
     
     // Informations financières complémentaires
     public decimal? PropertyTax { get; private set; }  // Taxe foncière annuelle
@@ -83,9 +72,6 @@ public class Property : AuditableEntity
     public decimal? MaintenanceRate { get; private set; }
     public decimal? VacancyRate { get; private set; }
 
-    // Airbnb
-    public int? NightsBookedPerMonth { get; private set; }
-    
     // Informations administratives
     public string? CadastralReference { get; private set; }  // Référence cadastrale
     public string? LotNumber { get; private set; }  // Numéro de lot
@@ -230,11 +216,7 @@ public class Property : AuditableEntity
         if (UsageType != PropertyUsageType.Airbnb)
             throw new ValidationException("PROPERTY_NOT_AIRBNB", "This property is not configured for Airbnb");
 
-        var min = minimumStay ?? MinimumStay ?? 0;
-        var max = maximumStay ?? MaximumStay ?? 0;
-        var price = pricePerNight ?? PricePerNight ?? 0m;
-
-        SetAirbnbSettings(min, max, price);
+        AirbnbSettings.Update(minimumStay, maximumStay, pricePerNight);
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -298,11 +280,6 @@ public class Property : AuditableEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void SetImages(List<string> urls)
-    {
-        ImageUrls = urls;
-    }
-    
     public void UpdateDiagnostics(
         string? dpeRating = null,
         int? dpeValue = null,
@@ -315,17 +292,17 @@ public class Property : AuditableEntity
         DateTime? asbestosDiagnosticDate = null,
         string? erpZone = null)
     {
-        if (dpeRating != null) DpeRating = dpeRating;
-        if (dpeValue.HasValue) DpeValue = dpeValue.Value;
-        if (gesRating != null) GesRating = gesRating;
-        if (electricDiagnosticDate.HasValue) ElectricDiagnosticDate = EnsureUtc(electricDiagnosticDate);
-        if (electricDiagnosticExpiry.HasValue) ElectricDiagnosticExpiry = EnsureUtc(electricDiagnosticExpiry);
-        if (gasDiagnosticDate.HasValue) GasDiagnosticDate = EnsureUtc(gasDiagnosticDate);
-        if (gasDiagnosticExpiry.HasValue) GasDiagnosticExpiry = EnsureUtc(gasDiagnosticExpiry);
-        if (hasAsbestos.HasValue) HasAsbestos = hasAsbestos;
-        if (asbestosDiagnosticDate.HasValue) AsbestosDiagnosticDate = EnsureUtc(asbestosDiagnosticDate);
-        if (erpZone != null) ErpZone = erpZone;
-        
+        Diagnostics.Update(
+            dpeRating: dpeRating,
+            dpeValue: dpeValue,
+            gesRating: gesRating,
+            electricDiagnosticDate: EnsureUtc(electricDiagnosticDate),
+            electricDiagnosticExpiry: EnsureUtc(electricDiagnosticExpiry),
+            gasDiagnosticDate: EnsureUtc(gasDiagnosticDate),
+            gasDiagnosticExpiry: EnsureUtc(gasDiagnosticExpiry),
+            hasAsbestos: hasAsbestos,
+            asbestosDiagnosticDate: EnsureUtc(asbestosDiagnosticDate),
+            erpZone: erpZone);
         UpdatedAt = DateTime.UtcNow;
     }
     
@@ -401,7 +378,7 @@ public class Property : AuditableEntity
         {
             if (nightsBookedPerMonth.Value < 0 || nightsBookedPerMonth.Value > 31)
                 throw new ValidationException("PROPERTY_INVALID_NIGHTS_BOOKED", "Nights booked per month must be between 0 and 31");
-            NightsBookedPerMonth = nightsBookedPerMonth.Value;
+            AirbnbSettings.SetNightsBookedPerMonth(nightsBookedPerMonth.Value);
         }
 
         UpdatedAt = DateTime.UtcNow;
@@ -553,9 +530,7 @@ public class Property : AuditableEntity
         if (pricePerNight <= 0)
             throw new ValidationException("PROPERTY_INVALID_PRICE", "Price per night must be positive");
             
-        MinimumStay = minimumStay;
-        MaximumStay = maximumStay;
-        PricePerNight = pricePerNight;
+        AirbnbSettings.Set(minimumStay, maximumStay, pricePerNight);
     }
     
     #region Gestion des Chambres (Colocation)

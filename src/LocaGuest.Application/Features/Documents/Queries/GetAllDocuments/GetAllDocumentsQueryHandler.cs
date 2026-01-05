@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Documents;
-using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,14 +9,14 @@ namespace LocaGuest.Application.Features.Documents.Queries.GetAllDocuments;
 
 public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery, Result<List<DocumentDto>>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ILogger<GetAllDocumentsQueryHandler> _logger;
 
     public GetAllDocumentsQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ILogger<GetAllDocumentsQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
         try
         {
             // Get all documents for the authenticated user (filtered automatically by TenantId via query filter)
-            var documents = await _unitOfWork.Documents.Query()
+            var documents = await _readDb.Documents.AsNoTracking()
                 .Where(d => !d.IsArchived)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync(cancellationToken);
@@ -37,7 +37,7 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
                 .Distinct()
                 .ToList();
 
-            var tenants = await _unitOfWork.Occupants.Query()
+            var tenants = await _readDb.Occupants.AsNoTracking()
                 .Where(t => tenantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 
@@ -48,7 +48,7 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
                 .Distinct()
                 .ToList();
 
-            var properties = await _unitOfWork.Properties.Query()
+            var properties = await _readDb.Properties.AsNoTracking()
                 .Where(p => propertyIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
 

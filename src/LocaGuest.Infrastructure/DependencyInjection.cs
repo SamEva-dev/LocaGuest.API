@@ -100,6 +100,9 @@ public static class DependencyInjection
         // Register ILocaGuestDbContext
         services.AddScoped<ILocaGuestDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
 
+        // Query-side DbContext abstraction (CQRS)
+        services.AddScoped<ILocaGuestReadDbContext>(sp => sp.GetRequiredService<LocaGuestDbContext>());
+
         // Register IAuditDbContext
         services.AddScoped<IAuditDbContext>(sp => sp.GetRequiredService<AuditDbContext>());
 

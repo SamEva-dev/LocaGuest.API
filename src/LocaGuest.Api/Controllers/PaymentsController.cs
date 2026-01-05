@@ -12,6 +12,7 @@ using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -38,6 +39,7 @@ public class PaymentsController : ControllerBase
     /// Create a new payment
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = Permissions.PaymentsWrite)]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentDto dto)
@@ -138,6 +140,7 @@ public class PaymentsController : ControllerBase
     /// Update an existing payment
     /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Policy = Permissions.PaymentsWrite)]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -166,6 +169,7 @@ public class PaymentsController : ControllerBase
     /// Delete a payment (void it)
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = Permissions.PaymentsWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeletePayment(Guid id)

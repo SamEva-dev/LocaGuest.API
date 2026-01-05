@@ -48,7 +48,7 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual IQueryable<T> Query()
     {
-        return _dbSet.AsQueryable();
+        return _dbSet.AsNoTracking().AsQueryable();
     }
 
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)

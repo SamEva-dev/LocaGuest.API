@@ -21,7 +21,7 @@ using LocaGuest.Infrastructure.Persistence.Entities;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
-public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
+public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestReadDbContext
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService? _currentUserService;
@@ -247,9 +247,30 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Property(p => p.ManagementFeesRate).HasColumnType("decimal(18,2)");
             entity.Property(p => p.MaintenanceRate).HasColumnType("decimal(18,2)");
             entity.Property(p => p.VacancyRate).HasColumnType("decimal(18,2)");
-            entity.Property(p => p.NightsBookedPerMonth);
 
             entity.Property(p => p.HasBalcony);
+
+            entity.OwnsOne(p => p.Diagnostics, d =>
+            {
+                d.Property(x => x.DpeRating).HasColumnName("DpeRating");
+                d.Property(x => x.DpeValue).HasColumnName("DpeValue");
+                d.Property(x => x.GesRating).HasColumnName("GesRating");
+                d.Property(x => x.ElectricDiagnosticDate).HasColumnName("ElectricDiagnosticDate");
+                d.Property(x => x.ElectricDiagnosticExpiry).HasColumnName("ElectricDiagnosticExpiry");
+                d.Property(x => x.GasDiagnosticDate).HasColumnName("GasDiagnosticDate");
+                d.Property(x => x.GasDiagnosticExpiry).HasColumnName("GasDiagnosticExpiry");
+                d.Property(x => x.HasAsbestos).HasColumnName("HasAsbestos");
+                d.Property(x => x.AsbestosDiagnosticDate).HasColumnName("AsbestosDiagnosticDate");
+                d.Property(x => x.ErpZone).HasColumnName("ErpZone");
+            });
+
+            entity.OwnsOne(p => p.AirbnbSettings, a =>
+            {
+                a.Property(x => x.MinimumStay).HasColumnName("MinimumStay");
+                a.Property(x => x.MaximumStay).HasColumnName("MaximumStay");
+                a.Property(x => x.PricePerNight).HasColumnName("PricePerNight");
+                a.Property(x => x.NightsBookedPerMonth).HasColumnName("NightsBookedPerMonth");
+            });
             
             // Store list as JSON (not JSONB for simplicity)
             entity.Property(p => p.ImageUrls)
@@ -744,14 +765,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext
             entity.Ignore(ie => ie.DomainEvents);
         });
 
-        // Apply custom entity configurations
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.PaymentConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.RentInvoiceLineConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.ContractParticipantConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.DocumentConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.AddendumConfiguration());
-        modelBuilder.ApplyConfiguration(new Persistence.Configurations.PlanConfiguration());
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(LocaGuest.Infrastructure.Persistence.Configurations.PaymentConfiguration).Assembly);
     }
     
     /// <summary>

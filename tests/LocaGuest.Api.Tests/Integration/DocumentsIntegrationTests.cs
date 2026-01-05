@@ -97,7 +97,7 @@ public class DocumentsIntegrationTests : IDisposable
         // Act - Get all documents
         var getAllQuery = new GetAllDocumentsQuery();
         var getAllHandler = new GetAllDocumentsQueryHandler(
-            _unitOfWork,
+            _context,
             Mock.Of<ILogger<GetAllDocumentsQueryHandler>>());
 
         var getAllResult = await getAllHandler.Handle(getAllQuery, CancellationToken.None);
@@ -202,7 +202,7 @@ public class DocumentsIntegrationTests : IDisposable
         // Act - Get all documents (should return both since we're using the same user context)
         var getAllQuery = new GetAllDocumentsQuery();
         var getAllHandler = new GetAllDocumentsQueryHandler(
-            _unitOfWork,
+            _context,
             Mock.Of<ILogger<GetAllDocumentsQueryHandler>>());
 
         var getAllResult = await getAllHandler.Handle(getAllQuery, CancellationToken.None);

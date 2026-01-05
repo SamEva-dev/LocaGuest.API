@@ -14,6 +14,7 @@ using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -45,6 +46,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> CreateProperty([FromBody] CreatePropertyCommand command)
     {
         var result = await _mediator.Send(command);
@@ -72,6 +74,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> UpdateProperty(string id, [FromBody] UpdatePropertyCommand command)
     {
         if (!Guid.TryParse(id, out var propertyId) || command.Id != propertyId)
@@ -90,6 +93,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> UpdatePropertyStatus(string id, [FromBody] UpdatePropertyStatusCommand command)
     {
         if (!Guid.TryParse(id, out var propertyId) || command.PropertyId != propertyId)
@@ -168,6 +172,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpPost("{id}/assign-tenant")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> AssignTenant(string id, [FromBody] CreateContractCommand command)
     {
         if (id != command.PropertyId.ToString())
@@ -182,6 +187,7 @@ public class PropertiesController : ControllerBase
     }
 
     [HttpDelete("{propertyId}/dissociate-tenant/{tenantId}")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> DissociateTenant(string propertyId, string tenantId)
     {
         var command = new DissociateTenantCommand
@@ -203,6 +209,7 @@ public class PropertiesController : ControllerBase
     /// DELETE /api/properties/{id}
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
     public async Task<IActionResult> DeleteProperty(string id)
     {
         if (!Guid.TryParse(id, out var propertyGuid))

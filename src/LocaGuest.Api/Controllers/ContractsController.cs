@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -134,6 +135,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> CreateContract([FromBody] CreateContractCommand command)
     {
         var result = await _mediator.Send(command);
@@ -145,6 +147,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/payments")]
+    [Authorize(Policy = Permissions.PaymentsWrite)]
     public async Task<IActionResult> RecordPayment(Guid id, [FromBody] RecordPaymentCommand command)
     {
         // Ensure contractId matches route parameter
@@ -164,6 +167,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/terminate")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> TerminateContract(Guid id, [FromBody] TerminateContractCommand command)
     {
         // Ensure contractId matches route parameter
@@ -194,6 +198,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/cancel")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> CancelContract(Guid id)
     {
         var result = await _mediator.Send(new CancelContractCommand(id));
@@ -209,6 +214,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/mark-signed")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> MarkContractAsSigned(Guid id, [FromBody] MarkContractAsSignedCommand command)
     {
         // Ensure contractId matches route parameter
@@ -231,6 +237,7 @@ public class ContractsController : ControllerBase
     /// Activer manuellement un contrat signé (normalement fait automatiquement par le BackgroundService)
     /// </summary>
     [HttpPut("{id:guid}/activate")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> ActivateContract(Guid id)
     {
         var command = new ActivateContractCommand(id);
@@ -250,6 +257,7 @@ public class ContractsController : ControllerBase
     /// Marquer manuellement un contrat comme expiré (normalement fait automatiquement par le BackgroundService)
     /// </summary>
     [HttpPut("{id:guid}/mark-expired")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> MarkContractAsExpired(Guid id)
     {
         var command = new MarkContractAsExpiredCommand(id);
@@ -270,6 +278,7 @@ public class ContractsController : ControllerBase
     /// PUT /api/contracts/{id}
     /// </summary>
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = Permissions.ContractsWrite)]
     public async Task<IActionResult> UpdateContract(Guid id, [FromBody] UpdateContractRequest request)
     {
         var command = new UpdateContractCommand

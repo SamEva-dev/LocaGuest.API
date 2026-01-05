@@ -97,7 +97,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
             // Update images if provided
             if (request.ImageUrls != null)
             {
-                property.SetImages(request.ImageUrls);
+                property.UpdateImageUrls(request.ImageUrls);
             }
             
             // Update diagnostics if provided
@@ -231,19 +231,19 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 TotalRooms = property.TotalRooms,
                 OccupiedRooms = property.OccupiedRooms,
                 ReservedRooms = property.ReservedRooms,
-                MinimumStay = property.MinimumStay,
-                MaximumStay = property.MaximumStay,
-                PricePerNight = property.PricePerNight,
-                DpeRating = property.DpeRating,
-                DpeValue = property.DpeValue,
-                GesRating = property.GesRating,
-                ElectricDiagnosticDate = property.ElectricDiagnosticDate,
-                ElectricDiagnosticExpiry = property.ElectricDiagnosticExpiry,
-                GasDiagnosticDate = property.GasDiagnosticDate,
-                GasDiagnosticExpiry = property.GasDiagnosticExpiry,
-                HasAsbestos = property.HasAsbestos,
-                AsbestosDiagnosticDate = property.AsbestosDiagnosticDate,
-                ErpZone = property.ErpZone,
+                MinimumStay = property.AirbnbSettings.MinimumStay,
+                MaximumStay = property.AirbnbSettings.MaximumStay,
+                PricePerNight = property.AirbnbSettings.PricePerNight,
+                DpeRating = property.Diagnostics.DpeRating,
+                DpeValue = property.Diagnostics.DpeValue,
+                GesRating = property.Diagnostics.GesRating,
+                ElectricDiagnosticDate = property.Diagnostics.ElectricDiagnosticDate,
+                ElectricDiagnosticExpiry = property.Diagnostics.ElectricDiagnosticExpiry,
+                GasDiagnosticDate = property.Diagnostics.GasDiagnosticDate,
+                GasDiagnosticExpiry = property.Diagnostics.GasDiagnosticExpiry,
+                HasAsbestos = property.Diagnostics.HasAsbestos,
+                AsbestosDiagnosticDate = property.Diagnostics.AsbestosDiagnosticDate,
+                ErpZone = property.Diagnostics.ErpZone,
                 PropertyTax = property.PropertyTax,
                 CondominiumCharges = property.CondominiumCharges,
                 PurchasePrice = property.PurchasePrice,
@@ -251,7 +251,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 ManagementFeesRate = property.ManagementFeesRate,
                 MaintenanceRate = property.MaintenanceRate,
                 VacancyRate = property.VacancyRate,
-                NightsBookedPerMonth = property.NightsBookedPerMonth,
+                NightsBookedPerMonth = property.AirbnbSettings.NightsBookedPerMonth,
                 CadastralReference = property.CadastralReference,
                 LotNumber = property.LotNumber,
                 PurchaseDate = property.PurchaseDate,

@@ -1,8 +1,8 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,14 +11,14 @@ namespace LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
 
 public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSummaryQuery, Result<DashboardSummaryDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ILogger<GetDashboardSummaryQueryHandler> _logger;
 
     public GetDashboardSummaryQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ILogger<GetDashboardSummaryQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _logger = logger;
     }
 
@@ -33,18 +33,18 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
             var endDate = startDate.AddMonths(1).AddDays(-1);
 
             // Count total properties (all statuses)
-            var propertiesCount = await _unitOfWork.Properties.Query()
+            var propertiesCount = await _readDb.Properties.AsNoTracking()
                 .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
                 .CountAsync(cancellationToken);
 
             // Count active contracts during the period
-            var activeContracts = await _unitOfWork.Contracts.Query()
+            var activeContracts = await _readDb.Contracts.AsNoTracking()
                 .Where(c => c.Status == ContractStatus.Active &&
                            c.StartDate <= endDate &&
                            c.EndDate >= startDate)
                 .ToListAsync(cancellationToken);
 
-            var tenantsCount = await _unitOfWork.Occupants.Query()
+            var tenantsCount = await _readDb.Occupants.AsNoTracking()
                 .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
                 .CountAsync(cancellationToken);
 
@@ -70,7 +70,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                 .Count();
 
             // 2. Paiements pour la période (payés ou payés en retard)
-            var periodPayments = await _unitOfWork.Payments.Query()
+            var periodPayments = await _readDb.Payments.AsNoTracking()
                 .Where(p => p.Month == targetMonth && 
                            p.Year == targetYear &&
                            (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate))
@@ -88,7 +88,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                 : 0m;
 
             // 5. Paiements en retard pour la période
-            var latePayments = await _unitOfWork.Payments.Query()
+            var latePayments = await _readDb.Payments.AsNoTracking()
                 .Where(p => p.Month == targetMonth && 
                            p.Year == targetYear &&
                            (p.Status == PaymentStatus.Late || p.Status == PaymentStatus.Partial))

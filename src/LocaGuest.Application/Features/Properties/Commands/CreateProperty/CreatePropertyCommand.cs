@@ -11,7 +11,7 @@ public record CreatePropertyCommand : IRequest<Result<PropertyDetailDto>>
 {
     public string Name { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
-    public string? City { get; init; }
+    public string City { get; init; } = string.Empty;
     public string? PostalCode { get; init; }
     public string? Country { get; init; }
     public string Type { get; init; } = string.Empty;

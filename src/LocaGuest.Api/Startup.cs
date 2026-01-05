@@ -16,11 +16,13 @@ using Microsoft.OpenApi.Models;
 using LocaGuest.Infrastructure.BackgroundServices;
 using LocaGuest.Infrastructure.Jobs;
 using LocaGuest.Api.Common.Swagger;
+using LocaGuest.Api.Authorization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LocaGuest.Api;
 
@@ -143,6 +145,8 @@ public class Startup
         // JWT Authentication with AuthGate (RSA via JWKS)
         ConfigureJwtAuthentication(services);
 
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy("RequireOrganization", policy =>
@@ -174,6 +178,36 @@ public class Startup
                     ctx.User.FindAll("roles").Any(r => r.Value == "SuperAdmin") ||
                     ctx.User.FindAll(ClaimTypes.Role).Any(r => r.Value == "SuperAdmin"));
             });
+
+            options.AddPolicy(Permissions.PropertiesRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PropertiesRead)));
+            options.AddPolicy(Permissions.PropertiesWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PropertiesWrite)));
+
+            options.AddPolicy(Permissions.RoomsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.RoomsRead)));
+            options.AddPolicy(Permissions.RoomsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.RoomsWrite)));
+
+            options.AddPolicy(Permissions.ContractsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.ContractsRead)));
+            options.AddPolicy(Permissions.ContractsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.ContractsWrite)));
+
+            options.AddPolicy(Permissions.PaymentsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PaymentsRead)));
+            options.AddPolicy(Permissions.PaymentsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PaymentsWrite)));
+
+            options.AddPolicy(Permissions.DocumentsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DocumentsRead)));
+            options.AddPolicy(Permissions.DocumentsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DocumentsWrite)));
+
+            options.AddPolicy(Permissions.TeamRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TeamRead)));
+            options.AddPolicy(Permissions.TeamManage, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TeamManage)));
         });
 
         services.AddRateLimiter(options =>

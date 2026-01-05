@@ -14,6 +14,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -177,6 +178,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("generate")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     public async Task<IActionResult> GenerateDocument([FromBody] GenerateDocumentRequest request)
     {
         // Simulation de génération
@@ -232,6 +234,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("generate-contract")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

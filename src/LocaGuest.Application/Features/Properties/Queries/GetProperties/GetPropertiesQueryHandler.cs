@@ -1,34 +1,33 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Models;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetProperties;
 
-public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Result<PagedResult<PropertyDto>>>
+public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Result<PagedResult<PropertyListItemDto>>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ILogger<GetPropertiesQueryHandler> _logger;
 
     public GetPropertiesQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ILogger<GetPropertiesQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _logger = logger;
     }
 
-    public async Task<Result<PagedResult<PropertyDto>>> Handle(GetPropertiesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<PropertyListItemDto>>> Handle(GetPropertiesQuery request, CancellationToken cancellationToken)
     {
         try
         {
-            // ✅ Charger les rooms pour les colocations
-            var queryWithRooms = _unitOfWork.Properties.Query().Include(p => p.Rooms);
-            IQueryable<Property> query = queryWithRooms;
+            // Listing: keep it lightweight (no rooms include, no heavy diagnostics/finance fields)
+            IQueryable<Property> query = _readDb.Properties.AsNoTracking();
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))
@@ -63,72 +62,30 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 .ToListAsync(cancellationToken);
 
             // Map to DTOs
-            var dtos = properties.Select(p => new PropertyDto
+            var dtos = properties.Select(p => new PropertyListItemDto
             {
                 Id = p.Id,
+                Code = p.Code,
                 Name = p.Name,
                 Address = p.Address,
                 City = p.City,
                 PostalCode = p.PostalCode,
                 Country = p.Country,
                 Type = p.Type.ToString(),
-                Surface = p.Surface ?? 0,
-                Bedrooms = p.Bedrooms,
-                Bathrooms = p.Bathrooms,
-                Floor = p.Floor,
-                HasElevator = p.HasElevator,
-                HasParking = p.HasParking,
-                HasBalcony = p.HasBalcony,
                 Rent = p.Rent,
                 Charges = p.Charges,
-                Description = p.Description,
-                EnergyClass = p.EnergyClass,
-                ConstructionYear = p.ConstructionYear,
                 TotalRooms = p.TotalRooms,
                 OccupiedRooms = p.OccupiedRooms,
                 ReservedRooms = p.ReservedRooms,
                 Status = p.Status.ToString(),
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
-                PurchaseDate = p.PurchaseDate,
-                PurchasePrice= p.PurchasePrice,
-                AsbestosDiagnosticDate = p.AsbestosDiagnosticDate,
-                CadastralReference = p.CadastralReference,
-                Code = p.Code,
-                DpeRating = p.DpeRating,
-                DpeValue = p.DpeValue,
-                ElectricDiagnosticDate = p.ElectricDiagnosticDate,
-                ElectricDiagnosticExpiry = p.ElectricDiagnosticExpiry,
-                GasDiagnosticDate = p.GasDiagnosticDate,
-                GasDiagnosticExpiry = p.GasDiagnosticExpiry,
-                HasAsbestos = p.HasAsbestos,
-                ErpZone = p.ErpZone,
-                PropertyTax = p.PropertyTax,
-                CondominiumCharges = p.CondominiumCharges,
-                LotNumber = p.LotNumber,
-                TotalWorksAmount = p.TotalWorksAmount,
-                MinimumStay = p.MinimumStay,
-                MaximumStay = p.MaximumStay,
-                PricePerNight = p.PricePerNight,
-                GesRating = p.GesRating,
                 PropertyUsageType = p.UsageType.ToString(),
-                ImageUrls = p.ImageUrls,
-                Rooms = p.Rooms?.Select(r => new PropertyRoomDto  // ✅ Mapper les rooms
-                {
-                    Id = r.Id,
-                    PropertyId = r.PropertyId,
-                    Name = r.Name,
-                    Surface = r.Surface,
-                    Rent = r.Rent,
-                    Charges = r.Charges,
-                    Description = r.Description,
-                    Status = r.Status.ToString(),
-                    CurrentContractId = r.CurrentContractId
-                }).ToList() ?? new List<PropertyRoomDto>()
+                Surface = p.Surface ?? 0,
 
             }).ToList();
 
-            var result = new PagedResult<PropertyDto>
+            var result = new PagedResult<PropertyListItemDto>
             {
                 Items = dtos,
                 TotalCount = totalCount,
@@ -141,7 +98,7 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving properties");
-            return Result.Failure<PagedResult<PropertyDto>>($"Error retrieving properties: {ex.Message}");
+            return Result.Failure<PagedResult<PropertyListItemDto>>($"Error retrieving properties: {ex.Message}");
         }
     }
 }

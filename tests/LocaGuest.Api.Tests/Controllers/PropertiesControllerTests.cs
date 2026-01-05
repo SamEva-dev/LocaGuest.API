@@ -39,13 +39,13 @@ public class PropertiesControllerTests : BaseTestFixture
     public async Task GetProperties_WithSuccessfulQuery_ReturnsOkWithProperties()
     {
         // Arrange - Using AutoFixture + Builders for test data generation
-        var properties = new List<PropertyDto>
+        var properties = new List<PropertyListItemDto>
         {
-            PropertyDtoBuilder.AProperty().WithName(Fixture.Create<string>()).Build(),
-            PropertyDtoBuilder.AProperty().WithName(Fixture.Create<string>()).Build()
+            new PropertyListItemDto { Id = Fixture.Create<Guid>(), Name = Fixture.Create<string>(), Address = "1 rue test", City = "Paris", Type = "Apartment", PropertyUsageType = "Complete", Rent = 100m, Surface = 10m },
+            new PropertyListItemDto { Id = Fixture.Create<Guid>(), Name = Fixture.Create<string>(), Address = "2 rue test", City = "Lyon", Type = "House", PropertyUsageType = "Complete", Rent = 200m, Surface = 20m }
         };
 
-        var pagedResult = new PagedResult<PropertyDto>
+        var pagedResult = new PagedResult<PropertyListItemDto>
         {
             Items = properties,
             TotalCount = properties.Count,
@@ -58,7 +58,7 @@ public class PropertiesControllerTests : BaseTestFixture
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertiesQuery>(q => true), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.GetProperties(query);
@@ -79,12 +79,12 @@ public class PropertiesControllerTests : BaseTestFixture
     {
         // Arrange
         var errorMessage = "Failed to retrieve properties";
-        var result = Result.Failure<PagedResult<PropertyDto>>(errorMessage);
+        var result = Result.Failure<PagedResult<PropertyListItemDto>>(errorMessage);
         var query = new GetPropertiesQuery();
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetPropertiesQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.GetProperties(query);
@@ -106,9 +106,9 @@ public class PropertiesControllerTests : BaseTestFixture
             Search = "apartment"
         };
 
-        var pagedResult = new PagedResult<PropertyDto> 
+        var pagedResult = new PagedResult<PropertyListItemDto> 
         { 
-            Items = Fixture.CreateMany<PropertyDto>(0).ToList(),
+            Items = new List<PropertyListItemDto>(),
             TotalCount = 0,
             Page = 2,
             PageSize = 20
@@ -118,7 +118,7 @@ public class PropertiesControllerTests : BaseTestFixture
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertiesQuery>(q => true), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         await _controller.GetProperties(query);
@@ -148,9 +148,9 @@ public class PropertiesControllerTests : BaseTestFixture
             Search = search
         };
 
-        var pagedResult = new PagedResult<PropertyDto> 
+        var pagedResult = new PagedResult<PropertyListItemDto> 
         { 
-            Items = Fixture.CreateMany<PropertyDto>(0).ToList(),
+            Items = new List<PropertyListItemDto>(),
             TotalCount = 0,
             Page = page,
             PageSize = pageSize
@@ -185,70 +185,33 @@ public class PropertiesControllerTests : BaseTestFixture
         var propertyId = Fixture.Create<Guid>();
         var propertyName = Fixture.Create<string>();
         
-        var baseProperty = PropertyDtoBuilder.AProperty()
-            .WithId(propertyId)
-            .WithName(propertyName)
-            .Build();
-
-        var property = new PropertyDetailDto
+        var property = new PropertyDetailReadDto
         {
-            Id = baseProperty.Id,
-            Code = baseProperty.Code,
-            Name = baseProperty.Name,
-            Address = baseProperty.Address,
-            City = baseProperty.City,
-            PostalCode = baseProperty.PostalCode,
-            Country = baseProperty.Country,
-            Type = baseProperty.Type,
-            PropertyUsageType = baseProperty.PropertyUsageType,
-            Surface = baseProperty.Surface,
-            Bedrooms = baseProperty.Bedrooms,
-            Bathrooms = baseProperty.Bathrooms,
-            Floor = baseProperty.Floor,
-            HasElevator = baseProperty.HasElevator,
-            HasParking = baseProperty.HasParking,
-            Rent = baseProperty.Rent,
-            Charges = baseProperty.Charges,
-            Status = baseProperty.Status,
-            TotalRooms = baseProperty.TotalRooms,
-            OccupiedRooms = baseProperty.OccupiedRooms,
-            ReservedRooms = baseProperty.ReservedRooms,
-            Rooms = baseProperty.Rooms,
-            MinimumStay = baseProperty.MinimumStay,
-            MaximumStay = baseProperty.MaximumStay,
-            PricePerNight = baseProperty.PricePerNight,
-            DpeRating = baseProperty.DpeRating,
-            DpeValue = baseProperty.DpeValue,
-            GesRating = baseProperty.GesRating,
-            ElectricDiagnosticDate = baseProperty.ElectricDiagnosticDate,
-            ElectricDiagnosticExpiry = baseProperty.ElectricDiagnosticExpiry,
-            GasDiagnosticDate = baseProperty.GasDiagnosticDate,
-            GasDiagnosticExpiry = baseProperty.GasDiagnosticExpiry,
-            HasAsbestos = baseProperty.HasAsbestos,
-            AsbestosDiagnosticDate = baseProperty.AsbestosDiagnosticDate,
-            ErpZone = baseProperty.ErpZone,
-            PropertyTax = baseProperty.PropertyTax,
-            CondominiumCharges = baseProperty.CondominiumCharges,
-            PurchasePrice = baseProperty.PurchasePrice,
-            Insurance = baseProperty.Insurance,
-            ManagementFeesRate = baseProperty.ManagementFeesRate,
-            MaintenanceRate = baseProperty.MaintenanceRate,
-            VacancyRate = baseProperty.VacancyRate,
-            NightsBookedPerMonth = baseProperty.NightsBookedPerMonth,
-            CadastralReference = baseProperty.CadastralReference,
-            LotNumber = baseProperty.LotNumber,
-            PurchaseDate = baseProperty.PurchaseDate,
-            TotalWorksAmount = baseProperty.TotalWorksAmount,
-            CreatedAt = baseProperty.CreatedAt,
-            UpdatedAt = baseProperty.UpdatedAt,
-            ImageUrls = baseProperty.ImageUrls
+            Id = propertyId,
+            Code = "T0001-APP0001",
+            Name = propertyName,
+            Address = "1 rue test",
+            City = "Paris",
+            Type = "Apartment",
+            PropertyUsageType = "Complete",
+            Surface = 10m,
+            Bedrooms = 1,
+            Bathrooms = 1,
+            HasElevator = false,
+            HasParking = false,
+            HasBalcony = false,
+            IsFurnished = false,
+            Rent = 100m,
+            Status = "Vacant",
+            CreatedAt = DateTime.UtcNow,
+            Rooms = new List<PropertyRoomDto>()
         };
 
         var result = Result.Success(property);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertyQuery>(q => q.Id == propertyId.ToString()), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.GetProperty(propertyId.ToString());
@@ -270,11 +233,11 @@ public class PropertiesControllerTests : BaseTestFixture
         // Arrange
         var propertyId = Guid.NewGuid();
         var errorMessage = "Property not found";
-        var result = Result.Failure<PropertyDetailDto>(errorMessage);
+        var result = Result.Failure<PropertyDetailReadDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertyQuery>(q => q.Id == propertyId.ToString()), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.GetProperty(propertyId.ToString());
@@ -291,11 +254,11 @@ public class PropertiesControllerTests : BaseTestFixture
         // Arrange
         var propertyId = Guid.NewGuid();
         var errorMessage = "Database connection failed";
-        var result = Result.Failure<PropertyDetailDto>(errorMessage);
+        var result = Result.Failure<PropertyDetailReadDto>(errorMessage);
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<GetPropertyQuery>(q => q.Id == propertyId.ToString()), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.GetProperty(propertyId.ToString());
@@ -331,7 +294,7 @@ public class PropertiesControllerTests : BaseTestFixture
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<CreatePropertyCommand>(c => true), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.CreateProperty(command);
@@ -357,7 +320,7 @@ public class PropertiesControllerTests : BaseTestFixture
 
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<CreatePropertyCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.CreateProperty(command);
@@ -381,7 +344,7 @@ public class PropertiesControllerTests : BaseTestFixture
 
         _mediatorMock
             .Setup(m => m.Send(It.Is<CreatePropertyCommand>(c => true), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(result);
+            .Returns(Task.FromResult(result));
 
         // Act
         var actionResult = await _controller.CreateProperty(command);
