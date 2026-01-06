@@ -2,6 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Documents;
 using LocaGuest.Application.Services;
+using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Repositories;
@@ -13,17 +14,20 @@ namespace LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocumen
 public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGeneratedDocumentCommand, Result<DocumentDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestDbContext _context;
     private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly ILogger<SaveGeneratedDocumentCommandHandler> _logger;
 
     public SaveGeneratedDocumentCommandHandler(
         IUnitOfWork unitOfWork,
+        ILocaGuestDbContext context,
         IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
         ILogger<SaveGeneratedDocumentCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
         _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
         _logger = logger;
@@ -64,7 +68,6 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 documentType,
                 documentCategory,
                 request.FileSizeBytes,
-                contractId: request.ContractId, // Association au contrat si fourni
                 tenantId: request.TenantId,
                 propertyId: request.PropertyId,
                 description: request.Description);
@@ -75,6 +78,21 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
             document.SetCode(code);
 
             await _unitOfWork.Documents.AddAsync(document, cancellationToken);
+
+            if (request.ContractId.HasValue)
+            {
+                var link = ContractDocumentLink.Create(
+                    effectiveOrganizationId.Value,
+                    request.ContractId.Value,
+                    document.Id,
+                    document.Type);
+
+                await _context.ContractDocumentLinks.AddAsync(link, cancellationToken);
+
+                var contract = await _unitOfWork.Contracts.GetByIdAsync(request.ContractId.Value, cancellationToken);
+                contract?.MarkDocumentProvided(document.Type);
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation(

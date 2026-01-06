@@ -57,9 +57,10 @@ public class FinalizeInventoryEntryCommandHandler : IRequestHandler<FinalizeInve
                     contract.Id);
             }
 
-            _context.InventoryEntries.Update(inventory);
-            _unitOfWork.Contracts.Update(contract);
-            await _context.SaveChangesAsync(cancellationToken);
+            // Les entités sont déjà trackées par le DbContext (chargées via EF / repository).
+            // Ne pas appeler Update() ici: cela marque OrganizationId comme modifié et déclenche
+            // la protection "OrganizationId cannot be modified after entity creation.".
+            await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Inventory entry {InventoryId} finalized successfully", request.InventoryEntryId);
 

@@ -10,6 +10,7 @@ namespace LocaGuest.Domain.Aggregates.PropertyAggregate;
 public class PropertyRoom : Entity
 {
     public Guid PropertyId { get; private set; }
+    public Guid OrganizationId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public decimal? Surface { get; private set; }
     public decimal Rent { get; private set; }
@@ -29,6 +30,7 @@ public class PropertyRoom : Entity
 
     public static PropertyRoom Create(
         Guid propertyId,
+        Guid organizationId,
         string name,
         decimal rent,
         decimal? surface = null,
@@ -44,7 +46,7 @@ public class PropertyRoom : Entity
         if (surface.HasValue && surface.Value <= 0)
             throw new ValidationException("ROOM_INVALID_SURFACE", "Room surface must be positive");
 
-        return new PropertyRoom
+        var room = new PropertyRoom
         {
             Id = Guid.NewGuid(),
             PropertyId = propertyId,
@@ -55,6 +57,20 @@ public class PropertyRoom : Entity
             Description = description,
             Status = PropertyRoomStatus.Available
         };
+
+        room.SetOrganizationId(organizationId);
+        return room;
+    }
+
+    public void SetOrganizationId(Guid organizationId)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId cannot be empty.", nameof(organizationId));
+
+        if (OrganizationId != Guid.Empty && OrganizationId != organizationId)
+            throw new InvalidOperationException("OrganizationId is immutable once set.");
+
+        OrganizationId = organizationId;
     }
 
     /// <summary>

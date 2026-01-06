@@ -2,7 +2,9 @@ using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Infrastructure.Persistence;
+using LocaGuest.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,17 +20,22 @@ public class ContractActivationBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ContractActivationBackgroundService> _logger;
-    private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Toutes les heures
+    private readonly TimeSpan _interval;
 
     private static bool IsColocation(PropertyUsageType usageType)
         => usageType == PropertyUsageType.ColocationIndividual || usageType == PropertyUsageType.Colocation || usageType == PropertyUsageType.ColocationSolidaire;
 
     public ContractActivationBackgroundService(
         IServiceProvider serviceProvider,
+        IConfiguration configuration,
         ILogger<ContractActivationBackgroundService> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+
+        var seconds = configuration.GetValue<int?>("Jobs:ContractActivation:IntervalSeconds") ?? 60;
+        if (seconds < 1) seconds = 1;
+        _interval = TimeSpan.FromSeconds(seconds);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,12 +67,15 @@ public class ContractActivationBackgroundService : BackgroundService
     private async Task ProcessContractActivationsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
+        var orgWriter = scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>();
+        orgWriter.Set(null, isAuthenticated: true, isSystemContext: true, canBypassOrganizationFilter: true);
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
 
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
         // Récupérer les contrats Signed dont la date de début est aujourd'hui ou passée
         var contractsToActivate = await context.Contracts
+            .IgnoreQueryFilters()
             .Where(c => 
                 c.Status == ContractStatus.Signed &&
                 c.StartDate.Date <= today)
@@ -92,7 +102,9 @@ public class ContractActivationBackgroundService : BackgroundService
                     cancellationToken);
 
                 // Charger le locataire associé
-                var tenant = await context.Occupants.FindAsync(contract.RenterTenantId);
+                var tenant = await context.Occupants
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(t => t.Id == contract.RenterTenantId, cancellationToken);
                 if (tenant != null)
                 {
                     tenant.SetActive();
@@ -124,12 +136,15 @@ public class ContractActivationBackgroundService : BackgroundService
     private async Task ProcessContractExpirationsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
+        var orgWriter = scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>();
+        orgWriter.Set(null, isAuthenticated: true, isSystemContext: true, canBypassOrganizationFilter: true);
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
 
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
         // Récupérer les contrats Active dont la date de fin est passée
         var contractsToExpire = await context.Contracts
+            .IgnoreQueryFilters()
             .Where(c => 
                 c.Status == ContractStatus.Active &&
                 c.EndDate.Date < today)
@@ -156,11 +171,14 @@ public class ContractActivationBackgroundService : BackgroundService
                     cancellationToken);
 
                 // Charger le locataire associé
-                var tenant = await context.Occupants.FindAsync(contract.RenterTenantId);
+                var tenant = await context.Occupants
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(t => t.Id == contract.RenterTenantId, cancellationToken);
                 if (tenant != null)
                 {
                     // Vérifier si le locataire a d'autres contrats actifs
                     var hasOtherActiveContracts = await context.Contracts
+                        .IgnoreQueryFilters()
                         .AnyAsync(c => 
                             c.RenterTenantId == tenant.Id &&
                             c.Id != contract.Id &&
@@ -201,11 +219,14 @@ public class ContractActivationBackgroundService : BackgroundService
     private async Task ProcessRoomOnHoldExpirationsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
+        var orgWriter = scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>();
+        orgWriter.Set(null, isAuthenticated: true, isSystemContext: true, canBypassOrganizationFilter: true);
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
 
         var now = DateTime.UtcNow;
 
         var propertiesWithExpiredOnHoldRooms = await context.Properties
+            .IgnoreQueryFilters()
             .Include(p => p.Rooms)
             .Where(p => p.Rooms.Any(r =>
                 r.Status == PropertyRoomStatus.OnHold &&
@@ -244,11 +265,13 @@ public class ContractActivationBackgroundService : BackgroundService
                     if (contractId.HasValue)
                     {
                         var contract = await context.Contracts
+                            .IgnoreQueryFilters()
                             .FirstOrDefaultAsync(c => c.Id == contractId.Value, cancellationToken);
 
                         if (contract != null && contract.Status == ContractStatus.Draft)
                         {
                             var payments = await context.Payments
+                                .IgnoreQueryFilters()
                                 .Where(p => p.ContractId == contract.Id)
                                 .ToListAsync(cancellationToken);
 
@@ -257,8 +280,25 @@ public class ContractActivationBackgroundService : BackgroundService
                                 context.Payments.RemoveRange(payments);
                             }
 
+                            var documentIds = await context.ContractDocumentLinks
+                                .AsNoTracking()
+                                .Where(link => link.ContractId == contract.Id)
+                                .Select(link => link.DocumentId)
+                                .Distinct()
+                                .ToListAsync(cancellationToken);
+
+                            var links = await context.ContractDocumentLinks
+                                .Where(link => link.ContractId == contract.Id)
+                                .ToListAsync(cancellationToken);
+
+                            if (links.Count > 0)
+                            {
+                                context.ContractDocumentLinks.RemoveRange(links);
+                            }
+
                             var documents = await context.Documents
-                                .Where(d => d.ContractId == contract.Id)
+                                .IgnoreQueryFilters()
+                                .Where(d => documentIds.Contains(d.Id))
                                 .ToListAsync(cancellationToken);
 
                             if (documents.Count > 0)
@@ -304,6 +344,7 @@ public class ContractActivationBackgroundService : BackgroundService
         CancellationToken cancellationToken)
     {
         var propertyQuery = context.Properties.AsQueryable();
+        propertyQuery = propertyQuery.IgnoreQueryFilters();
         if (contract.RoomId.HasValue)
         {
             propertyQuery = propertyQuery.Include(p => p.Rooms);
@@ -359,6 +400,7 @@ public class ContractActivationBackgroundService : BackgroundService
         CancellationToken cancellationToken)
     {
         var propertyQuery = context.Properties.AsQueryable();
+        propertyQuery = propertyQuery.IgnoreQueryFilters();
         if (contract.RoomId.HasValue)
         {
             propertyQuery = propertyQuery.Include(p => p.Rooms);
@@ -399,6 +441,7 @@ public class ContractActivationBackgroundService : BackgroundService
         else
         {
             var hasOtherActiveContracts = await context.Contracts
+                .IgnoreQueryFilters()
                 .AnyAsync(c =>
                         c.PropertyId == property.Id &&
                         c.Id != contract.Id &&
@@ -412,6 +455,7 @@ public class ContractActivationBackgroundService : BackgroundService
             else
             {
                 var hasOtherSignedContracts = await context.Contracts
+                    .IgnoreQueryFilters()
                     .AnyAsync(c =>
                             c.PropertyId == property.Id &&
                             c.Id != contract.Id &&

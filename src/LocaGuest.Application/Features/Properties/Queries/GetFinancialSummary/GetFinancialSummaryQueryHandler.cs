@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -29,12 +30,15 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
 
             var contracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId)
-                .Include(c => c.Payments)
                 .ToListAsync(cancellationToken);
 
             var activeContracts = contracts.Count(c => c.Status == ContractStatus.Active);
-            var allPayments = contracts.SelectMany(c => c.Payments).ToList();
-            var totalRevenue = allPayments.Sum(p => p.Amount);
+
+            var allPayments = await _unitOfWork.Payments.Query()
+                .Where(p => p.PropertyId == propertyId)
+                .ToListAsync(cancellationToken);
+
+            var totalRevenue = allPayments.Sum(p => p.AmountPaid);
             var monthlyRent = contracts.Where(c => c.Status == ContractStatus.Active).Sum(c => c.Rent);
             
             var lastPayment = allPayments
@@ -49,7 +53,7 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
                 PropertyId = propertyId,
                 TotalRevenue = totalRevenue,
                 MonthlyRent = monthlyRent,
-                LastPaymentAmount = lastPayment?.Amount,
+                LastPaymentAmount = lastPayment?.AmountPaid,
                 LastPaymentDate = lastPayment?.PaymentDate,
                 OccupancyRate = occupancyRate,
                 TotalPayments = allPayments.Count,

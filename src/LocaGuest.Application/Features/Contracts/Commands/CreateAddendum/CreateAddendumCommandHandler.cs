@@ -40,7 +40,6 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             // ========== 1. CHARGER ET VALIDER LE CONTRAT ==========
             
             var contract = await _unitOfWork.Contracts.Query()
-                .Include(c => c.Addendums)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
             if (contract == null)

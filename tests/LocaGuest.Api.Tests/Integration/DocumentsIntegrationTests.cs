@@ -82,6 +82,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
+            _context,
             _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());
@@ -134,6 +135,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
+            _context,
             _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());
@@ -171,6 +173,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         var saveHandler = new SaveGeneratedDocumentCommandHandler(
             _unitOfWork,
+            _context,
             _orgContextMock.Object,
             _numberSequenceServiceMock.Object,
             Mock.Of<ILogger<SaveGeneratedDocumentCommandHandler>>());

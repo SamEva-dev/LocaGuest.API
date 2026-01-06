@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
@@ -10,13 +11,16 @@ namespace LocaGuest.Application.Features.Tenants.Commands.DeleteTenant;
 public class DeleteTenantCommandHandler : IRequestHandler<DeleteTenantCommand, Result<DeleteTenantResult>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestDbContext _context;
     private readonly ILogger<DeleteTenantCommandHandler> _logger;
 
     public DeleteTenantCommandHandler(
         IUnitOfWork unitOfWork,
+        ILocaGuestDbContext context,
         ILogger<DeleteTenantCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
         _logger = logger;
     }
 
@@ -44,7 +48,6 @@ public class DeleteTenantCommandHandler : IRequestHandler<DeleteTenantCommand, R
 
             // ✅ CASCADE: Récupérer tous les contrats (Draft, Cancelled, Expired, Terminated)
             var allContracts = await _unitOfWork.Contracts.Query()
-                .Include(c => c.Payments)
                 .Where(c => c.RenterTenantId == request.TenantId)
                 .ToListAsync(cancellationToken);
 
@@ -52,19 +55,37 @@ public class DeleteTenantCommandHandler : IRequestHandler<DeleteTenantCommand, R
             int deletedDocuments = 0;
 
             // Supprimer tous les paiements
-            foreach (var contract in allContracts)
+            var contractIds = allContracts.Select(c => c.Id).ToList();
+            var paymentsToDelete = await _unitOfWork.Payments.Query()
+                .Where(p => contractIds.Contains(p.ContractId))
+                .ToListAsync(cancellationToken);
+
+            deletedPayments = paymentsToDelete.Count;
+            foreach (var payment in paymentsToDelete)
             {
-                if (contract.Payments.Any())
-                {
-                    deletedPayments += contract.Payments.Count;
-                }
+                _unitOfWork.Payments.Remove(payment);
             }
 
             // Supprimer les documents des contrats
-            var contractIds = allContracts.Select(c => c.Id).ToList();
-            var contractDocuments = await _unitOfWork.Documents.Query()
-                .Where(d => contractIds.Contains(d.ContractId!.Value))
+            var contractDocumentIds = await _context.ContractDocumentLinks
+                .AsNoTracking()
+                .Where(link => contractIds.Contains(link.ContractId))
+                .Select(link => link.DocumentId)
+                .Distinct()
                 .ToListAsync(cancellationToken);
+
+            var contractDocuments = await _unitOfWork.Documents.Query()
+                .Where(d => contractDocumentIds.Contains(d.Id))
+                .ToListAsync(cancellationToken);
+
+            var contractLinks = await _context.ContractDocumentLinks
+                .Where(link => contractIds.Contains(link.ContractId))
+                .ToListAsync(cancellationToken);
+
+            foreach (var link in contractLinks)
+            {
+                _context.ContractDocumentLinks.Remove(link);
+            }
 
             foreach (var doc in contractDocuments)
             {

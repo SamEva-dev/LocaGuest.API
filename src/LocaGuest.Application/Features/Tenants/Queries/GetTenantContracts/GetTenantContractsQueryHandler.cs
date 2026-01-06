@@ -30,7 +30,6 @@ public class GetTenantContractsQueryHandler : IRequestHandler<GetTenantContracts
 
             var contracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.RenterTenantId == request.TenantId)
-                .Include(c => c.Payments)
                 .OrderByDescending(c => c.StartDate)
                 .ToListAsync(cancellationToken);
 

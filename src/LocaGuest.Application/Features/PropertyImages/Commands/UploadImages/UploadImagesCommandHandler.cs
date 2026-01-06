@@ -79,6 +79,7 @@ public class UploadImagesCommandHandler : IRequestHandler<UploadImagesCommand, R
                 // Créer l'entité PropertyImage
                 var propertyImage = new PropertyImage(
                     propertyId: property.Id,
+                    organizationId: property.OrganizationId,
                     fileName: file.FileName,
                     filePath: relativePath,
                     fileSize: file.Length,

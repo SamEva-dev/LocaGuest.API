@@ -8,6 +8,7 @@ namespace LocaGuest.Domain.Aggregates.PropertyAggregate;
 public class PropertyImage : Entity
 {
     public Guid PropertyId { get; private set; }
+    public Guid OrganizationId { get; private set; }
     public string FileName { get; private set; } = string.Empty;
     public string FilePath { get; private set; } = string.Empty;
     public long FileSize { get; private set; }
@@ -18,7 +19,8 @@ public class PropertyImage : Entity
     private PropertyImage() { } // EF Core
 
     public PropertyImage(
-        Guid propertyId, 
+        Guid propertyId,
+        Guid organizationId,
         string fileName, 
         string filePath, 
         long fileSize, 
@@ -33,6 +35,19 @@ public class PropertyImage : Entity
         MimeType = mimeType;
         Category = category;
         CreatedAt = DateTime.UtcNow;
+
+        SetOrganizationId(organizationId);
+    }
+
+    public void SetOrganizationId(Guid organizationId)
+    {
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("OrganizationId cannot be empty.", nameof(organizationId));
+
+        if (OrganizationId != Guid.Empty && OrganizationId != organizationId)
+            throw new InvalidOperationException("OrganizationId is immutable once set.");
+
+        OrganizationId = organizationId;
     }
 
     public void UpdateCategory(string category)

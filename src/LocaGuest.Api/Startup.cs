@@ -23,6 +23,10 @@ using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
 
 namespace LocaGuest.Api;
 
@@ -47,6 +51,30 @@ public class Startup
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            });
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(serviceName: "LocaGuest.Api"))
+            .WithTracing(tracing =>
+            {
+                tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation();
+
+                var otlpEndpoint = Configuration["OpenTelemetry:Otlp:Endpoint"];
+                if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+                {
+                    tracing.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+                }
+            })
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation();
+
+                metrics.AddPrometheusExporter();
             });
 
         services.Configure<ApiBehaviorOptions>(options =>
@@ -220,16 +248,32 @@ public class Startup
                 if (HttpMethods.IsGet(method) || HttpMethods.IsHead(method) || HttpMethods.IsOptions(method))
                     return RateLimitPartition.GetNoLimiter("read");
 
+                var path = httpContext.Request.Path.Value ?? string.Empty;
+                if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/ready", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/live", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/metrics", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RateLimitPartition.GetNoLimiter("infra");
+                }
+
                 var user = httpContext.User;
-                var clientId =
-                    user.FindFirst("azp")?.Value
-                    ?? user.FindFirst("client_id")?.Value
-                    ?? user.FindFirst("sub")?.Value
-                    ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                    ?? "unknown";
+
+                var organizationId =
+                    user.FindFirst("organization_id")?.Value
+                    ?? user.FindFirst("organizationId")?.Value;
+
+                var partitionKey = !string.IsNullOrWhiteSpace(organizationId)
+                    ? $"org:{organizationId}"
+                    : user.FindFirst("azp")?.Value
+                      ?? user.FindFirst("client_id")?.Value
+                      ?? user.FindFirst("sub")?.Value
+                      ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                      ?? "unknown";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: clientId,
+                    partitionKey: partitionKey,
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 60,
@@ -295,11 +339,19 @@ public class Startup
     {
         var jwtSettings = Configuration.GetSection("Jwt");
 
-        services.AddHttpClient(nameof(AuthGateJwksProvider))
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+        var allowInsecureJwksTls = string.Equals(envName, Environments.Development, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(envName, "Testing", StringComparison.OrdinalIgnoreCase);
+
+        var jwksClient = services.AddHttpClient(nameof(AuthGateJwksProvider));
+
+        if (allowInsecureJwksTls)
+        {
+            jwksClient.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
             });
+        }
 
         services.AddSingleton<AuthGateJwksProvider>();
 
@@ -351,7 +403,7 @@ public class Startup
                         // Avoid log spam when tokens don't carry these claims
                         if (!string.IsNullOrWhiteSpace(userId) || !string.IsNullOrWhiteSpace(email))
                         {
-                            Log.Debug("JWT Token validated - User: {UserId} ({Email})", userId, email);
+                            Log.Debug("JWT Token validated - UserId={UserId}", userId);
                         }
                         return Task.CompletedTask;
                     }
@@ -411,11 +463,14 @@ public class Startup
 
         // Middleware
         app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseObservabilityEnrichment();
         app.UseMiddleware<IdempotencyMiddleware>();
         if (!env.IsDevelopment() && env.EnvironmentName != "Testing")
         {
             app.UseMiddleware<ExceptionHandlingMiddleware>();
         }
+
+        app.UseSerilogRequestLogging();
 
         var swaggerEnabled = Configuration.GetValue<bool>("Swagger:Enabled");
         if (swaggerEnabled || env.IsDevelopment() || env.EnvironmentName == "Testing")
@@ -441,6 +496,8 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
+
+            endpoints.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
 
             // SignalR Hubs
             endpoints.MapHub<NotificationsHub>("/hubs/notifications");

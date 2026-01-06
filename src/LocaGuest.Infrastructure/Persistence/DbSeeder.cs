@@ -1,7 +1,7 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.TenantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
-using LocaGuest.Infrastructure.Persistence.Seeders;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Infrastructure.Persistence;
@@ -154,16 +154,42 @@ public static class DbSeeder
             for (int i = 0; i < paymentsToCreate; i++)
             {
                 var paymentDate = DateTime.UtcNow.AddMonths(-i).AddDays(-random.Next(0, 5));
-                var method = (ContractPaymentMethod)random.Next(0, 4);
-                
-                contract.RecordPayment(contract.Rent, paymentDate, method);
+                var method = (PaymentMethod)random.Next(0, 3);
+
+                var expectedDateUtc = new DateTime(paymentDate.Year, paymentDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var amountDue = contract.Rent + contract.Charges;
+
+                var payment = Payment.Create(
+                    tenantId: contract.RenterTenantId,
+                    propertyId: contract.PropertyId,
+                    contractId: contract.Id,
+                    paymentType: PaymentType.Rent,
+                    amountDue: amountDue,
+                    amountPaid: contract.Rent,
+                    expectedDate: expectedDateUtc,
+                    paymentDate: paymentDate,
+                    paymentMethod: method);
+
+                payment.SetOrganizationId(contract.OrganizationId);
+                context.Payments.Add(payment);
             }
 
             // Simuler 1-2 paiements en retard sur certains contrats
             if (random.Next(0, 3) == 0)
             {
-                var latePayment = contract.Payments.OrderByDescending(p => p.PaymentDate).First();
-                contract.MarkPaymentAsLate(latePayment.Id);
+                var lastPayment = await context.Payments
+                    .Where(p => p.ContractId == contract.Id)
+                    .OrderByDescending(p => p.PaymentDate)
+                    .FirstOrDefaultAsync();
+
+                if (lastPayment != null)
+                {
+                    lastPayment.UpdatePayment(
+                        amountPaid: lastPayment.AmountPaid,
+                        paymentDate: lastPayment.ExpectedDate.AddDays(10),
+                        paymentMethod: lastPayment.PaymentMethod,
+                        note: lastPayment.Note);
+                }
             }
         }
 

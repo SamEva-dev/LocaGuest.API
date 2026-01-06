@@ -21,6 +21,7 @@ public class DocumentsControllerTests : BaseTestFixture
     private readonly Mock<IPropertySheetGeneratorService> _propertySheetGeneratorMock;
     private readonly Mock<ITenantSheetGeneratorService> _tenantSheetGeneratorMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ILocaGuestReadDbContext> _readDbMock;
     private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<IWebHostEnvironment> _webHostEnvironmentMock;
     private readonly DocumentsController _controller;
@@ -33,6 +34,7 @@ public class DocumentsControllerTests : BaseTestFixture
         _propertySheetGeneratorMock = new Mock<IPropertySheetGeneratorService>();
         _tenantSheetGeneratorMock = new Mock<ITenantSheetGeneratorService>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _readDbMock = new Mock<ILocaGuestReadDbContext>();
         _orgContextMock = new Mock<IOrganizationContext>();
         _webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
         
@@ -45,6 +47,7 @@ public class DocumentsControllerTests : BaseTestFixture
             _propertySheetGeneratorMock.Object,
             _tenantSheetGeneratorMock.Object,
             _unitOfWorkMock.Object,
+            _readDbMock.Object,
             _orgContextMock.Object,
             _webHostEnvironmentMock.Object);
     }

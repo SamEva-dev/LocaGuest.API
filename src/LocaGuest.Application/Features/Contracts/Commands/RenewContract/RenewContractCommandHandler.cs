@@ -32,7 +32,6 @@ public class RenewContractCommandHandler : IRequestHandler<RenewContractCommand,
             // ========== 1. CHARGER ET VALIDER LE CONTRAT EXISTANT ==========
             
             var oldContract = await _unitOfWork.Contracts.Query()
-                .Include(c => c.Payments)
                 .Include(c => c.RequiredDocuments)
                 .FirstOrDefaultAsync(c => c.Id == request.ContractId, cancellationToken);
 
@@ -153,7 +152,7 @@ public class RenewContractCommandHandler : IRequestHandler<RenewContractCommand,
             {
                 // Note: Il faudrait vérifier le type de document via DocumentsApi
                 // Pour l'instant on associe directement
-                newContract.AssociateDocument(docId, DocumentType.Bail);
+                newContract.MarkDocumentProvided(DocumentType.Bail);
             }
 
             // ========== 4. CLÔTURER L'ANCIEN CONTRAT ==========

@@ -10,6 +10,8 @@ using LocaGuest.Application.Features.Users.Commands.UpdatePreferences;
 using LocaGuest.Application.Features.Users.Queries.GetNotifications;
 using LocaGuest.Application.Features.Users.Commands.UpdateNotifications;
 using LocaGuest.Application.Features.Users.Commands.UpdateUserPhoto;
+using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Api.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -20,32 +22,32 @@ public class UsersController : ControllerBase
 {
     private readonly ILogger<UsersController> _logger;
     private readonly IMediator _mediator;
+    private readonly IAuthGateClient _authGateClient;
 
-    public UsersController(ILogger<UsersController> logger, IMediator mediator)
+    public UsersController(ILogger<UsersController> logger, IMediator mediator, IAuthGateClient authGateClient)
     {
         _logger = logger;
         _mediator = mediator;
+        _authGateClient = authGateClient;
     }
 
     /// <summary>
     /// Get all users (from AuthGate, via HttpClient call)
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = Permissions.TeamRead)]
     [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllUsers([FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> GetAllUsers(CancellationToken cancellationToken)
     {
         try
         {
-            var client = httpClientFactory.CreateClient("AuthGateApi");
-            var response = await client.GetAsync("/api/users");
-
-            if (response.IsSuccessStatusCode)
+            var (statusCode, users) = await _authGateClient.GetUsersAsync(cancellationToken);
+            if ((int)statusCode >= 200 && (int)statusCode <= 299)
             {
-                var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
                 return Ok(users);
             }
 
-            return StatusCode((int)response.StatusCode, "Failed to fetch users from AuthGate");
+            return StatusCode((int)statusCode, "Failed to fetch users from AuthGate");
         }
         catch (Exception ex)
         {
@@ -58,29 +60,29 @@ public class UsersController : ControllerBase
     /// Delete a user by ID (via AuthGate)
     /// </summary>
     [HttpDelete("{userId}")]
+    [Authorize(Policy = Permissions.TeamManage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(
         Guid userId,
-        [FromServices] IHttpClientFactory httpClientFactory)
+        CancellationToken cancellationToken)
     {
         try
         {
-            var client = httpClientFactory.CreateClient("AuthGateApi");
-            var response = await client.DeleteAsync($"/api/users/{userId}");
+            var statusCode = await _authGateClient.DeleteUserAsync(userId, cancellationToken);
 
-            if (response.IsSuccessStatusCode)
+            if ((int)statusCode >= 200 && (int)statusCode <= 299)
             {
                 _logger.LogInformation("User {UserId} deleted successfully", userId);
                 return NoContent();
             }
 
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            if (statusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return NotFound(new { error = "User not found" });
             }
 
-            return StatusCode((int)response.StatusCode, "Failed to delete user from AuthGate");
+            return StatusCode((int)statusCode, "Failed to delete user from AuthGate");
         }
         catch (Exception ex)
         {

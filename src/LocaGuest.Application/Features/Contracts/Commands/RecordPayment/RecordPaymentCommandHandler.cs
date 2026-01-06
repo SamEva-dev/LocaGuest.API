@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -26,13 +27,37 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
             if (contract == null)
                 return Result.Failure<Guid>("Contract not found");
 
-            var paymentMethod = Enum.TryParse<Domain.Aggregates.ContractAggregate.ContractPaymentMethod>(
-                request.Method, true, out var parsed) ? parsed : Domain.Aggregates.ContractAggregate.ContractPaymentMethod.Cash;
-            
-            var payment = contract.RecordPayment(
-                request.Amount,
-                request.PaymentDate,
-                paymentMethod);
+            var amountDue = contract.Rent + contract.Charges;
+
+            if (!Enum.TryParse<PaymentMethod>(request.Method, true, out var paymentMethod))
+            {
+                paymentMethod = PaymentMethod.Cash;
+            }
+
+            var expectedDateUtc = new DateTime(
+                request.PaymentDate.Year,
+                request.PaymentDate.Month,
+                1,
+                0,
+                0,
+                0,
+                DateTimeKind.Utc);
+
+            var payment = Payment.Create(
+                tenantId: contract.RenterTenantId,
+                propertyId: contract.PropertyId,
+                contractId: contract.Id,
+                paymentType: PaymentType.Rent,
+                amountDue: amountDue,
+                amountPaid: request.Amount,
+                expectedDate: expectedDateUtc,
+                paymentDate: request.PaymentDate.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(request.PaymentDate, DateTimeKind.Utc)
+                    : request.PaymentDate.ToUniversalTime(),
+                paymentMethod: paymentMethod,
+                note: request.Reference);
+
+            await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

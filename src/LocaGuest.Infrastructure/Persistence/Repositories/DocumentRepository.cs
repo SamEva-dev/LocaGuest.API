@@ -1,4 +1,5 @@
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
+using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -29,9 +30,16 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
 
     public async Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(d => d.ContractId == contractId && !d.IsArchived)
-            .OrderByDescending(d => d.CreatedAt)
+        return await _context.Set<ContractDocumentLink>()
+            .AsNoTracking()
+            .Where(link => link.ContractId == contractId)
+            .Join(
+                _dbSet.AsNoTracking(),
+                link => link.DocumentId,
+                doc => doc.Id,
+                (_, doc) => doc)
+            .Where(doc => !doc.IsArchived)
+            .OrderByDescending(doc => doc.CreatedAt)
             .ToListAsync(cancellationToken);
     }
 }

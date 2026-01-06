@@ -20,11 +20,6 @@ public class Document : AuditableEntity
     public DateTime? ExpiryDate { get; private set; }
     
     /// <summary>
-    /// Contrat associé à ce document (optionnel)
-    /// </summary>
-    public Guid? ContractId { get; private set; }
-    
-    /// <summary>
     /// Locataire associé à ce document (optionnel)
     /// Note: Le TenantId hérité de AuditableEntity est utilisé pour le multi-tenant filtering
     /// </summary>
@@ -63,7 +58,6 @@ public class Document : AuditableEntity
         DocumentType type,
         DocumentCategory category,
         long fileSizeBytes,
-        Guid? contractId = null,
         Guid? tenantId = null,
         Guid? propertyId = null,
         string? description = null,
@@ -77,7 +71,6 @@ public class Document : AuditableEntity
             Type = type,
             Category = category,
             FileSizeBytes = fileSizeBytes,
-            ContractId = contractId,
             AssociatedTenantId = tenantId,
             PropertyId = propertyId,
             Description = description,
@@ -88,7 +81,6 @@ public class Document : AuditableEntity
 
         document.AddDomainEvent(new DocumentCreated(
             document.Id,
-            contractId,
             tenantId,
             type,
             category));
@@ -152,7 +144,6 @@ public class Document : AuditableEntity
         
         AddDomainEvent(new DocumentSigned(
             Id,
-            ContractId,
             AssociatedTenantId,
             Type,
             SignedDate.Value));
@@ -169,15 +160,7 @@ public class Document : AuditableEntity
                 "Only signed documents can be validated");
         
         Status = DocumentStatus.Validated;
-        AddDomainEvent(new DocumentValidated(Id, ContractId, Type));
-    }
-    
-    /// <summary>
-    /// Associer ce document à un contrat
-    /// </summary>
-    public void AssociateToContract(Guid contractId)
-    {
-        ContractId = contractId;
+        AddDomainEvent(new DocumentValidated(Id, Type));
     }
 }
 

@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,16 +28,13 @@ public class GetTenantPaymentStatsQueryHandler : IRequestHandler<GetTenantPaymen
             if (tenant == null)
                 return Result.Failure<TenantPaymentStatsDto>($"Tenant with ID {request.TenantId} not found");
 
-            var tenantContracts = await _unitOfWork.Contracts.Query()
-                .Where(c => c.RenterTenantId == request.TenantId)
-                .Include(c => c.Payments)
+            var allPayments = await _unitOfWork.Payments.Query()
+                .Where(p => p.RenterTenantId == request.TenantId)
                 .ToListAsync(cancellationToken);
 
-            var allPayments = tenantContracts.SelectMany(c => c.Payments).ToList();
-
-            var totalPaid = allPayments.Sum(p => p.Amount);
+            var totalPaid = allPayments.Sum(p => p.AmountPaid);
             var totalPayments = allPayments.Count;
-            var latePayments = allPayments.Count(p => p.Status == ContractPaymentStatus.Late);
+            var latePayments = allPayments.Count(p => p.Status == PaymentStatus.Late || p.Status == PaymentStatus.PaidLate);
             var onTimeRate = totalPayments > 0 ? (decimal)(totalPayments - latePayments) / totalPayments : 1.0m;
 
             var stats = new TenantPaymentStatsDto

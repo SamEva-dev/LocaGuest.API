@@ -72,6 +72,8 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
                 request.Bathrooms ?? 0,
                 request.TotalRooms);
 
+            property.SetOrganizationId(_orgContext.OrganizationId!.Value);
+
             // Set the generated code
             property.SetCode(code);
             

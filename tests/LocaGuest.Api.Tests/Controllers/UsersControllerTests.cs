@@ -1,11 +1,11 @@
 using FluentAssertions;
 using LocaGuest.Api.Controllers;
 using LocaGuest.Api.Tests.Fixtures;
+using LocaGuest.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.Protected;
 using MediatR;
 using System.Net;
 using Xunit;
@@ -16,27 +16,16 @@ public class UsersControllerTests : BaseTestFixture
 {
     private readonly Mock<ILogger<UsersController>> _loggerMock;
     private readonly Mock<IMediator> _mediatorMock;
-    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
-    private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
+    private readonly Mock<IAuthGateClient> _authGateClientMock;
     private readonly UsersController _controller;
 
     public UsersControllerTests()
     {
         _loggerMock = new Mock<ILogger<UsersController>>();
         _mediatorMock = new Mock<IMediator>();
-        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        _authGateClientMock = new Mock<IAuthGateClient>();
 
-        var httpClient = new HttpClient(_httpMessageHandlerMock.Object)
-        {
-            BaseAddress = new Uri("https://localhost:5001")
-        };
-
-        _httpClientFactoryMock
-            .Setup(f => f.CreateClient("AuthGateApi"))
-            .Returns(httpClient);
-
-        _controller = new UsersController(_loggerMock.Object, _mediatorMock.Object);
+        _controller = new UsersController(_loggerMock.Object, _mediatorMock.Object, _authGateClientMock.Object);
     }
 
     #region GetAllUsers Tests
@@ -45,22 +34,23 @@ public class UsersControllerTests : BaseTestFixture
     public async Task GetAllUsers_WhenAuthGateReturnsSuccess_ReturnsOkWithUsers()
     {
         // Arrange
-        var usersJson = "[{\"id\":\"00000000-0000-0000-0000-000000000001\",\"email\":\"test@test.com\",\"firstName\":\"Test\",\"lastName\":\"User\"}]";
-        
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get && req.RequestUri!.ToString().Contains("/api/users")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
+        var users = new List<AuthGateUserDto>
+        {
+            new()
             {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(usersJson, System.Text.Encoding.UTF8, "application/json")
-            });
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                Email = "test@test.com",
+                FirstName = "Test",
+                LastName = "User"
+            }
+        };
+
+        _authGateClientMock
+            .Setup(c => c.GetUsersAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HttpStatusCode.OK, (IReadOnlyList<AuthGateUserDto>?)users));
 
         // Act
-        var result = await _controller.GetAllUsers(_httpClientFactoryMock.Object) as OkObjectResult;
+        var result = await _controller.GetAllUsers(CancellationToken.None) as OkObjectResult;
 
         // Assert
         result.Should().NotBeNull();
@@ -71,16 +61,12 @@ public class UsersControllerTests : BaseTestFixture
     public async Task GetAllUsers_WhenAuthGateFails_ReturnsInternalServerError()
     {
         // Arrange
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        _authGateClientMock
+            .Setup(c => c.GetUsersAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Connection error"));
 
         // Act
-        var result = await _controller.GetAllUsers(_httpClientFactoryMock.Object) as ObjectResult;
+        var result = await _controller.GetAllUsers(CancellationToken.None) as ObjectResult;
 
         // Assert
         result.Should().NotBeNull();
@@ -97,21 +83,12 @@ public class UsersControllerTests : BaseTestFixture
         // Arrange
         var userId = Guid.NewGuid();
 
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.Method == HttpMethod.Delete && 
-                    req.RequestUri!.ToString().Contains($"/api/users/{userId}")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.NoContent
-            });
+        _authGateClientMock
+            .Setup(c => c.DeleteUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(HttpStatusCode.NoContent);
 
         // Act
-        var result = await _controller.DeleteUser(userId, _httpClientFactoryMock.Object) as NoContentResult;
+        var result = await _controller.DeleteUser(userId, CancellationToken.None) as NoContentResult;
 
         // Assert
         result.Should().NotBeNull();
@@ -124,19 +101,12 @@ public class UsersControllerTests : BaseTestFixture
         // Arrange
         var userId = Guid.NewGuid();
 
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains($"/api/users/{userId}")),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.NotFound
-            });
+        _authGateClientMock
+            .Setup(c => c.DeleteUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(HttpStatusCode.NotFound);
 
         // Act
-        var result = await _controller.DeleteUser(userId, _httpClientFactoryMock.Object) as NotFoundObjectResult;
+        var result = await _controller.DeleteUser(userId, CancellationToken.None) as NotFoundObjectResult;
 
         // Assert
         result.Should().NotBeNull();
@@ -149,16 +119,12 @@ public class UsersControllerTests : BaseTestFixture
         // Arrange
         var userId = Guid.NewGuid();
 
-        _httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+        _authGateClientMock
+            .Setup(c => c.DeleteUserAsync(userId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Connection error"));
 
         // Act
-        var result = await _controller.DeleteUser(userId, _httpClientFactoryMock.Object) as ObjectResult;
+        var result = await _controller.DeleteUser(userId, CancellationToken.None) as ObjectResult;
 
         // Assert
         result.Should().NotBeNull();

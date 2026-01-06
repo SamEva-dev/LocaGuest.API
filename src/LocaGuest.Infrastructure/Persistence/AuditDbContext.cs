@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LocaGuest.Domain.Audit;
 using LocaGuest.Application.Common.Interfaces;
+using System.Reflection;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
@@ -9,8 +10,12 @@ namespace LocaGuest.Infrastructure.Persistence;
 /// </summary>
 public class AuditDbContext : DbContext, IAuditDbContext
 {
-    public AuditDbContext(DbContextOptions<AuditDbContext> options) : base(options)
+    private readonly IOrganizationContext? _orgContext;
+
+    public AuditDbContext(DbContextOptions<AuditDbContext> options, IOrganizationContext? orgContext = null)
+        : base(options)
     {
+        _orgContext = orgContext;
     }
     
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -21,6 +26,8 @@ public class AuditDbContext : DbContext, IAuditDbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasDefaultSchema("audit");
+
+        ConfigureMultiTenantFilters(modelBuilder);
         
         // AuditLog configuration
         modelBuilder.Entity<AuditLog>(entity =>
@@ -85,5 +92,34 @@ public class AuditDbContext : DbContext, IAuditDbContext
             entity.HasIndex(e => e.Success);
             entity.HasIndex(e => e.CorrelationId);
         });
+    }
+
+    private void ConfigureMultiTenantFilters(ModelBuilder modelBuilder)
+    {
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(t => t.ClrType != null)
+            .Where(t => !t.IsOwned());
+
+        foreach (var entityType in entityTypes)
+        {
+            var orgIdProperty = entityType.FindProperty("OrganizationId");
+            if (orgIdProperty == null || orgIdProperty.ClrType != typeof(Guid))
+                continue;
+
+            var method = typeof(AuditDbContext)
+                .GetMethod(nameof(ApplyOrganizationFilter), BindingFlags.NonPublic | BindingFlags.Instance);
+
+            method?.MakeGenericMethod(entityType.ClrType!).Invoke(this, new object[] { modelBuilder });
+        }
+    }
+
+    private void ApplyOrganizationFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
+    {
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
+            (_orgContext != null && _orgContext.IsSystemContext && _orgContext.CanBypassOrganizationFilter)
+            ||
+            (_orgContext != null
+             && _orgContext.OrganizationId.HasValue
+             && EF.Property<Guid>(e, "OrganizationId") == _orgContext.OrganizationId.Value));
     }
 }

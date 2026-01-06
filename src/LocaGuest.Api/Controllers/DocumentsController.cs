@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Api.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -29,6 +30,7 @@ public class DocumentsController : ControllerBase
     private readonly IPropertySheetGeneratorService _propertySheetGenerator;
     private readonly ITenantSheetGeneratorService _tenantSheetGenerator;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly IOrganizationContext _orgContext;
     private readonly IWebHostEnvironment _environment;
 
@@ -39,6 +41,7 @@ public class DocumentsController : ControllerBase
         IPropertySheetGeneratorService propertySheetGenerator,
         ITenantSheetGeneratorService tenantSheetGenerator,
         IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         IOrganizationContext orgContext,
         IWebHostEnvironment environment)
     {
@@ -48,6 +51,7 @@ public class DocumentsController : ControllerBase
         _propertySheetGenerator = propertySheetGenerator;
         _tenantSheetGenerator = tenantSheetGenerator;
         _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _orgContext = orgContext;
         _environment = environment;
     }
@@ -349,7 +353,7 @@ public class DocumentsController : ControllerBase
                     var contract = await _unitOfWork.Contracts.GetByIdAsync(dto.ContractId.Value, cancellationToken);
                     if (contract != null)
                     {
-                        contract.AssociateDocument(saveResult.Data.Id, documentType);
+                        contract.MarkDocumentProvided(documentType);
                         await _unitOfWork.CommitAsync(cancellationToken);
 
                         _logger.LogInformation(
@@ -805,13 +809,19 @@ public class DocumentsController : ControllerBase
                 return BadRequest(new { message = "Only PDF documents can be sent for electronic signature" });
 
             // Si le document est lié à un contrat, vérifier son statut
-            if (document.ContractId.HasValue)
+            var contractId = await _readDb.ContractDocumentLinks
+                .AsNoTracking()
+                .Where(x => x.DocumentId == document.Id)
+                .Select(x => (Guid?)x.ContractId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (contractId.HasValue)
             {
                 // ✅ Autoriser l'envoi des avenants même si le contrat est Active/Signed.
                 // La restriction ne s'applique qu'aux documents de bail (contrat).
                 if (document.Type != Domain.Aggregates.DocumentAggregate.DocumentType.Avenant)
                 {
-                    var contract = await _unitOfWork.Contracts.GetByIdAsync(document.ContractId.Value, cancellationToken);
+                    var contract = await _unitOfWork.Contracts.GetByIdAsync(contractId.Value, cancellationToken);
                     if (contract != null && contract.Status != Domain.Aggregates.ContractAggregate.ContractStatus.Draft)
                     {
                         return BadRequest(new { message = "Only draft contracts can be sent for signature" });
@@ -881,7 +891,11 @@ public class DocumentsController : ControllerBase
                 Category = document.Category.ToString(),
                 Status = document.Status.ToString(),
                 document.FileSizeBytes,
-                document.ContractId,
+                ContractId = await _readDb.ContractDocumentLinks
+                    .AsNoTracking()
+                    .Where(x => x.DocumentId == document.Id)
+                    .Select(x => (Guid?)x.ContractId)
+                    .FirstOrDefaultAsync(cancellationToken),
                 document.AssociatedTenantId,
                 document.PropertyId,
                 document.Description,

@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Application.DTOs.Payments;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,18 +26,31 @@ public class GetPropertyPaymentsQueryHandler : IRequestHandler<GetPropertyPaymen
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var payments = await _unitOfWork.Contracts.Query()
-                .Where(c => c.PropertyId == propertyId)
-                .SelectMany(c => c.Payments.Select(p => new PaymentDto
+            var payments = await _unitOfWork.Payments.Query()
+                .Where(p => p.PropertyId == propertyId)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => new PaymentDto
                 {
                     Id = p.Id,
+                    TenantId = p.RenterTenantId,
+                    PropertyId = p.PropertyId,
                     ContractId = p.ContractId,
-                    Amount = p.Amount,
+                    PaymentType = p.PaymentType.ToString(),
+                    AmountDue = p.AmountDue,
+                    AmountPaid = p.AmountPaid,
+                    RemainingAmount = p.AmountDue - p.AmountPaid,
                     PaymentDate = p.PaymentDate,
-                    Method = p.Method.ToString(),
-                    Status = p.Status.ToString()
-                }))
-                .OrderByDescending(p => p.PaymentDate)
+                    ExpectedDate = p.ExpectedDate,
+                    Status = p.Status.ToString(),
+                    PaymentMethod = p.PaymentMethod.ToString(),
+                    Note = p.Note,
+                    Month = p.Month,
+                    Year = p.Year,
+                    ReceiptId = p.ReceiptId,
+                    InvoiceDocumentId = p.InvoiceDocumentId,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.LastModifiedAt
+                })
                 .ToListAsync(cancellationToken);
 
             return Result.Success(payments);

@@ -15,6 +15,7 @@ using LocaGuest.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Reflection;
 using System.Linq.Expressions;
 using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence.Entities;
@@ -55,6 +56,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ContractParticipant> ContractParticipants => Set<ContractParticipant>();
     public DbSet<Addendum> Addendums => Set<Addendum>();
+    public DbSet<ContractDocumentLink> ContractDocumentLinks => Set<ContractDocumentLink>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Domain.Aggregates.PaymentAggregate.Payment> Payments => Set<Domain.Aggregates.PaymentAggregate.Payment>();
     public DbSet<RentInvoice> RentInvoices => Set<RentInvoice>();
@@ -113,6 +115,26 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.Property(o => o.SubscriptionPlan).HasMaxLength(50);
             entity.Property(o => o.Notes).HasMaxLength(1000);
             entity.Ignore(o => o.DomainEvents);
+        });
+
+        modelBuilder.Entity<ContractDocumentLink>(entity =>
+        {
+            entity.ToTable("contract_documents", schema: "lease");
+            entity.HasKey(x => new { x.OrganizationId, x.ContractId, x.DocumentId });
+
+            entity.Property(x => x.OrganizationId).IsRequired();
+            entity.HasIndex(x => x.OrganizationId);
+            entity.Property(x => x.ContractId).IsRequired();
+            entity.HasIndex(x => x.ContractId);
+            entity.Property(x => x.DocumentId).IsRequired();
+            entity.HasIndex(x => x.DocumentId);
+
+            entity.Property(x => x.Type)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.LinkedAtUtc).IsRequired();
         });
 
         // OrganizationSequence (Numbering service per organization)
@@ -294,6 +316,11 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
         {
             entity.ToTable("property_images", schema: "locaguest");
             entity.HasKey(pi => pi.Id);
+
+            entity.Property(pi => pi.OrganizationId).IsRequired();
+            entity.HasIndex(pi => pi.OrganizationId);
+            entity.HasIndex(pi => new { pi.OrganizationId, pi.PropertyId });
+
             entity.Property(pi => pi.PropertyId).IsRequired();
             entity.HasIndex(pi => pi.PropertyId);
         });
@@ -303,6 +330,11 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
         {
             entity.ToTable("property_rooms", schema: "locaguest");
             entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.OrganizationId).IsRequired();
+            entity.HasIndex(r => r.OrganizationId);
+            entity.HasIndex(r => new { r.OrganizationId, r.PropertyId });
+
             entity.Property(r => r.PropertyId).IsRequired();
             entity.HasIndex(r => r.PropertyId);
             entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
@@ -355,11 +387,6 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.Property(c => c.NoticeDate);
             entity.Property(c => c.NoticeEndDate);
             entity.Property(c => c.NoticeReason).HasColumnType("text");
-            
-            entity.HasMany(c => c.Payments)
-                  .WithOne()
-                  .HasForeignKey(p => p.ContractId)
-                  .OnDelete(DeleteBehavior.Cascade);
 
             // Configure RequiredDocuments as owned entity collection
             entity.OwnsMany(c => c.RequiredDocuments, rd =>
@@ -373,9 +400,6 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
                 rd.Property(r => r.IsProvided);
                 rd.Property(r => r.IsSigned);
             });
-
-            // Configure DocumentIds as a JSON column or ignore for now
-            entity.Ignore(c => c.DocumentIds);
             entity.Ignore(c => c.DomainEvents);
 
             entity.HasOne<Property>()
@@ -387,15 +411,6 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
                 .WithMany()
                 .HasForeignKey(c => c.RenterTenantId)
                 .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        // ContractPayment (old/deprecated - use PaymentAggregate.Payment instead)
-        modelBuilder.Entity<ContractPayment>(entity =>
-        {
-            entity.ToTable("contract_payments", schema: "finance");
-            entity.HasKey(p => p.Id);
-            entity.Property(p => p.Amount).HasColumnType("decimal(18,2)");
-            entity.Ignore(p => p.DomainEvents);
         });
 
         // UserSettings
@@ -774,35 +789,27 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     /// </summary>
     private void ConfigureMultiTenantFilters(ModelBuilder modelBuilder)
     {
-        // Liste des types d'entités qui doivent être filtrés par tenant
-        var tenantEntityTypes = new[]
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(t => t.ClrType != null)
+            .Where(t => !t.IsOwned());
+
+        foreach (var entityType in entityTypes)
         {
-            typeof(Property),
-            typeof(Occupant),
-            typeof(Contract),
-            typeof(ContractParticipant),
-            typeof(Document),
-            typeof(InventoryEntry),
-            typeof(InventoryExit),
-            typeof(RentabilityScenario),
-            typeof(ScenarioVersion),
-            typeof(ScenarioShare),
-            typeof(UserSettings)
-        };
-        
-        foreach (var entityType in tenantEntityTypes)
-        {
+            var orgIdProperty = entityType.FindProperty("OrganizationId");
+            if (orgIdProperty == null || orgIdProperty.ClrType != typeof(Guid))
+                continue;
+
             var method = typeof(LocaGuestDbContext)
-                .GetMethod(nameof(ApplyOrganizationFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            method?.MakeGenericMethod(entityType).Invoke(this, new object[] { modelBuilder });
+                .GetMethod(nameof(ApplyOrganizationFilter), BindingFlags.NonPublic | BindingFlags.Instance);
+
+            method?.MakeGenericMethod(entityType.ClrType!).Invoke(this, new object[] { modelBuilder });
         }
     }
     
     /// <summary>
     /// Applique un filtre global sur une entité pour filtrer par TenantId
     /// </summary>
-    private void ApplyOrganizationFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
+    private void ApplyOrganizationFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
         // IMPORTANT: Ne PAS capturer OrganizationId dans une variable locale
         // car cela fige la valeur au moment de OnModelCreating (avant l'authentification).
@@ -810,7 +817,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
         modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
             (_orgContext != null && _orgContext.IsSystemContext && _orgContext.CanBypassOrganizationFilter)
             ||
-            (_orgContext != null && _orgContext.OrganizationId.HasValue && e.OrganizationId == _orgContext.OrganizationId.Value));
+            (_orgContext != null
+             && _orgContext.OrganizationId.HasValue
+             && EF.Property<Guid>(e, "OrganizationId") == _orgContext.OrganizationId.Value));
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

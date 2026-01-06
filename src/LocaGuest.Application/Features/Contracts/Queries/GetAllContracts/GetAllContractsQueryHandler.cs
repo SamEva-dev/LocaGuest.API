@@ -65,6 +65,12 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 .Where(e => contractIds.Contains(e.ContractId))
                 .ToDictionaryAsync(e => e.ContractId, e => e.Id, cancellationToken);
 
+            var paymentsCounts = await _readDb.Payments.AsNoTracking()
+                .Where(p => contractIds.Contains(p.ContractId))
+                .GroupBy(p => p.ContractId)
+                .Select(g => new { ContractId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ContractId, x => x.Count, cancellationToken);
+
             var result = contracts.Select(c => new ContractDto
             {
                 Id = c.Id,
@@ -83,7 +89,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 Deposit = c.Deposit,
                 Status = c.Status.ToString(),
                 Notes = c.Notes,
-                PaymentsCount = c.Payments.Count,
+                PaymentsCount = paymentsCounts.GetValueOrDefault(c.Id),
                 CreatedAt = c.CreatedAt,
                 HasInventoryEntry = inventoryEntries.ContainsKey(c.Id),
                 HasInventoryExit = inventoryExits.ContainsKey(c.Id),

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
 {
     [DbContext(typeof(LocaGuestDbContext))]
-    partial class LocaGuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105222238_SprintX_RemoveDocumentContractId")]
+    partial class SprintX_RemoveDocumentContractId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -332,6 +335,38 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                         .IsUnique();
 
                     b.ToTable("contract_participants", "lease");
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.ContractPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.ToTable("contract_payments", "finance");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.DocumentAggregate.Document", b =>
@@ -2702,6 +2737,15 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                     b.Navigation("RequiredDocuments");
                 });
 
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.ContractPayment", b =>
+                {
+                    b.HasOne("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", null)
+                        .WithMany("Payments")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryEntry", b =>
                 {
                     b.OwnsMany("LocaGuest.Domain.Aggregates.InventoryAggregate.InventoryItem", "Items", b1 =>
@@ -2996,6 +3040,11 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                         .IsRequired();
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("LocaGuest.Domain.Aggregates.ContractAggregate.Contract", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("LocaGuest.Domain.Aggregates.PropertyAggregate.Property", b =>

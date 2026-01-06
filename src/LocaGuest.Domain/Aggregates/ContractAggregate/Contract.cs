@@ -73,18 +73,9 @@ public class Contract : AuditableEntity
     /// Nouvel IRL utilisé pour la révision
     /// </summary>
     public decimal? CurrentIRL { get; private set; }
-
-    private readonly List<ContractPayment> _payments = new();
-    public IReadOnlyCollection<ContractPayment> Payments => _payments.AsReadOnly();
     
     private readonly List<RequiredDocument> _requiredDocuments = new();
     public IReadOnlyCollection<RequiredDocument> RequiredDocuments => _requiredDocuments.AsReadOnly();
-    
-    private readonly List<Guid> _documentIds = new();
-    public IReadOnlyCollection<Guid> DocumentIds => _documentIds.AsReadOnly();
-    
-    private readonly List<Addendum> _addendums = new();
-    public IReadOnlyCollection<Addendum> Addendums => _addendums.AsReadOnly();
 
     private Contract() { } // EF
 
@@ -379,28 +370,6 @@ public class Contract : AuditableEntity
         Status = ContractStatus.Active;
         AddDomainEvent(new ContractActivated(Id, PropertyId, RenterTenantId));
     }
-
-    public ContractPayment RecordPayment(decimal amount, DateTime paymentDate, ContractPaymentMethod method)
-    {
-        if (amount <= 0)
-            throw new ValidationException("PAYMENT_INVALID_AMOUNT", "Payment amount must be positive");
-
-        var payment = ContractPayment.Create(Id, amount, paymentDate, method);
-        _payments.Add(payment);
-
-        AddDomainEvent(new PaymentRecorded(payment.Id, Id, PropertyId, RenterTenantId, amount, paymentDate));
-        return payment;
-    }
-
-    public void MarkPaymentAsLate(Guid paymentId)
-    {
-        var payment = _payments.FirstOrDefault(p => p.Id == paymentId);
-        if (payment == null)
-            throw new NotFoundException("PAYMENT_NOT_FOUND", "Payment not found");
-
-        payment.MarkAsLate();
-        AddDomainEvent(new PaymentLateDetected(paymentId, Id, PropertyId, RenterTenantId));
-    }
     
     /// <summary>
     /// Initialiser les documents requis selon le type de contrat
@@ -426,21 +395,10 @@ public class Contract : AuditableEntity
         // qui ne nécessiterait que le document Avenant signé
     }
     
-    /// <summary>
-    /// Associer un document à ce contrat
-    /// </summary>
-    public void AssociateDocument(Guid documentId, DocumentType type)
+    public void MarkDocumentProvided(DocumentType type)
     {
-        if (!_documentIds.Contains(documentId))
-        {
-            _documentIds.Add(documentId);
-            
-            var required = _requiredDocuments.FirstOrDefault(r => r.Type == type);
-            if (required != null)
-            {
-                required.MarkAsProvided();
-            }
-        }
+        var required = _requiredDocuments.FirstOrDefault(r => r.Type == type);
+        required?.MarkAsProvided();
     }
     
     /// <summary>
@@ -491,18 +449,7 @@ public class Contract : AuditableEntity
     }
     
     // ========== GESTION DES AVENANTS ==========
-    
-    /// <summary>
-    /// Ajouter un avenant au contrat
-    /// </summary>
-    public void AddAddendum(Addendum addendum)
-    {
-        if (addendum == null)
-            throw new ArgumentNullException(nameof(addendum));
-        
-        _addendums.Add(addendum);
-    }
-    
+
     /// <summary>
     /// Vérifier si un avenant peut être créé
     /// </summary>
@@ -608,65 +555,4 @@ public class RequiredDocument
     
     public void MarkAsProvided() => IsProvided = true;
     public void MarkAsSigned() => IsSigned = true;
-}
-
-/// <summary>
-/// DEPRECATED: Use LocaGuest.Domain.Aggregates.PaymentAggregate.Payment instead
-/// This class is kept for backward compatibility
-/// </summary>
-[Obsolete("Use PaymentAggregate.Payment instead")]
-public class ContractPayment : Entity
-{
-    public string Code { get; private set; } = string.Empty;  // T0001-PAY0001
-    
-    public Guid ContractId { get; private set; }
-    public decimal Amount { get; private set; }
-    public DateTime PaymentDate { get; private set; }
-    public ContractPaymentMethod Method { get; private set; }
-    public ContractPaymentStatus Status { get; private set; }
-
-    private ContractPayment() { } // EF
-
-    internal static ContractPayment Create(Guid contractId, decimal amount, DateTime paymentDate, ContractPaymentMethod method)
-    {
-        return new ContractPayment
-        {
-            Id = Guid.NewGuid(),
-            ContractId = contractId,
-            Amount = amount,
-            PaymentDate = paymentDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(paymentDate, DateTimeKind.Utc) : paymentDate.ToUniversalTime(),
-            Method = method,
-            Status = ContractPaymentStatus.Completed
-        };
-    }
-
-    public void SetCode(string code)
-    {
-        if (!string.IsNullOrWhiteSpace(Code))
-            throw new InvalidOperationException("Code cannot be changed once set");
-        Code = code;
-    }
-
-    internal void MarkAsLate()
-    {
-        Status = ContractPaymentStatus.Late;
-    }
-}
-
-[Obsolete("Use PaymentAggregate.PaymentMethod instead")]
-public enum ContractPaymentMethod
-{
-    BankTransfer,
-    Check,
-    Cash,
-    CreditCard
-}
-
-[Obsolete("Use PaymentAggregate.PaymentStatus instead")]
-public enum ContractPaymentStatus
-{
-    Pending,
-    Completed,
-    Failed,
-    Late
 }

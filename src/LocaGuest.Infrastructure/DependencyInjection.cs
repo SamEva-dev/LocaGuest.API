@@ -22,6 +22,11 @@ public static class DependencyInjection
     {
         var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
 
+        var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+        var isDevOrTesting = string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(envName, "Testing", StringComparison.OrdinalIgnoreCase);
+        var sslMode = isDevOrTesting ? "SSL Mode=Allow" : "SSL Mode=Require";
+
         services.AddScoped<AuditSaveChangesInterceptor>();
 
         // Main Database (LocaGuest)
@@ -45,7 +50,7 @@ public static class DependencyInjection
                     // Parse DATABASE_URL manually to avoid malformed sslmode parameter
                     var uri = new Uri(databaseUrl.Split('?')[0]); // Remove query params
                     var userInfo = uri.UserInfo.Split(':');
-                    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Disable";
+                    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};{sslMode}";
                 }
                 else
                 {
@@ -83,7 +88,7 @@ public static class DependencyInjection
                     var uri = new Uri(databaseUrl.Split('?')[0]); // Remove query params
                     var userInfo = uri.UserInfo.Split(':');
                     var dbName = uri.AbsolutePath.TrimStart('/') + "_audit";
-                    connectionString = $"Host={uri.Host};Port={uri.Port};Database={dbName};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Disable";
+                    connectionString = $"Host={uri.Host};Port={uri.Port};Database={dbName};Username={userInfo[0]};Password={userInfo[1]};{sslMode}";
                 }
                 else
                 {
@@ -107,12 +112,21 @@ public static class DependencyInjection
         services.AddScoped<IAuditDbContext>(sp => sp.GetRequiredService<AuditDbContext>());
 
         // HttpClient for AuthGate
+        services.AddScoped<ForwardAuthorizationHeaderHandler>();
+
         services.AddHttpClient("AuthGateApi", client =>
         {
             var baseUrl = configuration["HttpClients:AuthGateApi:BaseUrl"] ?? "https://localhost:8081";
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
-        });
+        }).AddHttpMessageHandler<ForwardAuthorizationHeaderHandler>();
+
+        services.AddHttpClient<IAuthGateClient, AuthGateClient>(client =>
+        {
+            var baseUrl = configuration["HttpClients:AuthGateApi:BaseUrl"] ?? "https://localhost:8081";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        }).AddHttpMessageHandler<ForwardAuthorizationHeaderHandler>();
         
         // Multi-Tenant Services  
         services.AddScoped<INumberSequenceService, NumberSequenceService>();

@@ -545,8 +545,11 @@ public class Property : AuditableEntity
             
         if (_rooms.Count >= (TotalRooms ?? 0))
             throw new ValidationException("PROPERTY_MAX_ROOMS_REACHED", "Maximum number of rooms reached");
+
+        if (OrganizationId == Guid.Empty)
+            throw new ValidationException("PROPERTY_ORG_REQUIRED", "Property must have OrganizationId before adding rooms");
             
-        var room = PropertyRoom.Create(Id, name, rent, surface, charges, description);
+        var room = PropertyRoom.Create(Id, OrganizationId, name, rent, surface, charges, description);
         _rooms.Add(room);
         
         return room;

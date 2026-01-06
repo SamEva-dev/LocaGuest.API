@@ -30,6 +30,12 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
+            var paymentCountsByContract = await _unitOfWork.Payments.Query()
+                .Where(p => p.PropertyId == propertyId)
+                .GroupBy(p => p.ContractId)
+                .Select(g => new { ContractId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ContractId, x => x.Count, cancellationToken);
+
             var contracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.PropertyId == propertyId)
                 .OrderByDescending(c => c.StartDate)
@@ -44,7 +50,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                     Rent = c.Rent,
                     Deposit = c.Deposit,
                     Status = c.Status.ToString(),
-                    PaymentsCount = c.Payments.Count,
+                    PaymentsCount = 0,
                     CreatedAt = c.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
@@ -71,6 +77,8 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
             foreach (var contract in contracts)
             {
                 contract.TenantName = tenants.FirstOrDefault(t => t.Id == contract.TenantId)?.FullName;
+
+                contract.PaymentsCount = paymentCountsByContract.GetValueOrDefault(contract.Id);
                 
                 // ✅ Enrichir avec les informations EDL
                 var entry = inventoryEntries.FirstOrDefault(ie => ie.ContractId == contract.Id);

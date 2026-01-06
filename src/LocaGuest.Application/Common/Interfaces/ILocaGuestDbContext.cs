@@ -22,6 +22,7 @@ public interface ILocaGuestDbContext
     DbSet<PropertyImage> PropertyImages { get; }
     DbSet<Occupant> Occupants { get; }
     DbSet<Contract> Contracts { get; }
+    DbSet<ContractDocumentLink> ContractDocumentLinks { get; }
     DbSet<Document> Documents { get; }
     DbSet<Payment> Payments { get; }
     DbSet<RentInvoice> RentInvoices { get; }

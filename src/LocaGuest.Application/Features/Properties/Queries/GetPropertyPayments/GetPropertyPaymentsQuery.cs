@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Application.DTOs.Payments;
 using MediatR;
 
 namespace LocaGuest.Application.Features.Properties.Queries.GetPropertyPayments;

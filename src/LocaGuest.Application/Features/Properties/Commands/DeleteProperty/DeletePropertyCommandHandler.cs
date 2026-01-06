@@ -11,15 +11,18 @@ namespace LocaGuest.Application.Features.Properties.Commands.DeleteProperty;
 public class DeletePropertyCommandHandler : IRequestHandler<DeletePropertyCommand, Result<DeletePropertyResult>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestDbContext _context;
     private readonly IOrganizationContext _orgContext;
     private readonly ILogger<DeletePropertyCommandHandler> _logger;
 
     public DeletePropertyCommandHandler(
         IUnitOfWork unitOfWork,
+        ILocaGuestDbContext context,
         IOrganizationContext orgContext,
         ILogger<DeletePropertyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
         _orgContext = orgContext;
         _logger = logger;
     }
@@ -49,12 +52,22 @@ public class DeletePropertyCommandHandler : IRequestHandler<DeletePropertyComman
             }
 
             var allContracts = await _unitOfWork.Contracts.Query()
-                .Include(c => c.Payments)
                 .Where(c => c.PropertyId == request.PropertyId)
                 .ToListAsync(cancellationToken);
 
             int deletedPayments = 0;
             int deletedDocuments = 0;
+
+            var contractIds = allContracts.Select(c => c.Id).ToList();
+            var paymentsToDelete = await _unitOfWork.Payments.Query()
+                .Where(p => contractIds.Contains(p.ContractId))
+                .ToListAsync(cancellationToken);
+
+            deletedPayments = paymentsToDelete.Count;
+            foreach (var payment in paymentsToDelete)
+            {
+                _unitOfWork.Payments.Remove(payment);
+            }
 
             foreach (var contract in allContracts)
             {
@@ -65,9 +78,25 @@ public class DeletePropertyCommandHandler : IRequestHandler<DeletePropertyComman
                 //     deletedPayments += contract.Payments.Count;
                 // }
 
-                var contractDocuments = await _unitOfWork.Documents.Query()
-                    .Where(d => d.ContractId == contract.Id)
+                var contractDocumentIds = await _context.ContractDocumentLinks
+                    .AsNoTracking()
+                    .Where(link => link.ContractId == contract.Id)
+                    .Select(link => link.DocumentId)
+                    .Distinct()
                     .ToListAsync(cancellationToken);
+
+                var contractDocuments = await _unitOfWork.Documents.Query()
+                    .Where(d => contractDocumentIds.Contains(d.Id))
+                    .ToListAsync(cancellationToken);
+
+                var contractLinks = await _context.ContractDocumentLinks
+                    .Where(link => link.ContractId == contract.Id)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var link in contractLinks)
+                {
+                    _context.ContractDocumentLinks.Remove(link);
+                }
 
                 foreach (var doc in contractDocuments)
                 {
