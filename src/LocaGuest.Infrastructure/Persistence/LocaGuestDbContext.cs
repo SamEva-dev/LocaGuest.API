@@ -135,6 +135,16 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
                 .HasMaxLength(50);
 
             entity.Property(x => x.LinkedAtUtc).IsRequired();
+
+            entity.HasOne<Contract>()
+                .WithMany()
+                .HasForeignKey(x => x.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<Document>()
+                .WithMany()
+                .HasForeignKey(x => x.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // OrganizationSequence (Numbering service per organization)
