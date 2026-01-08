@@ -3,6 +3,7 @@ using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Contracts;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
+using LocaGuest.Domain.Aggregates.DepositAggregate;
 using LocaGuest.Domain.Constants;
 using LocaGuest.Domain.Exceptions;
 using LocaGuest.Domain.Repositories;
@@ -159,7 +160,17 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 tenant.Code,
                 property.Code);
 
+            var depositAmountExpected = request.DepositAmountExpected ?? (request.Rent * 2m);
+            var depositDueDate = request.DepositDueDate ?? request.StartDate;
+
+            var deposit = Deposit.Create(
+                contractId: contract.Id,
+                amountExpected: depositAmountExpected,
+                dueDate: depositDueDate,
+                allowInstallments: request.DepositAllowInstallments);
+
             await _unitOfWork.Contracts.AddAsync(contract, cancellationToken);
+            await _unitOfWork.Deposits.AddAsync(deposit, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             var contractDto = new ContractDto

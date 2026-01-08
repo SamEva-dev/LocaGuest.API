@@ -2,6 +2,7 @@ using System.IO.Compression;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace LocaGuest.Application.Features.Documents.Queries.ExportDocumentsZip;
 
@@ -34,7 +35,11 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
                     if (File.Exists(doc.FilePath))
                     {
                         // Create folder structure by category
-                        var entryName = $"{doc.Category}/{doc.FileName}";
+                        var safeCategory = SanitizeZipEntrySegment(doc.Category.ToString());
+                        var safeFileName = SanitizeZipEntrySegment(Path.GetFileName(doc.FileName));
+                        var entryName = string.IsNullOrWhiteSpace(safeCategory)
+                            ? safeFileName
+                            : $"{safeCategory}/{safeFileName}";
                         var entry = archive.CreateEntry(entryName);
 
                         using var entryStream = entry.Open();
@@ -60,5 +65,24 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
             _logger.LogError(ex, "Error creating ZIP for tenant {TenantId}", request.TenantId);
             throw;
         }
+    }
+
+    private static string SanitizeZipEntrySegment(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var sb = new StringBuilder(value.Length);
+        foreach (var ch in value)
+        {
+            sb.Append(invalid.Contains(ch) ? '_' : ch);
+        }
+
+        var sanitized = sb.ToString();
+        sanitized = sanitized.Replace("/", "_").Replace("\\", "_");
+        return sanitized.Trim().TrimEnd('.');
     }
 }

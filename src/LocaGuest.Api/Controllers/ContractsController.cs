@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using LocaGuest.Api.Authorization;
+using LocaGuest.Application.Services;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -34,13 +35,16 @@ public class ContractsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<ContractsController> _logger;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
 
     public ContractsController(
         IMediator mediator,
-        ILogger<ContractsController> logger)
+        ILogger<ContractsController> logger,
+        IEffectiveContractStateResolver effectiveContractStateResolver)
     {
         _mediator = mediator;
         _logger = logger;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
     }
 
     [HttpGet("stats")]
@@ -51,6 +55,26 @@ public class ContractsController : ControllerBase
         
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("{id:guid}/effective-state")]
+    public async Task<IActionResult> GetEffectiveState(
+        Guid id,
+        [FromQuery] DateTime? dateUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        var d = dateUtc ?? DateTime.UtcNow;
+
+        var result = await _effectiveContractStateResolver.ResolveAsync(id, d, cancellationToken);
+        if (!result.IsSuccess || result.Data == null)
+        {
+            if ((result.ErrorMessage ?? string.Empty).Contains("not found", StringComparison.OrdinalIgnoreCase))
+                return NotFound(new { message = result.ErrorMessage });
+
+            return BadRequest(new { message = result.ErrorMessage ?? "Error resolving effective contract state" });
+        }
 
         return Ok(result.Data);
     }

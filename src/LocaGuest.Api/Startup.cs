@@ -1,19 +1,21 @@
 using LocaGuest.Api.Middleware;
 using LocaGuest.Api.Services;
-using LocaGuest.Api.Common;
 using LocaGuest.Application;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure;
+using LocaGuest.Infrastructure.Persistence.Seeders;
 using LocaGuest.Infrastructure.Persistence;
+using LocaGuest.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using LocaGuest.Infrastructure.BackgroundServices;
+using LocaGuest.Api.Common;
 using LocaGuest.Infrastructure.Jobs;
 using LocaGuest.Api.Common.Swagger;
 using LocaGuest.Api.Authorization;
@@ -22,7 +24,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authorization;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -227,6 +228,11 @@ public class Startup
             options.AddPolicy(Permissions.PaymentsWrite, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PaymentsWrite)));
 
+            options.AddPolicy(Permissions.DepositsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DepositsRead)));
+            options.AddPolicy(Permissions.DepositsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DepositsWrite)));
+
             options.AddPolicy(Permissions.DocumentsRead, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DocumentsRead)));
             options.AddPolicy(Permissions.DocumentsWrite, policy =>
@@ -430,6 +436,20 @@ public class Startup
             app.UseHttpsRedirection();
         }
 
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+                context.Response.Headers.TryAdd("X-Frame-Options", "DENY");
+                context.Response.Headers.TryAdd("Content-Security-Policy", "frame-ancestors 'none';");
+                return Task.CompletedTask;
+            });
+
+            await next();
+        });
+
         if (env.IsDevelopment() || env.EnvironmentName == "Testing")
         {
             app.UseDeveloperExceptionPage();
@@ -452,7 +472,12 @@ public class Startup
                 Log.Information("Applying Audit database migrations...");
                 auditContext.Database.Migrate();
 
-                Log.Information("⚠️ Database seeding disabled - Empty database");
+                var seedPlansConfigured = Configuration.GetValue<bool?>("Billing:SeedPlans");
+                var seedPlans = seedPlansConfigured ?? (env.IsDevelopment() || env.EnvironmentName == "Testing");
+                if (seedPlans)
+                {
+                    PlanSeeder.SeedPlansAsync(context).GetAwaiter().GetResult();
+                }
             }
             catch (Exception ex)
             {

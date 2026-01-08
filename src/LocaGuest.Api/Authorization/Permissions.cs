@@ -14,6 +14,9 @@ public static class Permissions
     public const string PaymentsRead = "payments.read";
     public const string PaymentsWrite = "payments.write";
 
+    public const string DepositsRead = "deposits.read";
+    public const string DepositsWrite = "deposits.write";
+
     public const string DocumentsRead = "documents.read";
     public const string DocumentsWrite = "documents.write";
 

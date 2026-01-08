@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Mvc;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Api.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
+using LocaGuest.Application.Services;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -33,6 +35,7 @@ public class DocumentsController : ControllerBase
     private readonly ILocaGuestReadDbContext _readDb;
     private readonly IOrganizationContext _orgContext;
     private readonly IWebHostEnvironment _environment;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
 
     public DocumentsController(
         IMediator mediator, 
@@ -43,7 +46,8 @@ public class DocumentsController : ControllerBase
         IUnitOfWork unitOfWork,
         ILocaGuestReadDbContext readDb,
         IOrganizationContext orgContext,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IEffectiveContractStateResolver effectiveContractStateResolver)
     {
         _mediator = mediator;
         _logger = logger;
@@ -54,6 +58,7 @@ public class DocumentsController : ControllerBase
         _readDb = readDb;
         _orgContext = orgContext;
         _environment = environment;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
     }
 
     [HttpGet("property/{propertyId:guid}/sheet")]
@@ -88,7 +93,7 @@ public class DocumentsController : ControllerBase
                 phone,
                 cancellationToken);
 
-            var fileName = $"Fiche_Bien_{property.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf";
+            var fileName = SanitizeFileName($"Fiche_Bien_{property.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
             return File(pdfBytes, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -96,6 +101,24 @@ public class DocumentsController : ControllerBase
             _logger.LogError(ex, "Error generating property sheet for {PropertyId}", propertyId);
             return StatusCode(500, new { message = "Error generating property sheet", error = ex.Message });
         }
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var safeName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeName))
+        {
+            return $"file_{Guid.NewGuid():N}";
+        }
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var sb = new StringBuilder(safeName.Length);
+        foreach (var ch in safeName)
+        {
+            sb.Append(invalid.Contains(ch) ? '_' : ch);
+        }
+
+        return sb.ToString().TrimEnd('.');
     }
 
     [HttpGet("tenant/{tenantId:guid}/sheet")]
@@ -135,7 +158,7 @@ public class DocumentsController : ControllerBase
                 phone,
                 cancellationToken);
 
-            var fileName = $"Fiche_Locataire_{tenant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf";
+            var fileName = SanitizeFileName($"Fiche_Locataire_{tenant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
             return File(pdfBytes, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -301,7 +324,7 @@ public class DocumentsController : ControllerBase
                 dto,
                 cancellationToken);
 
-            var fileName = $"Contrat_{dto.ContractType}_{DateTime.UtcNow:yyyy-MM-dd}_{Guid.NewGuid():N}.pdf";
+            var fileName = SanitizeFileName($"Contrat_{dto.ContractType}_{DateTime.UtcNow:yyyy-MM-dd}_{Guid.NewGuid():N}.pdf");
 
             // Save file to disk
             var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _orgContext.OrganizationId!.Value.ToString());
@@ -452,7 +475,9 @@ public class DocumentsController : ControllerBase
                 return Unauthorized(new { message = "User not authenticated" });
 
             // Save file to disk
-            var fileName = $"{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid():N}{Path.GetExtension(file.FileName)}";
+            var originalBaseName = Path.GetFileNameWithoutExtension(file.FileName);
+            var extension = Path.GetExtension(file.FileName);
+            var fileName = SanitizeFileName($"{originalBaseName}_{Guid.NewGuid():N}{extension}");
             var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _orgContext.OrganizationId!.Value.ToString());
             Directory.CreateDirectory(documentsPath);
             var filePath = Path.Combine(documentsPath, fileName);
@@ -710,6 +735,28 @@ public class DocumentsController : ControllerBase
             if (contract == null)
                 return NotFound(new { message = "Contract not found" });
 
+            var effectiveStateResult = await _effectiveContractStateResolver.ResolveAsync(contractId, DateTime.UtcNow, cancellationToken);
+            var effective = effectiveStateResult.IsSuccess ? effectiveStateResult.Data : null;
+
+            var nextSigned = await _unitOfWork.Addendums.Query()
+                .AsNoTracking()
+                .Where(a => a.ContractId == contractId
+                            && a.SignatureStatus == AddendumSignatureStatus.Signed
+                            && a.EffectiveDate > DateTime.UtcNow)
+                .OrderBy(a => a.EffectiveDate)
+                .ThenBy(a => a.CreatedAt)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    type = a.Type.ToString(),
+                    effectiveDate = a.EffectiveDate,
+                    newRent = a.NewRent,
+                    newCharges = a.NewCharges,
+                    newEndDate = a.NewEndDate,
+                    newRoomId = a.NewRoomId
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
             var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
             if (tenant == null)
                 return NotFound(new { message = "Tenant not found" });
@@ -761,6 +808,8 @@ public class DocumentsController : ControllerBase
                     terminationReason = contract.TerminationReason,
                     createdAt = contract.CreatedAt
                 },
+                effective,
+                nextSignedChange = nextSigned,
                 tenant = new
                 {
                     id = tenant.Id,

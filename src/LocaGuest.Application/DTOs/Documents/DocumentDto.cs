@@ -1,5 +1,7 @@
 namespace LocaGuest.Application.DTOs.Documents;
 
+using System.Text.Json.Serialization;
+
 public class DocumentStatsDto
 {
     public int TotalDocuments { get; set; }
@@ -41,6 +43,7 @@ public class DocumentDto
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
+    [JsonIgnore]
     public string FilePath { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;

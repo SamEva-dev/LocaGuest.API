@@ -1,5 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.DTOs.Contracts;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,13 +10,16 @@ namespace LocaGuest.Application.Features.Contracts.Queries.GetContractsByTenant;
 public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTenantQuery, Result<List<ContractDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
     private readonly ILogger<GetContractsByTenantQueryHandler> _logger;
 
     public GetContractsByTenantQueryHandler(
         IUnitOfWork unitOfWork,
+        IEffectiveContractStateResolver effectiveContractStateResolver,
         ILogger<GetContractsByTenantQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
         _logger = logger;
     }
 
@@ -41,6 +45,13 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
             foreach (var contract in contracts)
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+
+                var effectiveResult = await _effectiveContractStateResolver.ResolveAsync(
+                    contract.Id,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                var effective = effectiveResult.IsSuccess ? effectiveResult.Data : null;
                 
                 var dto = new ContractDto
                 {
@@ -51,14 +62,15 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
                     TenantId = contract.RenterTenantId,
                     TenantName = tenant.FullName,
                     StartDate = contract.StartDate,
-                    EndDate = contract.EndDate,
-                    Rent = contract.Rent,
-                    Charges = contract.Charges,
+                    EndDate = effective?.EndDate ?? contract.EndDate,
+                    Rent = effective?.Rent ?? contract.Rent,
+                    Charges = effective?.Charges ?? contract.Charges,
                     Deposit = contract.Deposit,
                     Type = contract.Type.ToString(),
                     Status = contract.Status.ToString(),
                     CreatedAt = contract.CreatedAt,
                     NoticeEndDate = contract.NoticeEndDate,
+                    RoomId = effective?.RoomId ?? contract.RoomId,
                     HasInventoryEntry = false,
                     HasInventoryExit = false,
                     PaymentsCount = 0

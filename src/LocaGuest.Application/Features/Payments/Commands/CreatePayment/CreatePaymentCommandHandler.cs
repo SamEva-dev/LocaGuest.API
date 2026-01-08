@@ -312,6 +312,17 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 return Result.Failure<PaymentDto>("Tenant is not an effective participant for this invoice period");
             }
 
+            var expectedDateUtc = request.ExpectedDate.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.ExpectedDate, DateTimeKind.Utc)
+                : request.ExpectedDate.ToUniversalTime();
+
+            if (paymentType == PaymentType.Rent)
+            {
+                var daysInMonth = DateTime.DaysInMonth(expectedDateUtc.Year, expectedDateUtc.Month);
+                var dueDay = Math.Clamp(contract.PaymentDueDay, 1, daysInMonth);
+                expectedDateUtc = new DateTime(expectedDateUtc.Year, expectedDateUtc.Month, dueDay, 0, 0, 0, DateTimeKind.Utc);
+            }
+
             // 6. Créer le paiement (AmountDue vient de la ligne calculée)
             var payment = Payment.Create(
                 tenantId: request.TenantId,
@@ -320,7 +331,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 paymentType: paymentType,
                 amountDue: tenantLine.AmountDue,
                 amountPaid: request.AmountPaid,
-                expectedDate: request.ExpectedDate,
+                expectedDate: expectedDateUtc,
                 paymentDate: request.PaymentDate,
                 paymentMethod: paymentMethod,
                 note: request.Note);

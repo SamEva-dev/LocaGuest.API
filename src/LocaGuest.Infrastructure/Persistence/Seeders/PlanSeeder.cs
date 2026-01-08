@@ -20,7 +20,7 @@ public static class PlanSeeder
             CreateEnterprisePlan()
         };
 
-        //context.Plans.AddRange(plans);
+        context.Plans.AddRange(plans);
         await context.SaveChangesAsync();
     }
 

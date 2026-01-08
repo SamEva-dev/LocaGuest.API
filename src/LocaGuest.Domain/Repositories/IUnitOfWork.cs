@@ -20,6 +20,7 @@ public interface IUnitOfWork : IDisposable
     IPlanRepository Plans { get; }
     ISubscriptionRepository Subscriptions { get; }
     IOrganizationRepository Organizations { get; }
+    IDepositRepository Deposits { get; }
     IPaymentRepository Payments { get; }
     IRentInvoiceRepository RentInvoices { get; }
     IRentInvoiceLineRepository RentInvoiceLines { get; }

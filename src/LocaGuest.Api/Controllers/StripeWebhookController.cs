@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using LocaGuest.Application.Features.Billing.Commands.HandleStripeWebhook;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LocaGuest.Api.Controllers;
 
+[AllowAnonymous]
 [ApiController]
 [Route("api/webhooks/stripe")]
 public class StripeWebhookController : ControllerBase
@@ -25,6 +27,8 @@ public class StripeWebhookController : ControllerBase
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
         var stripeSignature = Request.Headers["Stripe-Signature"].ToString();
+        if (string.IsNullOrWhiteSpace(stripeSignature))
+            return BadRequest();
         var result = await _mediator.Send(new HandleStripeWebhookCommand
         {
             Payload = json,

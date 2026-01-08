@@ -3,7 +3,9 @@ using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocument;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
+using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
+using LocaGuest.Application.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,6 +18,7 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestDbContext _context;
     private readonly IOrganizationContext _orgContext;
+    private readonly IEffectiveContractStateResolver _effectiveContractStateResolver;
     private readonly IMediator _mediator;
     private readonly ILogger<CreateAddendumCommandHandler> _logger;
 
@@ -23,12 +26,14 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
         IUnitOfWork unitOfWork,
         ILocaGuestDbContext context,
         IOrganizationContext orgContext,
+        IEffectiveContractStateResolver effectiveContractStateResolver,
         IMediator mediator,
         ILogger<CreateAddendumCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _orgContext = orgContext;
+        _effectiveContractStateResolver = effectiveContractStateResolver;
         _mediator = mediator;
         _logger = logger;
     }
@@ -73,6 +78,9 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             switch (addendumType)
             {
                 case AddendumType.Financial:
+                    if (request.EffectiveDate.Day != 1)
+                        return Result.Failure<Guid>("Financial addendum effective date must be the 1st of the month");
+
                     if (!request.NewRent.HasValue && !request.NewCharges.HasValue)
                         return Result.Failure<Guid>("Financial addendum requires at least rent or charges modification");
                     
@@ -116,6 +124,9 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
                     break;
 
                 case AddendumType.Occupants:
+                    if (request.EffectiveDate.Day != 1)
+                        return Result.Failure<Guid>("Occupants addendum effective date must be the 1st of the month");
+
                     if (!request.OccupantChanges.HasValue
                         || request.OccupantChanges.Value.ValueKind == JsonValueKind.Undefined
                         || request.OccupantChanges.Value.ValueKind == JsonValueKind.Null)
@@ -251,6 +262,16 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             // ========== 6. AJOUTER L'AVENANT AU CONTRAT ==========
 
             await _unitOfWork.Addendums.AddAsync(addendum, cancellationToken);
+
+            if (!request.RequireSignature
+                && addendum.Type == AddendumType.Occupants
+                && addendum.EffectiveDate <= DateTime.UtcNow)
+            {
+                var applyResult = await ApplyOccupantsChangesIfAnyAsync(addendum, cancellationToken);
+                if (!applyResult.IsSuccess)
+                    return Result.Failure<Guid>(applyResult.ErrorMessage ?? "Unable to apply occupants changes");
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
@@ -267,4 +288,90 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
             return Result.Failure<Guid>($"Error creating addendum: {ex.Message}");
         }
     }
+
+    private async Task<Result> ApplyOccupantsChangesIfAnyAsync(Addendum addendum, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(addendum.OccupantChanges))
+            return Result.Failure("Occupants addendum requires occupant changes details");
+
+        OccupantChangesDto? payload;
+        try
+        {
+            payload = JsonSerializer.Deserialize<OccupantChangesDto>(
+                addendum.OccupantChanges,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch
+        {
+            payload = null;
+        }
+
+        if (payload?.Participants == null || payload.Participants.Count == 0)
+            return Result.Failure("Occupants addendum requires occupant changes details");
+
+        if (!Enum.TryParse<BillingShareType>(payload.SplitType ?? string.Empty, true, out var shareType))
+            return Result.Failure("Invalid splitType for occupants addendum");
+
+        if (payload.Participants.Any(p => p == null || p.TenantId == Guid.Empty))
+            return Result.Failure("Invalid tenantId in occupants addendum");
+
+        var distinct = payload.Participants
+            .GroupBy(p => p.TenantId)
+            .Select(g => g.First())
+            .ToList();
+
+        if (distinct.Count != payload.Participants.Count)
+            return Result.Failure("Duplicate tenantId in occupants addendum");
+
+        if (distinct.Any(p => p.ShareValue < 0m))
+            return Result.Failure("ShareValue cannot be negative");
+
+        var shareSum = distinct.Sum(p => p.ShareValue);
+
+        if (shareType == BillingShareType.Percentage)
+        {
+            if (Math.Abs(shareSum - 100m) > 0.0001m)
+                return Result.Failure("Percentage split must total 100");
+        }
+        else
+        {
+            var stateResult = await _effectiveContractStateResolver.ResolveAsync(addendum.ContractId, addendum.EffectiveDate, cancellationToken);
+            if (!stateResult.IsSuccess || stateResult.Data == null)
+                return Result.Failure(stateResult.ErrorMessage ?? "Unable to resolve effective contract state");
+
+            var expected = stateResult.Data.Rent + stateResult.Data.Charges;
+            if (Math.Abs(shareSum - expected) > 0.01m)
+                return Result.Failure("FixedAmount split must total (Rent + Charges)");
+        }
+
+        var effectiveDate = addendum.EffectiveDate;
+        var endDate = effectiveDate.AddDays(-1);
+
+        var existing = await _unitOfWork.ContractParticipants
+            .GetEffectiveByContractIdAtDateAsync(addendum.ContractId, effectiveDate, cancellationToken);
+
+        foreach (var p in existing)
+        {
+            p.EndAt(endDate);
+            _unitOfWork.ContractParticipants.Update(p);
+        }
+
+        foreach (var np in distinct)
+        {
+            var created = ContractParticipant.Create(
+                contractId: addendum.ContractId,
+                tenantId: np.TenantId,
+                startDate: effectiveDate,
+                endDate: null,
+                shareType: shareType,
+                shareValue: np.ShareValue);
+
+            await _unitOfWork.ContractParticipants.AddAsync(created, cancellationToken);
+        }
+
+        return Result.Success();
+    }
+
+    private sealed record OccupantChangesDto(string? SplitType, List<OccupantParticipantDto> Participants);
+    private sealed record OccupantParticipantDto(Guid TenantId, decimal ShareValue);
 }

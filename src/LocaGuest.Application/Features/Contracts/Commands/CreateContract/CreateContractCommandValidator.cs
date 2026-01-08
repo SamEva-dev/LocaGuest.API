@@ -34,6 +34,14 @@ public sealed class CreateContractCommandValidator : AbstractValidator<CreateCon
             .GreaterThanOrEqualTo(0).When(x => x.Deposit.HasValue)
             .WithMessage("Deposit cannot be negative");
 
+        RuleFor(x => x.DepositAmountExpected)
+            .GreaterThanOrEqualTo(0).When(x => x.DepositAmountExpected.HasValue)
+            .WithMessage("DepositAmountExpected cannot be negative");
+
+        RuleFor(x => x.DepositDueDate)
+            .GreaterThanOrEqualTo(x => x.StartDate).When(x => x.DepositDueDate.HasValue)
+            .WithMessage("DepositDueDate must be on or after StartDate");
+
         RuleFor(x => x.PaymentDueDay)
             .InclusiveBetween(1, 31).WithMessage("PaymentDueDay must be between 1 and 31");
 

@@ -58,6 +58,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     public DbSet<Addendum> Addendums => Set<Addendum>();
     public DbSet<ContractDocumentLink> ContractDocumentLinks => Set<ContractDocumentLink>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<LocaGuest.Domain.Aggregates.DepositAggregate.Deposit> Deposits => Set<LocaGuest.Domain.Aggregates.DepositAggregate.Deposit>();
+    public DbSet<LocaGuest.Domain.Aggregates.DepositAggregate.DepositTransaction> DepositTransactions => Set<LocaGuest.Domain.Aggregates.DepositAggregate.DepositTransaction>();
     public DbSet<Domain.Aggregates.PaymentAggregate.Payment> Payments => Set<Domain.Aggregates.PaymentAggregate.Payment>();
     public DbSet<RentInvoice> RentInvoices => Set<RentInvoice>();
     public DbSet<LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoiceLine> RentInvoiceLines => Set<LocaGuest.Domain.Aggregates.PaymentAggregate.RentInvoiceLine>();

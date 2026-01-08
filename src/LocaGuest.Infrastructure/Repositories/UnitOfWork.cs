@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
     private IPlanRepository? _plans;
     private ISubscriptionRepository? _subscriptions;
     private IOrganizationRepository? _organizations;
+    private IDepositRepository? _deposits;
     private IPaymentRepository? _payments;
     private IRentInvoiceRepository? _rentInvoices;
     private IRentInvoiceLineRepository? _rentInvoiceLines;
@@ -83,6 +84,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IOrganizationRepository Organizations => 
         _organizations ??= new OrganizationRepository(_context);
+
+    public IDepositRepository Deposits =>
+        _deposits ??= new DepositRepository(_context);
 
     public IPaymentRepository Payments => 
         _payments ??= new PaymentRepository(_context);

@@ -37,7 +37,7 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
             var expectedDateUtc = new DateTime(
                 request.PaymentDate.Year,
                 request.PaymentDate.Month,
-                1,
+                Math.Clamp(contract.PaymentDueDay, 1, DateTime.DaysInMonth(request.PaymentDate.Year, request.PaymentDate.Month)),
                 0,
                 0,
                 0,
