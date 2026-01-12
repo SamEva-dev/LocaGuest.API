@@ -78,20 +78,10 @@ try
 
     static void LogEffectiveDatabaseTarget(WebApplicationBuilder b)
     {
-        var provider = b.Configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
+        var provider = b.Configuration["Database:Provider"]?.ToLowerInvariant() ?? "postgresql";
         if (provider == "sqlite")
         {
-            var cs = b.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=./Data/LocaGuest.db";
-            var dataSourcePrefix = "Data Source=";
-            var path = cs;
-            var idx = cs.IndexOf(dataSourcePrefix, StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0)
-            {
-                path = cs[(idx + dataSourcePrefix.Length)..].Trim();
-            }
-
-            var fullPath = Path.GetFullPath(path);
-            Log.Information("Database Provider={Provider}; SQLite file={SqliteFile}", provider, fullPath);
+            Log.Warning("Database Provider={Provider}; SQLite is no longer supported", provider);
             return;
         }
 

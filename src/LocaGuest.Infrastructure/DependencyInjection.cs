@@ -20,7 +20,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
+        var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "postgresql";
 
         var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
         var isDevOrTesting = string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase)
@@ -34,10 +34,7 @@ public static class DependencyInjection
         {
             if (provider == "sqlite")
             {
-                options.UseSqlite(
-                    configuration.GetConnectionString("SqliteConnection") ?? "Data Source=./Data/LocaGuest.db",
-                    b => b.MigrationsAssembly(typeof(LocaGuestDbContext).Assembly.FullName))
-                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+                throw new InvalidOperationException("SQLite is no longer supported. Set Database:Provider to 'postgresql'.");
             }
             else
             {
@@ -71,10 +68,7 @@ public static class DependencyInjection
         {
             if (provider == "sqlite")
             {
-                options.UseSqlite(
-                    configuration.GetConnectionString("SqliteAuditConnection") ?? "Data Source=./Data/LocaGuest_Audit.db",
-                    b => b.MigrationsAssembly(typeof(AuditDbContext).Assembly.FullName))
-                    .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+                throw new InvalidOperationException("SQLite is no longer supported. Set Database:Provider to 'postgresql'.");
             }
             else
             {

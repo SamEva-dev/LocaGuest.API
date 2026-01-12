@@ -23,19 +23,17 @@ public class LocaGuestDbContextFactory : IDesignTimeDbContextFactory<LocaGuestDb
         var optionsBuilder = new DbContextOptionsBuilder<LocaGuestDbContext>();
         
         // ✅ Respect the provider from configuration
-        var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "sqlite";
+        var provider = configuration["Database:Provider"]?.ToLowerInvariant() ?? "postgresql";
         
         if (provider == "npgsql" || provider == "postgresql")
         {
-            var connectionString = configuration.GetConnectionString("Default");
+            var connectionString = configuration.GetConnectionString("DefaultConnection_Locaguest");
             optionsBuilder.UseNpgsql(connectionString);
             Console.WriteLine($"[DesignTime] Using PostgreSQL: {connectionString}");
         }
         else
         {
-            var connectionString = configuration.GetConnectionString("SqliteConnection");
-            optionsBuilder.UseSqlite(connectionString);
-            Console.WriteLine($"[DesignTime] Using SQLite: {connectionString}");
+            throw new InvalidOperationException("SQLite is no longer supported. Set Database:Provider to 'postgresql'.");
         }
         
         // Create a dummy mediator for design time
