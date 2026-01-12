@@ -41,7 +41,7 @@ public static class DependencyInjection
             }
             else
             {
-                // Use DATABASE_URL from Fly.io, or fallback to Default
+                // Use DATABASE_URL from Fly.io, or fallback to DefaultConnection_Locaguest
                 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
                 string connectionString;
                 
@@ -54,7 +54,7 @@ public static class DependencyInjection
                 }
                 else
                 {
-                    connectionString = configuration.GetConnectionString("Default");
+                    connectionString = configuration.GetConnectionString("DefaultConnection_Locaguest");
                 }
                 
                 options.UseNpgsql(
@@ -66,7 +66,7 @@ public static class DependencyInjection
             options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
-        // Audit Database
+        // Audit_Locaguest Database
         services.AddDbContext<AuditDbContext>(options =>
         {
             if (provider == "sqlite")
@@ -78,7 +78,7 @@ public static class DependencyInjection
             }
             else
             {
-                // Use DATABASE_URL from Fly.io, or fallback to Audit
+                // Use DATABASE_URL from Fly.io, or fallback to Audit_Locaguest
                 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
                 string connectionString;
                 
@@ -92,7 +92,7 @@ public static class DependencyInjection
                 }
                 else
                 {
-                    connectionString = configuration.GetConnectionString("Audit");
+                    connectionString = configuration.GetConnectionString("Audit_Locaguest");
                 }
                 
                 options.UseNpgsql(

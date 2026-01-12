@@ -111,8 +111,8 @@ try
             }
         }
 
-        var pg = b.Configuration.GetConnectionString("Default") ?? string.Empty;
-        Log.Information("Database Provider={Provider}; ConnectionString(Default)={ConnectionString}", provider, RedactPostgresConnectionString(pg));
+        var pg = b.Configuration.GetConnectionString("DefaultConnection_Locaguest") ?? string.Empty;
+        Log.Information("Database Provider={Provider}; ConnectionString(DefaultConnection_Locaguest)={ConnectionString}", provider, RedactPostgresConnectionString(pg));
     }
 
     // Serilog (from appsettings + env)

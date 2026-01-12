@@ -24,8 +24,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 EXPOSE 8080
 
-# Create Data directory for SQLite
-RUN mkdir -p /app/Data
+# Security: run as non-root
+RUN addgroup --system --gid 10001 dotnetapp && adduser --system --uid 10001 --ingroup dotnetapp dotnetapp
+ENV LOCAGUEST_HOME=/app/LocaGuest
+RUN mkdir -p /app/LocaGuest /app/LocaGuest/Data /app/LocaGuest/log /app/Data && chown -R dotnetapp:dotnetapp /app/LocaGuest /app/Data
+USER dotnetapp
 
-COPY --from=publish /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+
+COPY --from=publish --chown=dotnetapp:dotnetapp /app/publish .
 ENTRYPOINT ["dotnet", "LocaGuest.Api.dll"]

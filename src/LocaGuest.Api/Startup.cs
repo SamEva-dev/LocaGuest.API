@@ -469,7 +469,7 @@ public class Startup
                 context.Database.Migrate();
                 Log.Information("LocaGuest database migrations applied successfully");
 
-                Log.Information("Applying Audit database migrations...");
+                Log.Information("Applying Audit_Locaguest database migrations...");
                 auditContext.Database.Migrate();
 
                 var seedPlansConfigured = Configuration.GetValue<bool?>("Billing:SeedPlans");
@@ -490,15 +490,14 @@ public class Startup
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseObservabilityEnrichment();
         app.UseMiddleware<IdempotencyMiddleware>();
-        if (!env.IsDevelopment() && env.EnvironmentName != "Testing")
+        if (!env.IsDevelopment() && env.IsStaging())
         {
             app.UseMiddleware<ExceptionHandlingMiddleware>();
         }
 
         app.UseSerilogRequestLogging();
 
-        var swaggerEnabled = Configuration.GetValue<bool>("Swagger:Enabled");
-        if (swaggerEnabled || env.IsDevelopment() || env.EnvironmentName == "Testing")
+        if (env.IsDevelopment() || env.IsStaging())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
@@ -522,10 +521,10 @@ public class Startup
         {
             endpoints.MapControllers();
 
-            endpoints.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
+            endpoints.MapPrometheusScrapingEndpoint("/metrics").RequireAuthorization();
 
             // SignalR Hubs
-            endpoints.MapHub<NotificationsHub>("/hubs/notifications");
+            endpoints.MapHub<NotificationsHub>("/hubs/notifications").RequireAuthorization("RequireOrganization");
 
             // Health Check Endpoints
             endpoints.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
