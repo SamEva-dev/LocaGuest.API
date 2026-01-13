@@ -117,7 +117,7 @@ public sealed class ProvisioningService : IProvisioningService
             await conn.OpenAsync(ct);
 
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT nextval('core.organization_number_seq')";
+        cmd.CommandText = "SELECT nextval('org.organization_number_seq')";
         var scalar = await cmd.ExecuteScalarAsync(ct);
 
         return Convert.ToInt32(scalar);

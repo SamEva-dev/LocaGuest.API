@@ -456,7 +456,7 @@ public class Startup
         }
 
         // Apply migrations in Development and Production
-        if (env.IsDevelopment() || env.IsProduction())
+        if (env.IsDevelopment() || env.IsStaging() || env.IsProduction())
         {
             using var scope = app.ApplicationServices.CreateScope();
 
