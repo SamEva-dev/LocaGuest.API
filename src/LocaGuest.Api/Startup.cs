@@ -455,8 +455,8 @@ public class Startup
             app.UseDeveloperExceptionPage();
         }
 
-        // Apply migrations in Development and Production
-        if (env.IsDevelopment() || env.IsStaging() || env.IsProduction())
+        // Apply migrations in Development, Staging, PreProduction and Production
+        if (env.IsDevelopment() || env.IsStaging() || env.IsProduction() || env.IsEnvironment("PreProduction"))
         {
             using var scope = app.ApplicationServices.CreateScope();
 
