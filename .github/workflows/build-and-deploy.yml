@@ -51,35 +51,31 @@ jobs:
             set -euo pipefail
 
             IMAGE_TAG="${{ needs.build_push.outputs.image_tag }}"
-
-            COMPOSE_DIR="/opt/locaguest/config"
-            COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
-            ENV_FILE="/opt/locaguest/env/.env"
-
-            sudo mkdir -p "$(dirname "$ENV_FILE")"
-            sudo touch "$ENV_FILE"
-            sudo chmod 600 "$ENV_FILE" || true
+            ROOT="/opt/locaguest"
+            ENV_FILE="${ROOT}/env/.env"
+            COMPOSE_FILE="${ROOT}/config/docker-compose.yml"
+            mkdir -p "${ROOT}/env"
+            touch "${ENV_FILE}"
+            cd "${ROOT}"
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             upsert_env () {
               local key="$1"
               local value="$2"
-              if sudo grep -qE "^${key}=" "$ENV_FILE"; then
-                sudo sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+              if grep -qE "^${key}=" "${ENV_FILE}"; then
+                sed -i "s|^${key}=.*|${key}=${value}|" "${ENV_FILE}"
               else
-                echo "${key}=${value}" | sudo tee -a "$ENV_FILE" >/dev/null
+                echo "${key}=${value}" >> "${ENV_FILE}"
               fi
             }
 
             upsert_env "LOCAGUEST_API_TAG_STAGING" "${IMAGE_TAG}"
 
-            cd "$COMPOSE_DIR"
-
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d caddy
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile staging pull locaguest-api-staging
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile staging up -d locaguest-db-staging locaguest-api-staging
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile staging ps
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d caddy
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile staging pull locaguest-api-staging
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile staging up -d locaguest-db-staging locaguest-api-staging
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile staging ps
 
   deploy_preprod:
     runs-on: ubuntu-latest
@@ -96,34 +92,31 @@ jobs:
             set -euo pipefail
 
             IMAGE_TAG="sha-${{ github.sha }}"
-
-            COMPOSE_DIR="/opt/locaguest/config"
-            COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
-            ENV_FILE="/opt/locaguest/env/.env"
-
-            sudo mkdir -p "$(dirname "$ENV_FILE")"
-            sudo touch "$ENV_FILE"
-            sudo chmod 600 "$ENV_FILE" || true
+            ROOT="/opt/locaguest"
+            ENV_FILE="${ROOT}/env/.env"
+            COMPOSE_FILE="${ROOT}/config/docker-compose.yml"
+            mkdir -p "${ROOT}/env"
+            touch "${ENV_FILE}"
+            cd "${ROOT}"
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             upsert_env () {
               local key="$1"
               local value="$2"
-              if sudo grep -qE "^${key}=" "$ENV_FILE"; then
-                sudo sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+              if grep -qE "^${key}=" "${ENV_FILE}"; then
+                sed -i "s|^${key}=.*|${key}=${value}|" "${ENV_FILE}"
               else
-                echo "${key}=${value}" | sudo tee -a "$ENV_FILE" >/dev/null
+                echo "${key}=${value}" >> "${ENV_FILE}"
               fi
             }
 
             upsert_env "LOCAGUEST_API_TAG_PREPROD" "${IMAGE_TAG}"
 
-            cd "$COMPOSE_DIR"
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d caddy
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile preprod pull locaguest-api-preprod
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile preprod up -d locaguest-db-preprod locaguest-api-preprod
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile preprod ps
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d caddy
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile preprod pull locaguest-api-preprod
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile preprod up -d locaguest-db-preprod locaguest-api-preprod
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile preprod ps
 
   deploy_prod:
     runs-on: ubuntu-latest
@@ -140,31 +133,28 @@ jobs:
             set -euo pipefail
 
             IMAGE_TAG="sha-${{ github.sha }}"
-
-            COMPOSE_DIR="/opt/locaguest/config"
-            COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
-            ENV_FILE="/opt/locaguest/env/.env"
-
-            sudo mkdir -p "$(dirname "$ENV_FILE")"
-            sudo touch "$ENV_FILE"
-            sudo chmod 600 "$ENV_FILE" || true
+            ROOT="/opt/locaguest"
+            ENV_FILE="${ROOT}/env/.env"
+            COMPOSE_FILE="${ROOT}/config/docker-compose.yml"
+            mkdir -p "${ROOT}/env"
+            touch "${ENV_FILE}"
+            cd "${ROOT}"
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             upsert_env () {
               local key="$1"
               local value="$2"
-              if sudo grep -qE "^${key}=" "$ENV_FILE"; then
-                sudo sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+              if grep -qE "^${key}=" "${ENV_FILE}"; then
+                sed -i "s|^${key}=.*|${key}=${value}|" "${ENV_FILE}"
               else
-                echo "${key}=${value}" | sudo tee -a "$ENV_FILE" >/dev/null
+                echo "${key}=${value}" >> "${ENV_FILE}"
               fi
             }
 
             upsert_env "LOCAGUEST_API_TAG_PROD" "${IMAGE_TAG}"
 
-            cd "$COMPOSE_DIR"
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d caddy
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile prod pull locaguest-api-prod
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile prod up -d locaguest-db-prod locaguest-api-prod
-            sudo docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile prod ps
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d caddy
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile prod pull locaguest-api-prod
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile prod up -d locaguest-db-prod locaguest-api-prod
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" --profile prod ps
