@@ -256,6 +256,7 @@ public class Startup
 
                 var path = httpContext.Request.Path.Value ?? string.Empty;
                 if (path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase)
                     || path.StartsWith("/ready", StringComparison.OrdinalIgnoreCase)
                     || path.StartsWith("/live", StringComparison.OrdinalIgnoreCase)
                     || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase)
@@ -550,12 +551,28 @@ public class Startup
                 }
             }).AllowAnonymous();
 
+            // Public SaaS health endpoint (Uptime-Kuma)
+            endpoints.MapHealthChecks("/healthz", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = _ => true
+            }).AllowAnonymous();
+
             endpoints.MapHealthChecks("/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
             {
                 Predicate = check => check.Tags.Contains("ready")
             }).AllowAnonymous();
 
+            endpoints.MapHealthChecks("/healthz/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready")
+            }).AllowAnonymous();
+
             endpoints.MapHealthChecks("/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("live")
+            }).AllowAnonymous();
+
+            endpoints.MapHealthChecks("/healthz/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
             {
                 Predicate = check => check.Tags.Contains("live")
             }).AllowAnonymous();
