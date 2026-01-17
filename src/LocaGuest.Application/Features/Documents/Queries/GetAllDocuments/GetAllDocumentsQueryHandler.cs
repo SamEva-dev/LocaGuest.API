@@ -24,21 +24,21 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
     {
         try
         {
-            // Get all documents for the authenticated user (filtered automatically by TenantId via query filter)
+            // Get all documents for the authenticated user (filtered automatically by OccupantId via query filter)
             var documents = await _readDb.Documents.AsNoTracking()
                 .Where(d => !d.IsArchived)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync(cancellationToken);
 
             // Get all related tenants
-            var tenantIds = documents
-                .Where(d => d.AssociatedTenantId.HasValue)
-                .Select(d => d.AssociatedTenantId!.Value)
+            var OccupantIds = documents
+                .Where(d => d.AssociatedOccupantId.HasValue)
+                .Select(d => d.AssociatedOccupantId!.Value)
                 .Distinct()
                 .ToList();
 
             var tenants = await _readDb.Occupants.AsNoTracking()
-                .Where(t => tenantIds.Contains(t.Id))
+                .Where(t => OccupantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 
             // Get all related properties
@@ -61,9 +61,9 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
                 Type = d.Type.ToString(),
                 Category = d.Category.ToString(),
                 FileSizeBytes = d.FileSizeBytes,
-                TenantId = d.AssociatedTenantId,
+                OccupantId = d.AssociatedOccupantId,
                 PropertyId = d.PropertyId,
-                TenantName = d.AssociatedTenantId.HasValue ? tenants.GetValueOrDefault(d.AssociatedTenantId.Value) : null,
+                OccupantName = d.AssociatedOccupantId.HasValue ? tenants.GetValueOrDefault(d.AssociatedOccupantId.Value) : null,
                 PropertyName = d.PropertyId.HasValue ? properties.GetValueOrDefault(d.PropertyId.Value) : null,
                 Description = d.Description,
                 CreatedAt = d.CreatedAt,

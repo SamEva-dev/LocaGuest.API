@@ -6,5 +6,5 @@ namespace LocaGuest.Application.Features.Documents.Queries.GetTenantDocuments;
 
 public record GetTenantDocumentsQuery : IRequest<Result<List<DocumentDto>>>
 {
-    public required string TenantId { get; init; }
+    public required string OccupantId { get; init; }
 }

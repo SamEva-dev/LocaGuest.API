@@ -43,7 +43,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                 {
                     Id = c.Id,
                     PropertyId = c.PropertyId,
-                    TenantId = c.RenterTenantId,
+                    OccupantId = c.RenterOccupantId,
                     Type = c.Type.ToString(),
                     StartDate = c.StartDate,
                     EndDate = c.EndDate,
@@ -56,9 +56,9 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
                 .ToListAsync(cancellationToken);
 
             // Charger les noms des locataires
-            var tenantIds = contracts.Select(c => c.TenantId).Distinct().ToList();
+            var OccupantIds = contracts.Select(c => c.OccupantId).Distinct().ToList();
             var tenants = await _unitOfWork.Occupants.Query()
-                .Where(t => tenantIds.Contains(t.Id))
+                .Where(t => OccupantIds.Contains(t.Id))
                 .Select(t => new { t.Id, t.FullName })
                 .ToListAsync(cancellationToken);
             
@@ -76,7 +76,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
 
             foreach (var contract in contracts)
             {
-                contract.TenantName = tenants.FirstOrDefault(t => t.Id == contract.TenantId)?.FullName;
+                contract.OccupantName = tenants.FirstOrDefault(t => t.Id == contract.OccupantId)?.FullName;
 
                 contract.PaymentsCount = paymentCountsByContract.GetValueOrDefault(contract.Id);
                 

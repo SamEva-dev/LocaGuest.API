@@ -140,12 +140,12 @@ public class ContractsController : ControllerBase
     /// <summary>
     /// Get all contracts for a specific occupant
     /// </summary>
-    [HttpGet("tenant/{tenantId}")]
+    [HttpGet("tenant/{OccupantId}")]
     [ProducesResponseType(typeof(List<LocaGuest.Application.DTOs.Contracts.ContractDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetContractsByTenant(string tenantId)
+    public async Task<IActionResult> GetContractsByTenant(string OccupantId)
     {
-        var query = new GetContractsByTenantQuery { TenantId = tenantId };
+        var query = new GetContractsByTenantQuery { OccupantId = OccupantId };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -308,8 +308,8 @@ public class ContractsController : ControllerBase
         var command = new UpdateContractCommand
         {
             ContractId = id,
-            TenantId = request.TenantId,
-            TenantIdIsSet = request.TenantIdIsSet,
+            OccupantId = request.OccupantId,
+            OccupantIdIsSet = request.OccupantIdIsSet,
             PropertyId = request.PropertyId,
             PropertyIdIsSet = request.PropertyIdIsSet,
             RoomId = request.RoomId,
@@ -338,10 +338,10 @@ public class ContractsController : ControllerBase
 
     public sealed class UpdateContractRequest
     {
-        private Guid? _tenantId;
-        public Guid? TenantId { get => _tenantId; set { _tenantId = value; TenantIdIsSet = true; } }
+        private Guid? _OccupantId;
+        public Guid? OccupantId { get => _OccupantId; set { _OccupantId = value; OccupantIdIsSet = true; } }
         [JsonIgnore]
-        public bool TenantIdIsSet { get; private set; }
+        public bool OccupantIdIsSet { get; private set; }
 
         private Guid? _propertyId;
         public Guid? PropertyId { get => _propertyId; set { _propertyId = value; PropertyIdIsSet = true; } }

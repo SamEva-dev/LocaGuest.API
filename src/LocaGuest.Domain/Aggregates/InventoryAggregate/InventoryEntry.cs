@@ -16,7 +16,7 @@ public class InventoryEntry : AuditableEntity
     /// <summary>
     /// ID du locataire (Tenant entity) - ne pas confondre avec TenantId multi-tenant hérité de AuditableEntity
     /// </summary>
-    public Guid RenterTenantId { get; private set; }
+    public Guid RenterOccupantId { get; private set; }
     
     public DateTime InspectionDate { get; private set; }
     public string AgentName { get; private set; } = string.Empty;
@@ -66,7 +66,7 @@ public class InventoryEntry : AuditableEntity
             PropertyId = propertyId,
             RoomId = roomId,
             ContractId = contractId,
-            RenterTenantId = renterTenantId,
+            RenterOccupantId = renterTenantId,
             InspectionDate = inspectionDate,
             AgentName = agentName,
             TenantPresent = tenantPresent,

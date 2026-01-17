@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

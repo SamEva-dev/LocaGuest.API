@@ -41,11 +41,11 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
         var contract = Contract.Create(
             propertyId,
-            tenantId,
+            OccupantId,
             ContractType.Unfurnished,
             DateTime.UtcNow,
             DateTime.UtcNow.AddMonths(12),
@@ -62,8 +62,8 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.PropertyAggregate.Property>());
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Occupant>());
+            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.OccupantAggregate.Occupant>());
 
         _unitOfWorkMock
             .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
@@ -74,8 +74,8 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             ContractId = contractId,
             PropertyId = propertyId,
             PropertyIdIsSet = true,
-            TenantId = tenantId,
-            TenantIdIsSet = true,
+            OccupantId = OccupantId,
+            OccupantIdIsSet = true,
             Type = "Non meublé",
             TypeIsSet = true,
             StartDate = DateTime.UtcNow,
@@ -106,11 +106,11 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
         var contract = Contract.Create(
             propertyId,
-            tenantId,
+            OccupantId,
             ContractType.Furnished,
             DateTime.UtcNow,
             DateTime.UtcNow.AddMonths(12),
@@ -127,8 +127,8 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.PropertyAggregate.Property>());
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.TenantAggregate.Occupant>());
+            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.OccupantAggregate.Occupant>());
 
         _unitOfWorkMock
             .Setup(x => x.CommitAsync(It.IsAny<CancellationToken>()))
@@ -152,11 +152,11 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
         var contract = Contract.Create(
             propertyId,
-            tenantId,
+            OccupantId,
             ContractType.Unfurnished,
             DateTime.UtcNow,
             DateTime.UtcNow.AddMonths(12),

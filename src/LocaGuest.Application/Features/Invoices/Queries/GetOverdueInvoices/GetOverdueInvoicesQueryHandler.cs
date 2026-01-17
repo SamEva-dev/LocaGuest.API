@@ -28,7 +28,7 @@ public class GetOverdueInvoicesQueryHandler : IRequestHandler<GetOverdueInvoices
             var invoiceDtos = invoices.Select(i => new InvoiceDto(
                 i.Id,
                 i.ContractId,
-                i.RenterTenantId,
+                i.RenterOccupantId,
                 i.PropertyId,
                 i.Month,
                 i.Year,

@@ -2,7 +2,7 @@ namespace LocaGuest.Application.DTOs.Analytics;
 
 public record TrackingEventReadDto(
     Guid Id,
-    Guid TenantId,
+    Guid OccupantId,
     Guid UserId,
     string EventType,
     string? PageName,

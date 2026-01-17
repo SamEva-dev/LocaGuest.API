@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -53,7 +53,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ShareType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -77,7 +77,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Code = table.Column<string>(type: "text", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -124,7 +124,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ExpiryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: true),
-                    AssociatedTenantId = table.Column<Guid>(type: "uuid", nullable: true),
+                    AssociatedOccupantId = table.Column<Guid>(type: "uuid", nullable: true),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     SignedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -169,7 +169,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoomId = table.Column<Guid>(type: "uuid", nullable: true),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     InspectionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     AgentName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     TenantPresent = table.Column<bool>(type: "boolean", nullable: false),
@@ -199,7 +199,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoomId = table.Column<Guid>(type: "uuid", nullable: true),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     InventoryEntryId = table.Column<Guid>(type: "uuid", nullable: false),
                     InspectionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     AgentName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
@@ -354,7 +354,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
                     PaymentType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -504,7 +504,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     RentInvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     AmountDue = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     AmountPaid = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -530,7 +530,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RenterTenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RenterOccupantId = table.Column<Guid>(type: "uuid", nullable: false),
                     PropertyId = table.Column<Guid>(type: "uuid", nullable: false),
                     InvoiceDocumentId = table.Column<Guid>(type: "uuid", nullable: true),
                     Month = table.Column<int>(type: "integer", nullable: false),
@@ -1315,16 +1315,16 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_contracts_RenterTenantId",
+                name: "IX_contracts_RenterOccupantId",
                 schema: "lease",
                 table: "contracts",
-                column: "RenterTenantId");
+                column: "RenterOccupantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_documents_AssociatedTenantId",
+                name: "IX_documents_AssociatedOccupantId",
                 schema: "doc",
                 table: "documents",
-                column: "AssociatedTenantId");
+                column: "AssociatedOccupantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_documents_Category",
@@ -1377,10 +1377,10 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_inventory_entries_RenterTenantId",
+                name: "IX_inventory_entries_RenterOccupantId",
                 schema: "inventory",
                 table: "inventory_entries",
-                column: "RenterTenantId");
+                column: "RenterOccupantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_inventory_exits_ContractId",
@@ -1401,10 +1401,10 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_inventory_exits_RenterTenantId",
+                name: "IX_inventory_exits_RenterOccupantId",
                 schema: "inventory",
                 table: "inventory_exits",
-                column: "RenterTenantId");
+                column: "RenterOccupantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_invitation_tokens_Email",

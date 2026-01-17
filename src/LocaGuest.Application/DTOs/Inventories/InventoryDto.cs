@@ -9,7 +9,7 @@ public class InventoryEntryDto
     public Guid PropertyId { get; set; }
     public Guid? RoomId { get; set; }
     public Guid ContractId { get; set; }
-    public Guid RenterTenantId { get; set; }
+    public Guid RenterOccupantId { get; set; }
     public DateTime InspectionDate { get; set; }
     public string AgentName { get; set; } = string.Empty;
     public bool TenantPresent { get; set; }
@@ -54,7 +54,7 @@ public class InventoryExitDto
     public Guid PropertyId { get; set; }
     public Guid? RoomId { get; set; }
     public Guid ContractId { get; set; }
-    public Guid RenterTenantId { get; set; }
+    public Guid RenterOccupantId { get; set; }
     public Guid InventoryEntryId { get; set; }
     public DateTime InspectionDate { get; set; }
     public string AgentName { get; set; } = string.Empty;

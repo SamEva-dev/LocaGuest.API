@@ -31,12 +31,12 @@ public class InvoicesController : ControllerBase
     /// <summary>
     /// Get invoices by tenant
     /// </summary>
-    [HttpGet("tenant/{tenantId}")]
+    [HttpGet("tenant/{OccupantId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetByTenant(Guid tenantId)
+    public async Task<IActionResult> GetByTenant(Guid OccupantId)
     {
-        var query = new GetInvoicesByTenantQuery(tenantId);
+        var query = new GetInvoicesByTenantQuery(OccupantId);
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)
@@ -85,11 +85,11 @@ public class InvoicesController : ControllerBase
     public async Task<IActionResult> Export(
         [FromQuery] DateTime? startDate,
         [FromQuery] DateTime? endDate,
-        [FromQuery] Guid? tenantId,
+        [FromQuery] Guid? OccupantId,
         [FromQuery] Guid? propertyId,
         [FromQuery] string format = "csv")
     {
-        var query = new ExportInvoicesQuery(startDate, endDate, tenantId, propertyId, format);
+        var query = new ExportInvoicesQuery(startDate, endDate, OccupantId, propertyId, format);
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)

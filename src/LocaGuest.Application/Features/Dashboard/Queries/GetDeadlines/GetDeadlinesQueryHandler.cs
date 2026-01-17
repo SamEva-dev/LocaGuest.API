@@ -47,7 +47,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
             foreach (var contract in contractsList)
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
 
                 if (property == null || tenant == null)
                     continue;
@@ -71,7 +71,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
                         Description = $"{contract.Rent + contract.Charges:F2}€",
                         Date = nextPaymentDate,
                         PropertyCode = property.Code,
-                        TenantName = tenant.FullName
+                        OccupantName = tenant.FullName
                     });
                 }
             }
@@ -84,7 +84,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
             foreach (var contract in expiringContracts)
             {
                 var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
 
                 if (property == null || tenant == null)
                     continue;
@@ -96,7 +96,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
                     Description = $"Contrat {contract.Code}",
                     Date = contract.EndDate,
                     PropertyCode = property.Code,
-                    TenantName = tenant.FullName
+                    OccupantName = tenant.FullName
                 });
             }
 

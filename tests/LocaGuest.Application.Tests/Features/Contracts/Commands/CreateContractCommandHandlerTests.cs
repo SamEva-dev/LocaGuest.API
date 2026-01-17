@@ -6,7 +6,7 @@ using LocaGuest.Application.Services;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -37,6 +37,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         _unitOfWorkMock.Setup(x => x.Contracts).Returns(_contractRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Properties).Returns(_propertyRepositoryMock.Object);
         _unitOfWorkMock.Setup(x => x.Occupants).Returns(_tenantRepositoryMock.Object);
+        _unitOfWorkMock.Setup(x => x.Deposits).Returns(new Mock<IDepositRepository>().Object);
         _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
         _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.NewGuid());
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
@@ -54,9 +55,6 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
     public async Task Handle_WithValidCommand_CreatesContractSuccessfully()
     {
         // Arrange
-        var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
-
         var property = Property.Create(
             name: "Test Property",
             address: "1 Test Street",
@@ -66,13 +64,14 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
             rent: 1500m,
             bedrooms: 2,
             bathrooms: 1);
+        property.SetOrganizationId(Guid.NewGuid());
 
         var tenant = Occupant.Create(fullName: "Test Tenant", email: "tenant@test.com");
 
         var command = new CreateContractCommand
         {
-            PropertyId = propertyId,
-            TenantId = tenantId,
+            PropertyId = property.Id,
+            OccupantId = tenant.Id,
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1),
             Rent = 1500m,
@@ -80,11 +79,11 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         };
 
         _propertyRepositoryMock
-            .Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdWithRoomsAsync(property.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(property);
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(tenant.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(tenant);
 
         _unitOfWorkMock
@@ -112,7 +111,7 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         var command = new CreateContractCommand
         {
             PropertyId = Guid.NewGuid(),
-            TenantId = Guid.NewGuid(),
+            OccupantId = Guid.NewGuid(),
             StartDate = DateTime.UtcNow,
             Rent = 1500m
         };

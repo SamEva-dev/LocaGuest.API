@@ -36,7 +36,7 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
                 return Result.Failure($"Only Draft contracts can be updated. Current status: {contract.Status}");
             }
 
-            var tenantId = request.TenantIdIsSet ? request.TenantId : contract.RenterTenantId;
+            var OccupantId = request.OccupantIdIsSet ? request.OccupantId : contract.RenterOccupantId;
             var propertyId = request.PropertyIdIsSet ? request.PropertyId : contract.PropertyId;
             var roomId = request.RoomIdIsSet ? request.RoomId : contract.RoomId;
             var type = request.TypeIsSet ? request.Type : contract.Type.ToString();
@@ -46,8 +46,8 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
             var charges = request.ChargesIsSet ? request.Charges : contract.Charges;
             var deposit = request.DepositIsSet ? request.Deposit : contract.Deposit;
 
-            if (tenantId is null)
-                return Result.Failure("TenantId is required");
+            if (OccupantId is null)
+                return Result.Failure("OccupantId is required");
             if (propertyId is null)
                 return Result.Failure("PropertyId is required");
             if (string.IsNullOrWhiteSpace(type))
@@ -70,10 +70,10 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
                 return Result.Failure($"Property with ID {propertyId} not found");
             }
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId.Value, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId.Value, cancellationToken);
             if (tenant == null)
             {
-                return Result.Failure($"Tenant with ID {tenantId} not found");
+                return Result.Failure($"Tenant with ID {OccupantId} not found");
             }
 
             // Valider les dates
@@ -84,7 +84,7 @@ public class UpdateContractCommandHandler : IRequestHandler<UpdateContractComman
 
             // Mettre à jour le contrat
             contract.UpdateBasicInfo(
-                tenantId.Value,
+                OccupantId.Value,
                 propertyId.Value,
                 roomId,
                 normalizedType,

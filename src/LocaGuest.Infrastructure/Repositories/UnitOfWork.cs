@@ -62,7 +62,7 @@ public class UnitOfWork : IUnitOfWork
         _inventoryExits ??= new InventoryExitRepository(_context);
 
     public IOccupantRepository Occupants => 
-        _tenants ??= new TenantRepository(_context);
+        _tenants ??= new OccupantRepository(_context);
 
     public ITeamMemberRepository TeamMembers => 
         _teamMembers ??= new TeamMemberRepository(_context);

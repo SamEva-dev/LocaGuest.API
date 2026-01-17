@@ -23,11 +23,11 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
     {
         try
         {
-            var tenantId = Guid.Parse(request.TenantId);
-            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(tenantId, cancellationToken);
+            var OccupantId = Guid.Parse(request.OccupantId);
+            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken);
 
             // Load tenant and property names
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
             
             var documentDtos = documents.Select(d => new DocumentDto
             {
@@ -40,8 +40,8 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
                 FileSizeBytes = d.FileSizeBytes,
                 Description = d.Description,
                 ExpiryDate = d.ExpiryDate,
-                TenantId = d.AssociatedTenantId,
-                TenantName = tenant?.FullName,
+                OccupantId = d.AssociatedOccupantId,
+                OccupantName = tenant?.FullName,
                 PropertyId = d.PropertyId,
                 PropertyName = null, // Could be loaded if needed
                 IsArchived = d.IsArchived,
@@ -52,7 +52,7 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving documents for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error retrieving documents for tenant {OccupantId}", request.OccupantId);
             return Result.Failure<List<DocumentDto>>($"Error retrieving documents: {ex.Message}");
         }
     }

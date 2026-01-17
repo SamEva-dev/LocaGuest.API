@@ -31,7 +31,7 @@ public class GetInventoryExitQueryHandler : IRequestHandler<GetInventoryExitQuer
             PropertyId = inventoryExit.PropertyId,
             RoomId = inventoryExit.RoomId,
             ContractId = inventoryExit.ContractId,
-            RenterTenantId = inventoryExit.RenterTenantId,
+            RenterOccupantId = inventoryExit.RenterOccupantId,
             InventoryEntryId = inventoryExit.InventoryEntryId,
             InspectionDate = inventoryExit.InspectionDate,
             AgentName = inventoryExit.AgentName,

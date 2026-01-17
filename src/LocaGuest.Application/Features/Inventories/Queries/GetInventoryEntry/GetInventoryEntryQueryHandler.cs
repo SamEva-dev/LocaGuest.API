@@ -30,7 +30,7 @@ public class GetInventoryEntryQueryHandler : IRequestHandler<GetInventoryEntryQu
             PropertyId = inventoryEntry.PropertyId,
             RoomId = inventoryEntry.RoomId,
             ContractId = inventoryEntry.ContractId,
-            RenterTenantId = inventoryEntry.RenterTenantId,
+            RenterOccupantId = inventoryEntry.RenterOccupantId,
             InspectionDate = inventoryEntry.InspectionDate,
             AgentName = inventoryEntry.AgentName,
             TenantPresent = inventoryEntry.TenantPresent,

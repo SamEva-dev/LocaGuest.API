@@ -22,12 +22,12 @@ public class GetInvoicesByTenantQueryHandler : IRequestHandler<GetInvoicesByTena
     {
         try
         {
-            var invoices = await _unitOfWork.RentInvoices.GetByTenantIdAsync(request.TenantId, cancellationToken);
+            var invoices = await _unitOfWork.RentInvoices.GetByTenantIdAsync(request.OccupantId, cancellationToken);
 
             var invoiceDtos = invoices.Select(i => new InvoiceDto(
                 i.Id,
                 i.ContractId,
-                i.RenterTenantId,
+                i.RenterOccupantId,
                 i.PropertyId,
                 i.Month,
                 i.Year,
@@ -43,7 +43,7 @@ public class GetInvoicesByTenantQueryHandler : IRequestHandler<GetInvoicesByTena
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving invoices for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error retrieving invoices for tenant {OccupantId}", request.OccupantId);
             return Result<List<InvoiceDto>>.Failure<List<InvoiceDto>>("Erreur lors de la récupération des factures");
         }
     }

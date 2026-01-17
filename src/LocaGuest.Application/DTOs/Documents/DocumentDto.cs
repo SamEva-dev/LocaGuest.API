@@ -25,7 +25,7 @@ public class GeneratedDocumentDto
     public Guid Id { get; set; }
     public string DocumentType { get; set; } = string.Empty;
     public string PropertyName { get; set; } = string.Empty;
-    public string TenantName { get; set; } = string.Empty;
+    public string OccupantName { get; set; } = string.Empty;
     public DateTime GeneratedAt { get; set; }
     public string FileName { get; set; } = string.Empty;
 }
@@ -34,7 +34,7 @@ public class GenerateDocumentRequest
 {
     public string TemplateType { get; set; } = string.Empty;
     public Guid PropertyId { get; set; }
-    public Guid? TenantId { get; set; }
+    public Guid? OccupantId { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -50,8 +50,8 @@ public class DocumentDto
     public long FileSizeBytes { get; set; }
     public string? Description { get; set; }
     public DateTime? ExpiryDate { get; set; }
-    public Guid? TenantId { get; set; }
-    public string? TenantName { get; set; }
+    public Guid? OccupantId { get; set; }
+    public string? OccupantName { get; set; }
     public Guid? PropertyId { get; set; }
     public string? PropertyName { get; set; }
     public bool IsArchived { get; set; }
@@ -67,6 +67,6 @@ public class UploadDocumentDto
     public long FileSizeBytes { get; set; }
     public string? Description { get; set; }
     public DateTime? ExpiryDate { get; set; }
-    public Guid? TenantId { get; set; }
+    public Guid? OccupantId { get; set; }
     public Guid? PropertyId { get; set; }
 }

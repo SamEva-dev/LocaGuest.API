@@ -2,7 +2,7 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.DTOs.Properties;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

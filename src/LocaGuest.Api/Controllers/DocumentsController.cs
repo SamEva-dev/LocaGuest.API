@@ -1,6 +1,6 @@
 using LocaGuest.Application.Features.Documents.Queries.GetDocumentStats;
 using LocaGuest.Application.Features.Documents.Queries.GetDocumentTemplates;
-using LocaGuest.Application.Features.Documents.Queries.GetTenantDocuments;
+using LocaGuest.Application.Features.Documents.Queries.GetOccupantDocuments;
 using LocaGuest.Application.Features.Documents.Queries.GetAllDocuments;
 using LocaGuest.Application.Features.Documents.Queries.ExportDocumentsZip;
 using LocaGuest.Application.Features.Documents.Commands.SaveGeneratedDocument;
@@ -30,7 +30,7 @@ public class DocumentsController : ControllerBase
     private readonly ILogger<DocumentsController> _logger;
     private readonly IContractGeneratorService _contractGenerator;
     private readonly IPropertySheetGeneratorService _propertySheetGenerator;
-    private readonly ITenantSheetGeneratorService _tenantSheetGenerator;
+    private readonly IOccupantSheetGeneratorService _occupantSheetGenerator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocaGuestReadDbContext _readDb;
     private readonly IOrganizationContext _orgContext;
@@ -42,7 +42,7 @@ public class DocumentsController : ControllerBase
         ILogger<DocumentsController> logger,
         IContractGeneratorService contractGenerator,
         IPropertySheetGeneratorService propertySheetGenerator,
-        ITenantSheetGeneratorService tenantSheetGenerator,
+        IOccupantSheetGeneratorService occupantSheetGenerator,
         IUnitOfWork unitOfWork,
         ILocaGuestReadDbContext readDb,
         IOrganizationContext orgContext,
@@ -53,7 +53,7 @@ public class DocumentsController : ControllerBase
         _logger = logger;
         _contractGenerator = contractGenerator;
         _propertySheetGenerator = propertySheetGenerator;
-        _tenantSheetGenerator = tenantSheetGenerator;
+        _occupantSheetGenerator = occupantSheetGenerator;
         _unitOfWork = unitOfWork;
         _readDb = readDb;
         _orgContext = orgContext;
@@ -121,12 +121,12 @@ public class DocumentsController : ControllerBase
         return sb.ToString().TrimEnd('.');
     }
 
-    [HttpGet("tenant/{tenantId:guid}/sheet")]
+    [HttpGet("occupant/{occupantId:guid}/sheet")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GenerateTenantSheet(
-        Guid tenantId,
+    public async Task<IActionResult> GenerateOccupantSheet(
+        Guid occupantId,
         CancellationToken cancellationToken = default)
     {
         try
@@ -134,12 +134,12 @@ public class DocumentsController : ControllerBase
             if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant == null)
-                return NotFound(new { message = "Tenant not found" });
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(occupantId, cancellationToken);
+            if (occupant == null)
+                return NotFound(new { message = "Occupant not found" });
 
-            var property = tenant.PropertyId.HasValue
-                ? await _unitOfWork.Properties.GetByIdAsync(tenant.PropertyId.Value, cancellationToken)
+            var property = occupant.PropertyId.HasValue
+                ? await _unitOfWork.Properties.GetByIdAsync(occupant.PropertyId.Value, cancellationToken)
                 : null;
 
             var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
@@ -150,21 +150,21 @@ public class DocumentsController : ControllerBase
             if (string.IsNullOrEmpty(currentUserFullName))
                 currentUserFullName = email;
 
-            var pdfBytes = await _tenantSheetGenerator.GenerateTenantSheetPdfAsync(
-                tenant,
+            var pdfBytes = await _occupantSheetGenerator.GenerateOccupantSheetPdfAsync(
+                occupant,
                 property,
                 currentUserFullName,
                 email,
                 phone,
                 cancellationToken);
 
-            var fileName = SanitizeFileName($"Fiche_Locataire_{tenant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
+            var fileName = SanitizeFileName($"Fiche_Occupant_{occupant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
             return File(pdfBytes, "application/pdf", fileName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating tenant sheet for {TenantId}", tenantId);
-            return StatusCode(500, new { message = "Error generating tenant sheet", error = ex.Message });
+            _logger.LogError(ex, "Error generating occupant sheet for {OccupantId}", occupantId);
+            return StatusCode(500, new { message = "Error generating occupant sheet", error = ex.Message });
         }
     }
 
@@ -214,7 +214,7 @@ public class DocumentsController : ControllerBase
             Id = Guid.NewGuid(),
             DocumentType = request.TemplateType,
             PropertyName = "Appartement Centre Ville",
-            TenantName = "Jean Dupont",
+            OccupantName = "Jean Dupont",
             GeneratedAt = DateTime.UtcNow,
             FileName = $"{request.TemplateType}_{DateTime.UtcNow:yyyyMMdd}.pdf"
         };
@@ -233,7 +233,7 @@ public class DocumentsController : ControllerBase
                 Id = Guid.NewGuid(),
                 DocumentType = "Bail de location",
                 PropertyName = "Appartement Centre Ville",
-                TenantName = "Jean Dupont",
+                OccupantName = "Jean Dupont",
                 GeneratedAt = DateTime.UtcNow.AddDays(-1),
                 FileName = "Bail_Dupont_Jean_20241108.pdf"
             },
@@ -242,7 +242,7 @@ public class DocumentsController : ControllerBase
                 Id = Guid.NewGuid(),
                 DocumentType = "Quittance",
                 PropertyName = "Studio Quartier Latin",
-                TenantName = "Paul Martin",
+                OccupantName = "Paul Martin",
                 GeneratedAt = DateTime.UtcNow.AddDays(-2),
                 FileName = "Quittance_Janvier_2024.pdf"
             },
@@ -251,7 +251,7 @@ public class DocumentsController : ControllerBase
                 Id = Guid.NewGuid(),
                 DocumentType = "État des lieux",
                 PropertyName = "2 pièces Montmartre",
-                TenantName = "Sophie Bernard",
+                OccupantName = "Sophie Bernard",
                 GeneratedAt = DateTime.UtcNow.AddDays(-5),
                 FileName = "Etat_lieux_sortie_20241105.pdf"
             }
@@ -272,19 +272,19 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            // Validate tenant context
+            // Validate occupant context
             if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
             {
                 _logger.LogWarning("Unauthorized contract generation attempt");
                 return Unauthorized(new { message = "User not authenticated" });
             }
 
-            // Load tenant
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(dto.TenantId, cancellationToken);
-            if (tenant == null)
+            // Load occupant
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(dto.OccupantId, cancellationToken);
+            if (occupant == null)
             {
-                _logger.LogWarning("Tenant not found: {TenantId}", dto.TenantId);
-                return NotFound(new { message = "Tenant not found" });
+                _logger.LogWarning("Occupant not found: {OccupantId}", dto.OccupantId);
+                return NotFound(new { message = "Occupant not found" });
             }
 
             // Load property
@@ -309,14 +309,14 @@ public class DocumentsController : ControllerBase
 
             // Generate PDF
             _logger.LogInformation(
-                "Generating contract: Type={ContractType}, Tenant={TenantId}, Property={PropertyId}, User={UserName}",
+                "Generating contract: Type={ContractType}, Occupant={OccupantId}, Property={PropertyId}, User={UserName}",
                 dto.ContractType,
-                dto.TenantId,
+                dto.OccupantId,
                 dto.PropertyId,
                 currentUserFullName);
 
             var pdfBytes = await _contractGenerator.GenerateContractPdfAsync(
-                tenant,
+                occupant,
                 property,
                 currentUserFullName,
                 email,
@@ -356,7 +356,7 @@ public class DocumentsController : ControllerBase
                 Category = DocumentCategory.Contrats.ToString(),
                 FileSizeBytes = pdfBytes.Length,
                 ContractId = dto.ContractId, // NOUVEAU: Association au contrat
-                TenantId = dto.TenantId,
+                OccupantId = dto.OccupantId,
                 PropertyId = dto.PropertyId,
                 Description = $"Contrat {dto.ContractType} généré automatiquement"
             };
@@ -396,16 +396,16 @@ public class DocumentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating contract for Tenant={TenantId}, Property={PropertyId}",
-                dto.TenantId, dto.PropertyId);
+            _logger.LogError(ex, "Error generating contract for Occupant={OccupantId}, Property={PropertyId}",
+                dto.OccupantId, dto.PropertyId);
             return StatusCode(500, new { message = "Error generating contract", error = ex.Message });
         }
     }
 
-    [HttpGet("tenant/{tenantId}")]
-    public async Task<IActionResult> GetTenantDocuments(string tenantId)
+    [HttpGet("occupant/{occupantId}")]
+    public async Task<IActionResult> GetOccupantDocuments(string occupantId)
     {
-        var query = new GetTenantDocumentsQuery { TenantId = tenantId };
+        var query = new GetOccupantDocumentsQuery { OccupantId = occupantId };
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)
@@ -462,7 +462,7 @@ public class DocumentsController : ControllerBase
         IFormFile file,
         [FromForm] string type,
         [FromForm] string category,
-        [FromForm] string? tenantId,
+        [FromForm] string? occupantId,
         [FromForm] string? propertyId,
         [FromForm] string? description)
     {
@@ -497,7 +497,7 @@ public class DocumentsController : ControllerBase
                 Type = type,
                 Category = category,
                 FileSizeBytes = file.Length,
-                TenantId = string.IsNullOrEmpty(tenantId) ? null : Guid.Parse(tenantId),
+                OccupantId = string.IsNullOrEmpty(occupantId) ? null : Guid.Parse(occupantId),
                 PropertyId = string.IsNullOrEmpty(propertyId) ? null : Guid.Parse(propertyId),
                 Description = description
             };
@@ -597,23 +597,23 @@ public class DocumentsController : ControllerBase
         }
     }
 
-    [HttpGet("tenant/{tenantId}/export-zip")]
-    public async Task<IActionResult> ExportDocumentsZip(string tenantId)
+    [HttpGet("occupant/{occupantId}/export-zip")]
+    public async Task<IActionResult> ExportDocumentsZip(string occupantId)
     {
         try
         {
-            var query = new ExportDocumentsZipQuery { TenantId = tenantId };
+            var query = new ExportDocumentsZipQuery { OccupantId = occupantId };
             var zipBytes = await _mediator.Send(query);
 
             if (zipBytes.Length == 0)
-                return NotFound(new { message = "No documents found for this tenant" });
+                return NotFound(new { message = "No documents found for this occupant" });
 
             var fileName = $"Documents_Locataire_{DateTime.UtcNow:yyyy-MM-dd}.zip";
             return File(zipBytes, "application/zip", fileName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exporting documents ZIP for tenant {TenantId}", tenantId);
+            _logger.LogError(ex, "Error exporting documents ZIP for occupant {OccupantId}", occupantId);
             return StatusCode(500, new { message = "Error exporting documents", error = ex.Message });
         }
     }
@@ -757,9 +757,9 @@ public class DocumentsController : ControllerBase
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
-            if (tenant == null)
-                return NotFound(new { message = "Tenant not found" });
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+            if (occupant == null)
+                return NotFound(new { message = "Occupant not found" });
 
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
             if (property == null)
@@ -810,13 +810,13 @@ public class DocumentsController : ControllerBase
                 },
                 effective,
                 nextSignedChange = nextSigned,
-                tenant = new
+                occupant = new
                 {
-                    id = tenant.Id,
-                    code = tenant.Code,
-                    fullName = tenant.FullName,
-                    email = tenant.Email,
-                    phone = tenant.Phone
+                    id = occupant.Id,
+                    code = occupant.Code,
+                    fullName = occupant.FullName,
+                    email = occupant.Email,
+                    phone = occupant.Phone
                 },
                 property = new
                 {
@@ -945,7 +945,7 @@ public class DocumentsController : ControllerBase
                     .Where(x => x.DocumentId == document.Id)
                     .Select(x => (Guid?)x.ContractId)
                     .FirstOrDefaultAsync(cancellationToken),
-                document.AssociatedTenantId,
+                document.AssociatedOccupantId,
                 document.PropertyId,
                 document.Description,
                 document.SignedDate,

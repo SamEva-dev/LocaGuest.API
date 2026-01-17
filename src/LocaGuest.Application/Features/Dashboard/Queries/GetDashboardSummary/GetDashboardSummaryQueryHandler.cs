@@ -65,7 +65,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
             // Calculate payment statistics
             // 1. Locataires uniques avec contrats actifs
             var totalActiveTenants = activeContracts
-                .Select(c => c.RenterTenantId)
+                .Select(c => c.RenterOccupantId)
                 .Distinct()
                 .Count();
 
@@ -78,7 +78,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
             // 3. Locataires ayant payé (uniques)
             var paidTenantsCount = periodPayments
-                .Select(p => p.RenterTenantId)
+                .Select(p => p.RenterOccupantId)
                 .Distinct()
                 .Count();
 
@@ -96,7 +96,7 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
             // 6. Locataires avec paiements en retard (uniques)
             var latePaymentsCount = latePayments
-                .Select(p => p.RenterTenantId)
+                .Select(p => p.RenterOccupantId)
                 .Distinct()
                 .Count();
 

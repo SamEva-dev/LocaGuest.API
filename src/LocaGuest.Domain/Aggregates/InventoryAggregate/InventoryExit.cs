@@ -16,7 +16,7 @@ public class InventoryExit : AuditableEntity
     /// <summary>
     /// ID du locataire (Tenant entity) - ne pas confondre avec TenantId multi-tenant hérité de AuditableEntity
     /// </summary>
-    public Guid RenterTenantId { get; private set; }
+    public Guid RenterOccupantId { get; private set; }
     public Guid InventoryEntryId { get; private set; } // Référence à l'EDL d'entrée
     
     public DateTime InspectionDate { get; private set; }
@@ -72,7 +72,7 @@ public class InventoryExit : AuditableEntity
             PropertyId = propertyId,
             RoomId = roomId,
             ContractId = contractId,
-            RenterTenantId = renterTenantId,
+            RenterOccupantId = renterTenantId,
             InventoryEntryId = inventoryEntryId,
             InspectionDate = inspectionDate,
             AgentName = agentName,

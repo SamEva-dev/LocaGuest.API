@@ -1,11 +1,11 @@
-using LocaGuest.Application.Features.Tenants.Commands.CreateTenant;
-using LocaGuest.Application.Features.Tenants.Commands.ChangeOccupantStatus;
-using LocaGuest.Application.Features.Tenants.Commands.DeleteTenant;
-using LocaGuest.Application.Features.Tenants.Queries.GetTenants;
-using LocaGuest.Application.Features.Tenants.Queries.GetTenant;
-using LocaGuest.Application.Features.Tenants.Queries.GetTenantContracts;
-using LocaGuest.Application.Features.Tenants.Queries.GetTenantPaymentStats;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Application.Features.Occupants.Commands.CreateOccupant;
+using LocaGuest.Application.Features.Occupants.Commands.ChangeOccupantStatus;
+using LocaGuest.Application.Features.Occupants.Commands.DeleteOccupant;
+using LocaGuest.Application.Features.Occupants.Queries.GetOccupants;
+using LocaGuest.Application.Features.Occupants.Queries.GetOccupant;
+using LocaGuest.Application.Features.Occupants.Queries.GetOccupantContracts;
+using LocaGuest.Application.Features.Occupants.Queries.GetOccupantPaymentStats;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +29,7 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTenants([FromQuery] GetTenantsQuery query)
+    public async Task<IActionResult> GetOccupants([FromQuery] GetOccupantsQuery query)
     {
         var result = await _mediator.Send(query);
         
@@ -40,20 +40,20 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTenant([FromBody] CreateTenantCommand command)
+    public async Task<IActionResult> CreateOccupant([FromBody] CreateOccupantCommand command)
     {
         var result = await _mediator.Send(command);
         
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
 
-        return CreatedAtAction(nameof(GetTenants), new { id = result.Data!.Id }, result.Data);
+        return CreatedAtAction(nameof(GetOccupants), new { id = result.Data!.Id }, result.Data);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTenant(string id)
+    public async Task<IActionResult> GetOccupant(string id)
     {
-        var query = new GetTenantQuery { Id = id };
+        var query = new GetOccupantQuery { Id = id };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -67,20 +67,20 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet("{id}/payments")]
-    public IActionResult GetTenantPayments(string id)
+    public IActionResult GetOccupantPayments(string id)
     {
-        // TODO: Implement GetTenantPaymentsQuery
+        // TODO: Implement GetOccupantPaymentsQuery
         // For now, return empty list
         return Ok(new object[0]);
     }
 
     [HttpGet("{id}/contracts")]
-    public async Task<IActionResult> GetTenantContracts(string id)
+    public async Task<IActionResult> GetOccupantContracts(string id)
     {
-        if (!Guid.TryParse(id, out var tenantGuid))
-            return BadRequest(new { message = "Invalid tenant ID format" });
+        if (!Guid.TryParse(id, out var occupantGuid))
+            return BadRequest(new { message = "Invalid occupant ID format" });
 
-        var query = new GetTenantContractsQuery(tenantGuid);
+        var query = new GetOccupantContractsQuery(occupantGuid);
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -96,10 +96,10 @@ public class OccupantsController : ControllerBase
     [HttpGet("{id}/payment-stats")]
     public async Task<IActionResult> GetPaymentStats(string id)
     {
-        if (!Guid.TryParse(id, out var tenantGuid))
-            return BadRequest(new { message = "Invalid tenant ID format" });
+        if (!Guid.TryParse(id, out var occupantGuid))
+            return BadRequest(new { message = "Invalid occupant ID format" });
 
-        var query = new GetTenantPaymentStatsQuery(tenantGuid);
+        var query = new GetOccupantPaymentStatsQuery(occupantGuid);
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -113,16 +113,16 @@ public class OccupantsController : ControllerBase
     }
     
     /// <summary>
-    /// Supprimer un locataire (uniquement si aucun contrat actif ou signé)
-    /// DELETE /api/tenants/{id}
+    /// Supprimer un occupant (uniquement si aucun contrat actif ou signé)
+    /// DELETE /api/occupants/{id}
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTenant(string id)
+    public async Task<IActionResult> DeleteOccupant(string id)
     {
-        if (!Guid.TryParse(id, out var tenantGuid))
-            return BadRequest(new { message = "Invalid tenant ID format" });
+        if (!Guid.TryParse(id, out var occupantGuid))
+            return BadRequest(new { message = "Invalid occupant ID format" });
 
-        var command = new DeleteTenantCommand { TenantId = tenantGuid };
+        var command = new DeleteOccupantCommand { OccupantId = occupantGuid };
         var result = await _mediator.Send(command);
         
         if (!result.IsSuccess)
@@ -134,7 +134,7 @@ public class OccupantsController : ControllerBase
 
         return Ok(new
         {
-            message = "Locataire supprimé avec succès",
+            message = "Occupant supprimé avec succès",
             id = result.Data!.Id,
             deletedContracts = result.Data.DeletedContracts,
             deletedPayments = result.Data.DeletedPayments,
@@ -147,8 +147,8 @@ public class OccupantsController : ControllerBase
     [HttpPost("{id}/change-status")]
     public async Task<IActionResult> ChangeStatus(string id, [FromBody] ChangeStatusRequest request)
     {
-        if (!Guid.TryParse(id, out var tenantGuid))
-            return BadRequest(new { message = "Invalid tenant ID format" });
+        if (!Guid.TryParse(id, out var occupantGuid))
+            return BadRequest(new { message = "Invalid occupant ID format" });
 
         if (string.IsNullOrWhiteSpace(request.Status) ||
             !Enum.TryParse<OccupantStatus>(request.Status, true, out var statusEnum))
@@ -158,7 +158,7 @@ public class OccupantsController : ControllerBase
 
         var command = new ChangeOccupantStatusCommand
         {
-            TenantId = tenantGuid,
+            OccupantId = occupantGuid,
             Status = statusEnum
         };
 

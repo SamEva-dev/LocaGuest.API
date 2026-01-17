@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LocaGuest.Api.IntegrationTests.Infrastructure;
 using LocaGuest.Application.Common.Interfaces;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;

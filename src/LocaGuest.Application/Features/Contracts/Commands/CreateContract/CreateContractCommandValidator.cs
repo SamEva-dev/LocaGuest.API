@@ -9,8 +9,8 @@ public sealed class CreateContractCommandValidator : AbstractValidator<CreateCon
         RuleFor(x => x.PropertyId)
             .NotEmpty().WithMessage("PropertyId is required");
 
-        RuleFor(x => x.TenantId)
-            .NotEmpty().WithMessage("TenantId is required");
+        RuleFor(x => x.OccupantId)
+            .NotEmpty().WithMessage("OccupantId is required");
 
         RuleFor(x => x.Type)
             .NotEmpty().WithMessage("Type is required")

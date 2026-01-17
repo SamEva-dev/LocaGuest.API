@@ -6,5 +6,5 @@ namespace LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
 public record DissociateTenantCommand : IRequest<Result<bool>>
 {
     public required string PropertyId { get; init; }
-    public required string TenantId { get; init; }
+    public required string OccupantId { get; init; }
 }

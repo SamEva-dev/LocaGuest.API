@@ -72,8 +72,8 @@ public record PaymentsDashboardDto
 public record UpcomingPaymentDto
 {
     public Guid Id { get; init; }
-    public Guid TenantId { get; init; }
-    public string TenantName { get; init; } = string.Empty;
+    public Guid OccupantId { get; init; }
+    public string OccupantName { get; init; } = string.Empty;
     public Guid PropertyId { get; init; }
     public string PropertyName { get; init; } = string.Empty;
     public decimal AmountDue { get; init; }
@@ -84,8 +84,8 @@ public record UpcomingPaymentDto
 public record OverduePaymentSummaryDto
 {
     public Guid Id { get; init; }
-    public Guid TenantId { get; init; }
-    public string TenantName { get; init; } = string.Empty;
+    public Guid OccupantId { get; init; }
+    public string OccupantName { get; init; } = string.Empty;
     public Guid PropertyId { get; init; }
     public string PropertyName { get; init; } = string.Empty;
     public decimal AmountDue { get; init; }

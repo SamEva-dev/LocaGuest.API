@@ -32,7 +32,7 @@ public class GetPropertyPaymentsQueryHandler : IRequestHandler<GetPropertyPaymen
                 .Select(p => new PaymentDto
                 {
                     Id = p.Id,
-                    TenantId = p.RenterTenantId,
+                    OccupantId = p.RenterOccupantId,
                     PropertyId = p.PropertyId,
                     ContractId = p.ContractId,
                     PaymentType = p.PaymentType.ToString(),

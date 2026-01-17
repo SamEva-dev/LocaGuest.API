@@ -15,7 +15,7 @@ public record AuthGateUserDto
     public string Email { get; init; } = string.Empty;
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
-    public Guid? TenantId { get; init; }
+    public Guid? OccupantId { get; init; }
     public string? TenantCode { get; init; }
     public bool IsActive { get; init; }
     public bool MfaEnabled { get; init; }

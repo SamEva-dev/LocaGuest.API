@@ -6,7 +6,7 @@ namespace LocaGuest.Application.Features.Invoices.Queries.ExportInvoices;
 public record ExportInvoicesQuery(
     DateTime? StartDate,
     DateTime? EndDate,
-    Guid? TenantId,
+    Guid? OccupantId,
     Guid? PropertyId,
     string Format // "csv" or "excel"
 ) : IRequest<Result<ExportResultDto>>;

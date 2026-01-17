@@ -22,7 +22,7 @@ public record EffectiveContractState(
     IReadOnlyList<Guid> AppliedAddendumIds);
 
 public record EffectiveContractParticipant(
-    Guid RenterTenantId,
+    Guid RenterOccupantId,
     BillingShareType ShareType,
     decimal ShareValue,
     DateTime StartDate,

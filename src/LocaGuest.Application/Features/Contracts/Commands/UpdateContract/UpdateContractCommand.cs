@@ -7,8 +7,8 @@ public record UpdateContractCommand : IRequest<Result>
 {
     public required Guid ContractId { get; init; }
 
-    public Guid? TenantId { get; init; }
-    public bool TenantIdIsSet { get; init; }
+    public Guid? OccupantId { get; init; }
+    public bool OccupantIdIsSet { get; init; }
 
     public Guid? PropertyId { get; init; }
     public bool PropertyIdIsSet { get; init; }

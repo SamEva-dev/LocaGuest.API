@@ -6,7 +6,7 @@ namespace LocaGuest.Application.Features.Payments.Commands.CreatePayment;
 
 public record CreatePaymentCommand : IRequest<Result<PaymentDto>>
 {
-    public Guid TenantId { get; init; }
+    public Guid OccupantId { get; init; }
     public Guid PropertyId { get; init; }
     public Guid ContractId { get; init; }
     public string PaymentType { get; init; } = "Rent";

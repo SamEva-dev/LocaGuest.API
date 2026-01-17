@@ -27,13 +27,13 @@ public class GetPaymentStatsQueryHandler : IRequestHandler<GetPaymentStatsQuery,
             List<Payment> payments;
 
             // Récupérer les paiements selon les filtres
-            if (!string.IsNullOrEmpty(request.TenantId))
+            if (!string.IsNullOrEmpty(request.OccupantId))
             {
-                if (!Guid.TryParse(request.TenantId, out var tenantId))
+                if (!Guid.TryParse(request.OccupantId, out var OccupantId))
                 {
                     return Result.Failure<PaymentStatsDto>("Invalid tenant ID format");
                 }
-                payments = await _unitOfWork.Payments.GetByTenantIdAsync(tenantId, cancellationToken);
+                payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken);
             }
             else if (!string.IsNullOrEmpty(request.PropertyId))
             {
@@ -45,7 +45,7 @@ public class GetPaymentStatsQueryHandler : IRequestHandler<GetPaymentStatsQuery,
             }
             else
             {
-                return Result.Failure<PaymentStatsDto>("Either TenantId or PropertyId must be provided");
+                return Result.Failure<PaymentStatsDto>("Either OccupantId or PropertyId must be provided");
             }
 
             // Filtrer par mois/année si fourni

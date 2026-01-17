@@ -28,7 +28,7 @@ public class GetContractQueryHandler : IRequestHandler<GetContractQuery, Result<
                 return Result.Failure<ContractDto>("Contract not found");
 
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
 
             var dto = new ContractDto
             {
@@ -36,8 +36,8 @@ public class GetContractQueryHandler : IRequestHandler<GetContractQuery, Result<
                 Code = contract.Code,
                 PropertyId = contract.PropertyId,
                 PropertyName = property?.Name ?? "Unknown",
-                TenantId = contract.RenterTenantId,
-                TenantName = tenant?.FullName ?? "Unknown",
+                OccupantId = contract.RenterOccupantId,
+                OccupantName = tenant?.FullName ?? "Unknown",
                 Type = contract.Type.ToString(),
                 StartDate = contract.StartDate,
                 EndDate = contract.EndDate,

@@ -7,7 +7,7 @@ namespace LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 public record CreateContractCommand : IRequest<Result<ContractDto>>
 {
     public Guid PropertyId { get; init; }
-    public Guid TenantId { get; init; }
+    public Guid OccupantId { get; init; }
     public string Type { get; init; } = "Unfurnished";
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }

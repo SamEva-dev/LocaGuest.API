@@ -185,7 +185,7 @@ public class DashboardControllerTests : BaseTestFixture
             {
                 UpcomingDeadlines = new List<DeadlineItem>
                 {
-                    new DeadlineItem { Type = "Rent", Title = "Test", Description = "Test", Date = DateTime.UtcNow, PropertyCode = "P1", TenantName = "T1" }
+                    new DeadlineItem { Type = "Rent", Title = "Test", Description = "Test", Date = DateTime.UtcNow, PropertyCode = "P1", OccupantName = "T1" }
                 }
             }));
 

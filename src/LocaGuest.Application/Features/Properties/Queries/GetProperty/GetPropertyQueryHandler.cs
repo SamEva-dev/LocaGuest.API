@@ -83,10 +83,37 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 MinimumStay = property.AirbnbSettings.MinimumStay,
                 MaximumStay = property.AirbnbSettings.MaximumStay,
                 PricePerNight = property.AirbnbSettings.PricePerNight,
+                NightsBookedPerMonth = property.AirbnbSettings.NightsBookedPerMonth,
                 CreatedAt = property.CreatedAt,
                 UpdatedAt = property.UpdatedAt,
                 ImageUrls = property.ImageUrls,
-                Rooms = roomDtos  // Inclure les rooms
+                Rooms = roomDtos,
+                // Diagnostics
+                DpeRating = property.Diagnostics.DpeRating,
+                DpeValue = property.Diagnostics.DpeValue,
+                GesRating = property.Diagnostics.GesRating,
+                ElectricDiagnosticDate = property.Diagnostics.ElectricDiagnosticDate,
+                ElectricDiagnosticExpiry = property.Diagnostics.ElectricDiagnosticExpiry,
+                GasDiagnosticDate = property.Diagnostics.GasDiagnosticDate,
+                GasDiagnosticExpiry = property.Diagnostics.GasDiagnosticExpiry,
+                HasAsbestos = property.Diagnostics.HasAsbestos,
+                AsbestosDiagnosticDate = property.Diagnostics.AsbestosDiagnosticDate,
+                ErpZone = property.Diagnostics.ErpZone,
+                // Financial info
+                PropertyTax = property.PropertyTax,
+                CondominiumCharges = property.CondominiumCharges,
+                PurchasePrice = property.PurchasePrice,
+                Insurance = property.Insurance,
+                ManagementFeesRate = property.ManagementFeesRate,
+                MaintenanceRate = property.MaintenanceRate,
+                VacancyRate = property.VacancyRate,
+                // Administrative info
+                CadastralReference = property.CadastralReference,
+                LotNumber = property.LotNumber,
+                PurchaseDate = property.PurchaseDate,
+                TotalWorksAmount = property.TotalWorksAmount,
+                EnergyClass = property.EnergyClass,
+                ConstructionYear = property.ConstructionYear
             };
 
             return Result.Success(propertyDto);

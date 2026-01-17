@@ -36,10 +36,10 @@ public class GenerateQuittanceCommandHandler : IRequestHandler<GenerateQuittance
     {
         try
         {
-            var tenantId = Guid.Parse(request.TenantId);
+            var OccupantId = Guid.Parse(request.OccupantId);
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
 
             if (tenant == null || property == null)
@@ -59,8 +59,8 @@ public class GenerateQuittanceCommandHandler : IRequestHandler<GenerateQuittance
                 request.Reference,
                 cancellationToken);
 
-            _logger.LogInformation("Quittance generated for tenant {TenantId}, amount {Amount}", 
-                tenantId, request.Amount);
+            _logger.LogInformation("Quittance generated for tenant {OccupantId}, amount {Amount}", 
+                OccupantId, request.Amount);
 
             // Save to database
             var fileName = $"Quittance_{request.Month.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.pdf";
@@ -76,7 +76,7 @@ public class GenerateQuittanceCommandHandler : IRequestHandler<GenerateQuittance
                 Type = DocumentType.Quittance.ToString(),
                 Category = DocumentCategory.Quittances.ToString(),
                 FileSizeBytes = pdf.Length,
-                TenantId = tenantId,
+                OccupantId = OccupantId,
                 PropertyId = propertyId,
                 Description = $"Quittance de loyer pour {request.Month} - {request.Amount:N2}€"
             };

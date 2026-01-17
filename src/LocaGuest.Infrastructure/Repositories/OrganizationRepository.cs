@@ -1,5 +1,5 @@
 using LocaGuest.Domain.Aggregates.OrganizationAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using LocaGuest.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

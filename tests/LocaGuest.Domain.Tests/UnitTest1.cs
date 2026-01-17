@@ -1,4 +1,4 @@
-﻿using LocaGuest.Domain.Aggregates.PropertyAggregate;
+using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Exceptions;
 
 namespace LocaGuest.Domain.Tests;

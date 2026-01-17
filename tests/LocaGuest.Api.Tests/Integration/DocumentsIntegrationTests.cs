@@ -6,7 +6,7 @@ using LocaGuest.Application.Features.Documents.Queries.GetAllDocuments;
 using LocaGuest.Application.Features.Documents.Queries.GetTenantDocuments;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Infrastructure.Repositories;
@@ -25,7 +25,7 @@ public class DocumentsIntegrationTests : IDisposable
     private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<INumberSequenceService> _numberSequenceServiceMock;
-    private readonly string _testTenantId = Guid.NewGuid().ToString();
+    private readonly string _testOccupantId = Guid.NewGuid().ToString();
     private readonly Guid _testUserId = Guid.NewGuid();
 
     public DocumentsIntegrationTests()
@@ -37,7 +37,7 @@ public class DocumentsIntegrationTests : IDisposable
 
         _orgContextMock = new Mock<IOrganizationContext>();
         _orgContextMock.Setup(x => x.IsAuthenticated).Returns(true);
-        _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.Parse(_testTenantId));
+        _orgContextMock.Setup(x => x.OrganizationId).Returns(Guid.Parse(_testOccupantId));
         _orgContextMock.Setup(x => x.IsSystemContext).Returns(false);
         _orgContextMock.Setup(x => x.CanBypassOrganizationFilter).Returns(false);
 
@@ -51,7 +51,7 @@ public class DocumentsIntegrationTests : IDisposable
         _numberSequenceServiceMock = new Mock<INumberSequenceService>();
         _numberSequenceServiceMock
             .Setup(x => x.GenerateNextCodeAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Guid tenantId, string prefix, CancellationToken ct) => $"{prefix}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}");
+            .ReturnsAsync((Guid OccupantId, string prefix, CancellationToken ct) => $"{prefix}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}");
     }
 
     public void Dispose()
@@ -76,7 +76,7 @@ public class DocumentsIntegrationTests : IDisposable
             Type = "PieceIdentite",
             Category = "Identite",
             FileSizeBytes = 1024,
-            TenantId = tenant.Id,
+            OccupantId = tenant.Id,
             Description = "Test document"
         };
 
@@ -93,7 +93,7 @@ public class DocumentsIntegrationTests : IDisposable
         saveResult.IsSuccess.Should().BeTrue();
         saveResult.Data.Should().NotBeNull();
         saveResult.Data!.FileName.Should().Be("test-document.pdf");
-        saveResult.Data.TenantId.Should().Be(tenant.Id);
+        saveResult.Data.OccupantId.Should().Be(tenant.Id);
 
         // Act - Get all documents
         var getAllQuery = new GetAllDocumentsQuery();
@@ -108,8 +108,8 @@ public class DocumentsIntegrationTests : IDisposable
         getAllResult.Data.Should().NotBeNull();
         getAllResult.Data!.Should().ContainSingle();
         getAllResult.Data.First().FileName.Should().Be("test-document.pdf");
-        getAllResult.Data.First().TenantId.Should().Be(tenant.Id);
-        getAllResult.Data.First().TenantName.Should().Be("John Doe");
+        getAllResult.Data.First().OccupantId.Should().Be(tenant.Id);
+        getAllResult.Data.First().OccupantName.Should().Be("John Doe");
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class DocumentsIntegrationTests : IDisposable
             Type = "Assurance",
             Category = "Justificatifs",
             FileSizeBytes = 2048,
-            TenantId = tenant.Id,
+            OccupantId = tenant.Id,
             Description = "Tenant-specific document"
         };
 
@@ -143,7 +143,7 @@ public class DocumentsIntegrationTests : IDisposable
         await saveHandler.Handle(saveCommand, CancellationToken.None);
 
         // Act - Get documents by tenant
-        var getByTenantQuery = new GetTenantDocumentsQuery { TenantId = tenant.Id.ToString() };
+        var getByTenantQuery = new GetTenantDocumentsQuery { OccupantId = tenant.Id.ToString() };
         var getByTenantHandler = new GetTenantDocumentsQueryHandler(
             _unitOfWork,
             Mock.Of<ILogger<GetTenantDocumentsQueryHandler>>());
@@ -154,7 +154,7 @@ public class DocumentsIntegrationTests : IDisposable
         getByTenantResult.IsSuccess.Should().BeTrue();
         getByTenantResult.Data.Should().NotBeNull();
         getByTenantResult.Data!.Should().ContainSingle();
-        getByTenantResult.Data.First().TenantId.Should().Be(tenant.Id);
+        getByTenantResult.Data.First().OccupantId.Should().Be(tenant.Id);
         getByTenantResult.Data.First().FileName.Should().Be("tenant-doc.pdf");
     }
 
@@ -186,7 +186,7 @@ public class DocumentsIntegrationTests : IDisposable
             Type = "PieceIdentite",
             Category = "Identite",
             FileSizeBytes = 1024,
-            TenantId = tenant1.Id
+            OccupantId = tenant1.Id
         };
         await saveHandler.Handle(saveCommand1, CancellationToken.None);
 
@@ -198,7 +198,7 @@ public class DocumentsIntegrationTests : IDisposable
             Type = "PieceIdentite",
             Category = "Identite",
             FileSizeBytes = 2048,
-            TenantId = tenant2.Id
+            OccupantId = tenant2.Id
         };
         await saveHandler.Handle(saveCommand2, CancellationToken.None);
 
@@ -214,7 +214,7 @@ public class DocumentsIntegrationTests : IDisposable
         getAllResult.IsSuccess.Should().BeTrue();
         getAllResult.Data.Should().NotBeNull();
         getAllResult.Data!.Should().HaveCount(2);
-        getAllResult.Data.Should().Contain(d => d.TenantId == tenant1.Id);
-        getAllResult.Data.Should().Contain(d => d.TenantId == tenant2.Id);
+        getAllResult.Data.Should().Contain(d => d.OccupantId == tenant1.Id);
+        getAllResult.Data.Should().Contain(d => d.OccupantId == tenant2.Id);
     }
 }

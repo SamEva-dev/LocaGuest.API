@@ -4,7 +4,7 @@ public class RentInvoiceDto
 {
     public Guid Id { get; set; }
     public Guid ContractId { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid OccupantId { get; set; }
     public Guid PropertyId { get; set; }
     
     public int Month { get; set; }
@@ -19,6 +19,6 @@ public class RentInvoiceDto
     public bool IsOverdue { get; set; }
     
     // Navigation properties
-    public string? TenantName { get; set; }
+    public string? OccupantName { get; set; }
     public string? PropertyName { get; set; }
 }

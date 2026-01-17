@@ -130,7 +130,7 @@ public class RenewContractCommandHandler : IRequestHandler<RenewContractCommand,
             
             var newContract = Contract.Create(
                 propertyId: oldContract.PropertyId,
-                renterTenantId: oldContract.RenterTenantId,
+                renterTenantId: oldContract.RenterOccupantId,
                 type: contractType,
                 startDate: request.NewStartDate,
                 endDate: request.NewEndDate,

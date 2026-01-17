@@ -4,6 +4,7 @@ using LocaGuest.Api.Tests.Fixtures;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Interfaces;
 using LocaGuest.Domain.Repositories;
+using LocaGuest.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,12 @@ public class DocumentsControllerTests : BaseTestFixture
     private readonly Mock<ILogger<DocumentsController>> _loggerMock;
     private readonly Mock<IContractGeneratorService> _contractGeneratorMock;
     private readonly Mock<IPropertySheetGeneratorService> _propertySheetGeneratorMock;
-    private readonly Mock<ITenantSheetGeneratorService> _tenantSheetGeneratorMock;
+    private readonly Mock<IOccupantSheetGeneratorService> _tenantSheetGeneratorMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILocaGuestReadDbContext> _readDbMock;
     private readonly Mock<IOrganizationContext> _orgContextMock;
     private readonly Mock<IWebHostEnvironment> _webHostEnvironmentMock;
+    private readonly Mock<IEffectiveContractStateResolver> _effectiveContractStateResolverMock;
     private readonly DocumentsController _controller;
 
     public DocumentsControllerTests()
@@ -32,11 +34,12 @@ public class DocumentsControllerTests : BaseTestFixture
         _loggerMock = new Mock<ILogger<DocumentsController>>();
         _contractGeneratorMock = new Mock<IContractGeneratorService>();
         _propertySheetGeneratorMock = new Mock<IPropertySheetGeneratorService>();
-        _tenantSheetGeneratorMock = new Mock<ITenantSheetGeneratorService>();
+        _tenantSheetGeneratorMock = new Mock<IOccupantSheetGeneratorService>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _readDbMock = new Mock<ILocaGuestReadDbContext>();
         _orgContextMock = new Mock<IOrganizationContext>();
         _webHostEnvironmentMock = new Mock<IWebHostEnvironment>();
+        _effectiveContractStateResolverMock = new Mock<IEffectiveContractStateResolver>();
         
         _webHostEnvironmentMock.Setup(x => x.ContentRootPath).Returns("C:\\Test");
         
@@ -49,7 +52,8 @@ public class DocumentsControllerTests : BaseTestFixture
             _unitOfWorkMock.Object,
             _readDbMock.Object,
             _orgContextMock.Object,
-            _webHostEnvironmentMock.Object);
+            _webHostEnvironmentMock.Object,
+            _effectiveContractStateResolverMock.Object);
     }
 
     [Fact]

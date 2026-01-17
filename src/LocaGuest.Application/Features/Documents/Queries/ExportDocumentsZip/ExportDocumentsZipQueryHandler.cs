@@ -23,8 +23,8 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
     {
         try
         {
-            var tenantId = Guid.Parse(request.TenantId);
-            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(tenantId, cancellationToken);
+            var OccupantId = Guid.Parse(request.OccupantId);
+            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken);
             var documentsList = documents.ToList();
 
             using var memoryStream = new MemoryStream();
@@ -55,14 +55,14 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
                 }
             }
 
-            _logger.LogInformation("Created ZIP with {Count} documents for tenant {TenantId}", 
-                documentsList.Count, request.TenantId);
+            _logger.LogInformation("Created ZIP with {Count} documents for tenant {OccupantId}", 
+                documentsList.Count, request.OccupantId);
 
             return memoryStream.ToArray();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating ZIP for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error creating ZIP for tenant {OccupantId}", request.OccupantId);
             throw;
         }
     }

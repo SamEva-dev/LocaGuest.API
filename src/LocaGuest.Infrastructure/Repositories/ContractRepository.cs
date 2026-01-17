@@ -28,14 +28,14 @@ public class ContractRepository : Repository<Contract>, IContractRepository
     public async Task<IEnumerable<Contract>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Where(c => c.RenterTenantId == tenantId)
+            .Where(c => c.RenterOccupantId == tenantId)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<List<Contract>> GetContractsByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Where(c => c.RenterTenantId == tenantId)
+            .Where(c => c.RenterOccupantId == tenantId)
             .OrderByDescending(c => c.StartDate)
             .ToListAsync(cancellationToken);
     }

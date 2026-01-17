@@ -7,7 +7,7 @@ namespace LocaGuest.Domain.Aggregates.ContractAggregate;
 public class ContractParticipant : AuditableEntity
 {
     public Guid ContractId { get; private set; }
-    public Guid RenterTenantId { get; private set; }
+    public Guid RenterOccupantId { get; private set; }
 
     public DateTime StartDate { get; private set; }
     public DateTime? EndDate { get; private set; }
@@ -52,7 +52,7 @@ public class ContractParticipant : AuditableEntity
         {
             Id = Guid.NewGuid(),
             ContractId = contractId,
-            RenterTenantId = tenantId,
+            RenterOccupantId = tenantId,
             StartDate = sDate,
             EndDate = eDate,
             ShareType = shareType,

@@ -68,7 +68,7 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 documentType,
                 documentCategory,
                 request.FileSizeBytes,
-                tenantId: request.TenantId,
+                tenantId: request.OccupantId,
                 propertyId: request.PropertyId,
                 description: request.Description);
 
@@ -102,13 +102,13 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 request.ContractId);
 
             // Load names for DTO
-            string? tenantName = null;
+            string? OccupantName = null;
             string? propertyName = null;
 
-            if (request.TenantId.HasValue)
+            if (request.OccupantId.HasValue)
             {
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId.Value, cancellationToken);
-                tenantName = tenant?.FullName;
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId.Value, cancellationToken);
+                OccupantName = tenant?.FullName;
             }
 
             if (request.PropertyId.HasValue)
@@ -128,8 +128,8 @@ public class SaveGeneratedDocumentCommandHandler : IRequestHandler<SaveGenerated
                 FileSizeBytes = document.FileSizeBytes,
                 Description = document.Description,
                 ExpiryDate = document.ExpiryDate,
-                TenantId = document.AssociatedTenantId,
-                TenantName = tenantName,
+                OccupantId = document.AssociatedOccupantId,
+                OccupantName = OccupantName,
                 PropertyId = document.PropertyId,
                 PropertyName = propertyName,
                 IsArchived = document.IsArchived,

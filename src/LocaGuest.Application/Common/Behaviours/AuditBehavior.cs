@@ -66,7 +66,7 @@ public class AuditBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TR
         try
         {
             _logger.LogInformation(
-                "Executing command {CommandName} for user {UserId} (Tenant: {TenantId})",
+                "Executing command {CommandName} for user {UserId} (Tenant: {OccupantId})",
                 requestName, userId, organizationId);
 
             response = await next();

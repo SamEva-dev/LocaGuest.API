@@ -44,7 +44,7 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
                 DateTimeKind.Utc);
 
             var payment = Payment.Create(
-                tenantId: contract.RenterTenantId,
+                tenantId: contract.RenterOccupantId,
                 propertyId: contract.PropertyId,
                 contractId: contract.Id,
                 paymentType: PaymentType.Rent,

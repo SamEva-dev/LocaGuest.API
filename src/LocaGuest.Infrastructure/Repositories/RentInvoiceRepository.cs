@@ -14,7 +14,7 @@ public class RentInvoiceRepository : Repository<RentInvoice>, IRentInvoiceReposi
     public async Task<List<RentInvoice>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<RentInvoice>()
-            .Where(i => i.RenterTenantId == tenantId)
+            .Where(i => i.RenterOccupantId == tenantId)
             .OrderByDescending(i => i.Year)
             .ThenByDescending(i => i.Month)
             .ToListAsync(cancellationToken);

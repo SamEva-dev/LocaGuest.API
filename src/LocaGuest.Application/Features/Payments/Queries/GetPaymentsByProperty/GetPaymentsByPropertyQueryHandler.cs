@@ -37,22 +37,22 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
             var payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken);
 
             // Enrichir avec les noms de locataires
-            var tenantIds = payments.Select(p => p.RenterTenantId).Distinct();
+            var OccupantIds = payments.Select(p => p.RenterOccupantId).Distinct();
             var tenants = new Dictionary<Guid, string>();
             
-            foreach (var tenantId in tenantIds)
+            foreach (var OccupantId in OccupantIds)
             {
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
                 if (tenant != null)
                 {
-                    tenants[tenantId] = tenant.FullName;
+                    tenants[OccupantId] = tenant.FullName;
                 }
             }
 
             var paymentDtos = payments.Select(p => new PaymentDto
             {
                 Id = p.Id,
-                TenantId = p.RenterTenantId,
+                OccupantId = p.RenterOccupantId,
                 PropertyId = p.PropertyId,
                 ContractId = p.ContractId,
                 PaymentType = p.PaymentType.ToString(),
@@ -70,7 +70,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
                 InvoiceDocumentId = p.InvoiceDocumentId,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.LastModifiedAt,
-                TenantName = tenants.GetValueOrDefault(p.RenterTenantId),
+                OccupantName = tenants.GetValueOrDefault(p.RenterOccupantId),
                 PropertyName = property.Name
             }).ToList();
 

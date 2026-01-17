@@ -3,7 +3,7 @@ using LocaGuest.Application.Features.Contracts.Commands.ActivateContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -56,9 +56,9 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
-        var contract = Contract.Create(propertyId, tenantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
+        var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
         contract.MarkAsSigned();
 
         var property = Property.Create(
@@ -71,13 +71,14 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
             bedrooms: 3,
             bathrooms: 1,
             totalRooms: 1);
+        property.SetOrganizationId(Guid.NewGuid());
         property.AddRoom("R1", 400m);
 
         var tenant = Occupant.Create(fullName: "John Doe", email: "john@doe.com");
 
         _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
         _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync(property);
-        _tenantRepositoryMock.Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepositoryMock.Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
 
         var result = await _handler.Handle(new ActivateContractCommand(contractId), CancellationToken.None);
 
@@ -90,9 +91,9 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
-        var contract = Contract.Create(propertyId, tenantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
+        var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
         contract.MarkAsSigned();
 
         var property = Property.Create(
@@ -105,6 +106,7 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
             bedrooms: 3,
             bathrooms: 1,
             totalRooms: 2);
+        property.SetOrganizationId(Guid.NewGuid());
         property.AddRoom("R1", 400m);
         property.AddRoom("R2", 400m);
 
@@ -112,7 +114,7 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
 
         _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
         _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync(property);
-        _tenantRepositoryMock.Setup(x => x.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepositoryMock.Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
 
         var result = await _handler.Handle(new ActivateContractCommand(contractId), CancellationToken.None);
 

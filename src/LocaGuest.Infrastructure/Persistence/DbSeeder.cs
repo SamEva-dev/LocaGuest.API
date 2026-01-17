@@ -1,5 +1,5 @@
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using Microsoft.EntityFrameworkCore;
@@ -160,7 +160,7 @@ public static class DbSeeder
                 var amountDue = contract.Rent + contract.Charges;
 
                 var payment = Payment.Create(
-                    tenantId: contract.RenterTenantId,
+                    tenantId: contract.RenterOccupantId,
                     propertyId: contract.PropertyId,
                     contractId: contract.Id,
                     paymentType: PaymentType.Rent,

@@ -1,4 +1,4 @@
-﻿namespace LocaGuest.Infrastructure.Tests;
+namespace LocaGuest.Infrastructure.Tests;
 
 public class UnitTest1
 {

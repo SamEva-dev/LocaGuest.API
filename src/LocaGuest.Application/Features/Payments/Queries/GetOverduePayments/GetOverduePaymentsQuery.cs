@@ -14,7 +14,7 @@ public record GetOverduePaymentsQuery : IRequest<Result<List<PaymentDto>>>
     /// <summary>
     /// Filtre optionnel par Tenant
     /// </summary>
-    public Guid? TenantId { get; init; }
+    public Guid? OccupantId { get; init; }
     
     /// <summary>
     /// Nombre maximum de jours de retard à inclure (ex: 90)

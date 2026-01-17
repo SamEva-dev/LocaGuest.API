@@ -13,10 +13,15 @@ public static class EntityPrefixes
     public const string Property = "APP";
 
     /// <summary>
-    /// Locataire - L
+    /// Locataire/Occupant - L
     /// Example: T0001-L0001
     /// </summary>
     public const string Tenant = "L";
+    
+    /// <summary>
+    /// Alias for Tenant - Occupant
+    /// </summary>
+    public const string Occupant = "L";
 
     /// <summary>
     /// Maison - M
@@ -56,7 +61,7 @@ public static class EntityPrefixes
     /// <summary>
     /// Get all supported prefixes
     /// </summary>
-    public static readonly string[] All = {Property, Tenant, House, Contract, Payment, Invoice};
+    public static readonly string[] All = {Property, Tenant, Occupant, House, Contract, Payment, Invoice};
 
     /// <summary>
     /// Get description for a prefix

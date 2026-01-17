@@ -47,7 +47,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
             if (payment.ReceiptId.HasValue)
                 return Result.Success(payment.ReceiptId.Value);
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(payment.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(payment.RenterOccupantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(payment.PropertyId, cancellationToken);
 
             if (tenant == null || property == null)
@@ -92,7 +92,7 @@ public class GeneratePaymentQuittanceCommandHandler : IRequestHandler<GeneratePa
                 Category = DocumentCategory.Quittances.ToString(),
                 FileSizeBytes = pdf.Length,
                 ContractId = payment.ContractId,
-                TenantId = payment.RenterTenantId,
+                OccupantId = payment.RenterOccupantId,
                 PropertyId = payment.PropertyId,
                 Description = docDescription
             };

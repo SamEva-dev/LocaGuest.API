@@ -58,7 +58,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
 
         var mappedParticipants = participants
             .Select(p => new EffectiveContractParticipant(
-                RenterTenantId: p.RenterTenantId,
+                RenterOccupantId: p.RenterOccupantId,
                 ShareType: p.ShareType,
                 ShareValue: p.ShareValue,
                 StartDate: p.StartDate,
@@ -68,7 +68,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
         if (mappedParticipants.Count == 0)
         {
             mappedParticipants.Add(new EffectiveContractParticipant(
-                RenterTenantId: contract.RenterTenantId,
+                RenterOccupantId: contract.RenterOccupantId,
                 ShareType: Domain.Aggregates.PaymentAggregate.BillingShareType.Percentage,
                 ShareValue: 100m,
                 StartDate: contract.StartDate,
@@ -116,7 +116,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
 
         var mappedParticipants = overlapping
             .Select(p => new EffectiveContractParticipant(
-                RenterTenantId: p.RenterTenantId,
+                RenterOccupantId: p.RenterOccupantId,
                 ShareType: p.ShareType,
                 ShareValue: p.ShareValue,
                 StartDate: p.StartDate,
@@ -126,7 +126,7 @@ public class EffectiveContractStateResolver : IEffectiveContractStateResolver
         if (mappedParticipants.Count == 0)
         {
             mappedParticipants.Add(new EffectiveContractParticipant(
-                RenterTenantId: contract.RenterTenantId,
+                RenterOccupantId: contract.RenterOccupantId,
                 ShareType: Domain.Aggregates.PaymentAggregate.BillingShareType.Percentage,
                 ShareValue: 100m,
                 StartDate: contract.StartDate,

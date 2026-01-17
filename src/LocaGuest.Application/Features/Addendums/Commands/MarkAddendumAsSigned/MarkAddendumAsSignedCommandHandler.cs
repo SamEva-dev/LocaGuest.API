@@ -117,13 +117,13 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
             return Result.Failure("Invalid splitType for occupants addendum");
 
         var distinct = payload.Participants
-            .Where(p => p != null && p.TenantId != Guid.Empty)
-            .GroupBy(p => p.TenantId)
+            .Where(p => p != null && p.OccupantId != Guid.Empty)
+            .GroupBy(p => p.OccupantId)
             .Select(g => g.First())
             .ToList();
 
         if (distinct.Count != payload.Participants.Count)
-            return Result.Failure("Duplicate tenantId in occupants addendum");
+            return Result.Failure("Duplicate OccupantId in occupants addendum");
 
         if (distinct.Any(p => p.ShareValue < 0m))
             return Result.Failure("ShareValue cannot be negative");
@@ -162,7 +162,7 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
         {
             var created = ContractParticipant.Create(
                 contractId: addendum.ContractId,
-                tenantId: np.TenantId,
+                tenantId: np.OccupantId,
                 startDate: effectiveDate,
                 endDate: null,
                 shareType: shareType,
@@ -175,5 +175,5 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
     }
 
     private sealed record OccupantChangesDto(string? SplitType, List<OccupantParticipantDto> Participants);
-    private sealed record OccupantParticipantDto(Guid TenantId, decimal ShareValue);
+    private sealed record OccupantParticipantDto(Guid OccupantId, decimal ShareValue);
 }

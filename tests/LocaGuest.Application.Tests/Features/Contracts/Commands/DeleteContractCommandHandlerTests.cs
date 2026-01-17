@@ -54,9 +54,9 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
-        var contract = Contract.Create(propertyId, tenantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
+        var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
         contract.MarkAsSigned();
 
         _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
@@ -72,9 +72,9 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
     {
         var contractId = Guid.NewGuid();
         var propertyId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
+        var OccupantId = Guid.NewGuid();
 
-        var contract = Contract.Create(propertyId, tenantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
+        var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
 
         var property = Property.Create(
             name: "Test",
@@ -86,6 +86,7 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
             bedrooms: 3,
             bathrooms: 1,
             totalRooms: 2);
+        property.SetOrganizationId(Guid.NewGuid());
         property.AddRoom("R1", 400m);
         property.AddRoom("R2", 400m);
 

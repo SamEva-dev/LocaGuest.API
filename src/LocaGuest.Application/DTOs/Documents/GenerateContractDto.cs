@@ -8,7 +8,7 @@ public record GenerateContractDto
     /// </summary>
     public Guid? ContractId { get; init; }
     
-    public Guid TenantId { get; init; }
+    public Guid OccupantId { get; init; }
     public Guid PropertyId { get; init; }
     public string ContractType { get; init; } = string.Empty; // BAIL, AVENANT, ETAT_LIEUX_ENTREE, ETAT_LIEUX_SORTIE
     public string StartDate { get; init; } = string.Empty; // ISO 8601

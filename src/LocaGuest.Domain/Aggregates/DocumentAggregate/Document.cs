@@ -23,7 +23,7 @@ public class Document : AuditableEntity
     /// Locataire associé à ce document (optionnel)
     /// Note: Le TenantId hérité de AuditableEntity est utilisé pour le multi-tenant filtering
     /// </summary>
-    public Guid? AssociatedTenantId { get; private set; }
+    public Guid? AssociatedOccupantId { get; private set; }
     
     /// <summary>
     /// Property associated with this document (optional)
@@ -71,7 +71,7 @@ public class Document : AuditableEntity
             Type = type,
             Category = category,
             FileSizeBytes = fileSizeBytes,
-            AssociatedTenantId = tenantId,
+            AssociatedOccupantId = tenantId,
             PropertyId = propertyId,
             Description = description,
             ExpiryDate = expiryDate,
@@ -102,13 +102,13 @@ public class Document : AuditableEntity
     public void Archive()
     {
         IsArchived = true;
-        AssociatedTenantId = null;
+        AssociatedOccupantId = null;
         PropertyId = null;
     }
 
     public void AssociateToTenant(Guid tenantId)
     {
-        AssociatedTenantId = tenantId;
+        AssociatedOccupantId = tenantId;
         IsArchived = false;
     }
 
@@ -144,7 +144,7 @@ public class Document : AuditableEntity
         
         AddDomainEvent(new DocumentSigned(
             Id,
-            AssociatedTenantId,
+            AssociatedOccupantId,
             Type,
             SignedDate.Value));
     }

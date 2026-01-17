@@ -19,5 +19,5 @@ public record DeadlineItem
     public string Description { get; init; } = string.Empty;
     public DateTime Date { get; init; }
     public string PropertyCode { get; init; } = string.Empty;
-    public string TenantName { get; init; } = string.Empty;
+    public string OccupantName { get; init; } = string.Empty;
 }

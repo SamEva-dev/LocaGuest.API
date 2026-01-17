@@ -76,7 +76,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                     // Create new invoice (header)
                     var invoice = RentInvoice.Create(
                         contract.Id,
-                        contract.RenterTenantId,
+                        contract.RenterOccupantId,
                         contract.PropertyId,
                         request.Month,
                         request.Year,
@@ -116,11 +116,11 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                             throw new InvalidOperationException("Percentage shares exceed 100%");
                     }
 
-                    var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
+                    var lineAmounts = new List<(Guid OccupantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
 
                     foreach (var p in fixedParticipants)
                     {
-                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                        lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
                     }
 
                     if (percentParticipants.Count > 0)
@@ -128,7 +128,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                         foreach (var p in percentParticipants)
                         {
                             var amount = remainingForPercent * (p.ShareValue / 100m);
-                            lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                            lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
                         }
 
                         var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
@@ -139,7 +139,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
                             if (lastIndex >= 0)
                             {
                                 var last = lineAmounts[lastIndex];
-                                lineAmounts[lastIndex] = (last.tenantId, last.shareType, last.shareValue, last.amountDue + diff);
+                                lineAmounts[lastIndex] = (last.OccupantId, last.shareType, last.shareValue, last.amountDue + diff);
                             }
                         }
                     }
@@ -151,7 +151,7 @@ public class GenerateMonthlyInvoicesCommandHandler : IRequestHandler<GenerateMon
 
                         var line = RentInvoiceLine.Create(
                             rentInvoiceId: invoice.Id,
-                            tenantId: la.tenantId,
+                            tenantId: la.OccupantId,
                             amountDue: la.amountDue,
                             shareType: la.shareType,
                             shareValue: la.shareValue);

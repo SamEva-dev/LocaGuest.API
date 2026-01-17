@@ -6,5 +6,5 @@ namespace LocaGuest.Application.Features.Payments.Queries.GetPaymentsByTenant;
 
 public record GetPaymentsByTenantQuery : IRequest<Result<List<PaymentDto>>>
 {
-    public required string TenantId { get; init; }
+    public required string OccupantId { get; init; }
 }

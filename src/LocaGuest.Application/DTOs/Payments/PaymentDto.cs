@@ -3,7 +3,7 @@ namespace LocaGuest.Application.DTOs.Payments;
 public class PaymentDto
 {
     public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public Guid OccupantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid ContractId { get; set; }
 
@@ -29,7 +29,7 @@ public class PaymentDto
     public DateTime? UpdatedAt { get; set; }
     
     // Navigation properties (optional enrichment)
-    public string? TenantName { get; set; }
+    public string? OccupantName { get; set; }
     public string? PropertyName { get; set; }
     
     /// <summary>
@@ -51,7 +51,7 @@ public class PaymentDto
 
 public class CreatePaymentDto
 {
-    public Guid TenantId { get; set; }
+    public Guid OccupantId { get; set; }
     public Guid PropertyId { get; set; }
     public Guid ContractId { get; set; }
 

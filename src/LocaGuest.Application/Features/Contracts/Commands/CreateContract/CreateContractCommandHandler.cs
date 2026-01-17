@@ -46,7 +46,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 return Result.Failure<ContractDto>("Property not found");
 
             // Vérifier que le locataire existe
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken);
             
             if (tenant == null)
                 return Result.Failure<ContractDto>("Tenant not found");
@@ -125,7 +125,7 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
             // Créer le contrat
             var contract = Contract.Create(
                 request.PropertyId,
-                request.TenantId,
+                request.OccupantId,
                 contractType,
                 request.StartDate,
                 request.EndDate,
@@ -178,9 +178,9 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 Id = contract.Id,
                 Code = contract.Code,  // ✅ Include generated code
                 PropertyId = contract.PropertyId,
-                TenantId = contract.RenterTenantId,
+                OccupantId = contract.RenterOccupantId,
                 PropertyName = property.Name,
-                TenantName = tenant.FullName,
+                OccupantName = tenant.FullName,
                 Type = contract.Type.ToString(),
                 StartDate = contract.StartDate,
                 EndDate = contract.EndDate,
@@ -192,21 +192,21 @@ public class CreateContractCommandHandler : IRequestHandler<CreateContractComman
                 CreatedAt = contract.CreatedAt
             };
 
-            _logger.LogInformation("Contract created: {ContractId} for Property {PropertyId} and Tenant {TenantId}", 
-                contract.Id, request.PropertyId, request.TenantId);
+            _logger.LogInformation("Contract created: {ContractId} for Property {PropertyId} and Tenant {OccupantId}", 
+                contract.Id, request.PropertyId, request.OccupantId);
 
             return Result.Success(contractDto);
         }
         catch (ValidationException vex)
         {
-            _logger.LogWarning(vex, "Validation error creating contract for Property {PropertyId} and Tenant {TenantId}",
-                request.PropertyId, request.TenantId);
+            _logger.LogWarning(vex, "Validation error creating contract for Property {PropertyId} and Tenant {OccupantId}",
+                request.PropertyId, request.OccupantId);
             return Result.Failure<ContractDto>(vex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating contract for Property {PropertyId} and Tenant {TenantId}", 
-                request.PropertyId, request.TenantId);
+            _logger.LogError(ex, "Error creating contract for Property {PropertyId} and Tenant {OccupantId}", 
+                request.PropertyId, request.OccupantId);
             return Result.Failure<ContractDto>($"Error creating contract: {ex.Message}");
         }
     }

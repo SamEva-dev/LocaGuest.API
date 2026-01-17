@@ -28,8 +28,8 @@ public class ExportInvoicesQueryHandler : IRequestHandler<ExportInvoicesQuery, R
             // Build query
             var query = _unitOfWork.RentInvoices.Query();
 
-            if (request.TenantId.HasValue)
-                query = query.Where(i => i.RenterTenantId == request.TenantId.Value);
+            if (request.OccupantId.HasValue)
+                query = query.Where(i => i.RenterOccupantId == request.OccupantId.Value);
 
             if (request.PropertyId.HasValue)
                 query = query.Where(i => i.PropertyId == request.PropertyId.Value);
@@ -92,7 +92,7 @@ public class ExportInvoicesQueryHandler : IRequestHandler<ExportInvoicesQuery, R
         {
             csv.AppendLine(string.Join(";",
                 invoice.GeneratedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                invoice.RenterTenantId,
+                invoice.RenterOccupantId,
                 invoice.PropertyId,
                 invoice.ContractId,
                 invoice.Month,

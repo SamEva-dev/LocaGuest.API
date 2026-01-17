@@ -13,7 +13,7 @@ public record SaveGeneratedDocumentCommand : IRequest<Result<DocumentDto>>
     public required long FileSizeBytes { get; init; }
     public Guid? OrganizationId { get; init; }
     public Guid? ContractId { get; init; }
-    public Guid? TenantId { get; init; }
+    public Guid? OccupantId { get; init; }
     public Guid? PropertyId { get; init; }
     public string? Description { get; init; }
 }

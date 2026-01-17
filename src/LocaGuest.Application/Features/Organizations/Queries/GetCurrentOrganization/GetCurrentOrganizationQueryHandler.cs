@@ -37,12 +37,12 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
             }
 
             // Get user's organization from Users in AuthGate database
-            // For now, we'll need to get the TenantId from the JWT claims
+            // For now, we'll need to get the OccupantId from the JWT claims
             // and use it to fetch the organization
             
-            // TODO: Get TenantId from HttpContext.User claims
+            // TODO: Get OccupantId from HttpContext.User claims
             // For this implementation, we'll query all organizations and return the first one
-            // In production, this should be filtered by the user's TenantId
+            // In production, this should be filtered by the user's OccupantId
             
             var organization = await _unitOfWork.Organizations.GetByIdAsync(_orgContext.OrganizationId.Value, cancellationToken);
 

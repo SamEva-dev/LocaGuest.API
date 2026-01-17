@@ -1,7 +1,7 @@
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Aggregates.UserAggregate;
 using LocaGuest.Domain.Aggregates.SubscriptionAggregate;
 using LocaGuest.Domain.Aggregates.RentabilityAggregate;
@@ -388,8 +388,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.HasIndex(c => c.OrganizationId);
             entity.Property(c => c.Code).IsRequired().HasMaxLength(50);
             entity.HasIndex(c => new { c.OrganizationId, c.Code }).IsUnique();
-            entity.Property(c => c.RenterTenantId).IsRequired();
-            entity.HasIndex(c => c.RenterTenantId);
+            entity.Property(c => c.RenterOccupantId).IsRequired();
+            entity.HasIndex(c => c.RenterOccupantId);
             entity.Property(c => c.Rent).HasColumnType("decimal(18,2)");
             entity.Property(c => c.Deposit).HasColumnType("decimal(18,2)");
 
@@ -421,7 +421,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
 
             entity.HasOne<Occupant>()
                 .WithMany()
-                .HasForeignKey(c => c.RenterTenantId)
+                .HasForeignKey(c => c.RenterOccupantId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -665,9 +665,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.Property(ie => ie.OrganizationId).IsRequired();
             entity.HasIndex(ie => ie.OrganizationId);
             
-            // RenterTenantId (Guid) pour le locataire du contrat
-            entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
-            entity.HasIndex(ie => ie.RenterTenantId);
+            // RenterOccupantId (Guid) pour le locataire du contrat
+            entity.Property(ie => ie.RenterOccupantId).IsRequired().HasColumnName("RenterOccupantId");
+            entity.HasIndex(ie => ie.RenterOccupantId);
             
             entity.Property(ie => ie.PropertyId).IsRequired();
             entity.Property(ie => ie.ContractId).IsRequired();
@@ -721,9 +721,9 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.Property(ie => ie.OrganizationId).IsRequired();
             entity.HasIndex(ie => ie.OrganizationId);
             
-            // RenterTenantId (Guid) pour le locataire du contrat
-            entity.Property(ie => ie.RenterTenantId).IsRequired().HasColumnName("RenterTenantId");
-            entity.HasIndex(ie => ie.RenterTenantId);
+            // RenterOccupantId (Guid) pour le locataire du contrat
+            entity.Property(ie => ie.RenterOccupantId).IsRequired().HasColumnName("RenterOccupantId");
+            entity.HasIndex(ie => ie.RenterOccupantId);
             
             entity.Property(ie => ie.PropertyId).IsRequired();
             entity.Property(ie => ie.ContractId).IsRequired();
@@ -881,7 +881,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
 
             if (entry.State is EntityState.Modified or EntityState.Deleted)
             {
-                if (entry.Property(nameof(AuditableEntity.OrganizationId)).IsModified)
+                var orgIdProp = entry.Property(nameof(AuditableEntity.OrganizationId));
+                if (orgIdProp.IsModified && !Equals(orgIdProp.OriginalValue, orgIdProp.CurrentValue))
                     throw new InvalidOperationException("OrganizationId cannot be modified after entity creation.");
 
                 if (!bypass)

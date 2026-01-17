@@ -77,7 +77,8 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 bedrooms: request.Bedrooms,
                 bathrooms: request.Bathrooms);
 
-            // Update extended details
+            // Update extended details (deposit = 2x rent automatically)
+            var calculatedDeposit = request.Rent.HasValue ? request.Rent.Value * 2 : (decimal?)null;
             property.UpdateExtendedDetails(
                 city: request.City,
                 postalCode: request.PostalCode,
@@ -89,7 +90,7 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 hasBalcony: request.HasBalcony,
                 isFurnished: request.IsFurnished,
                 charges: request.Charges,
-                deposit: request.Deposit,
+                deposit: calculatedDeposit ?? request.Deposit,
                 description: request.Description,
                 energyClass: request.EnergyClass,
                 constructionYear: request.ConstructionYear);
@@ -196,8 +197,8 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 }
             }
 
-            // Update through repository
-            _unitOfWork.Properties.Update(property);
+            // Commit changes - entity is already tracked by EF Core
+            // Do NOT call Update() as it marks OrganizationId as modified and triggers protection
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Property updated successfully: {PropertyId} - {PropertyName}", 

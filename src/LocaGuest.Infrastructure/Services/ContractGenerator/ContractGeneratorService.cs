@@ -1,7 +1,7 @@
 using LocaGuest.Application.DTOs.Documents;
 using LocaGuest.Application.Interfaces;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -33,7 +33,7 @@ public class ContractGeneratorService : IContractGeneratorService
         _logger.LogInformation(
             "Generating contract: Type={ContractType}, Tenant={TenantId}, Property={PropertyId}",
             dto.ContractType,
-            dto.TenantId,
+            dto.OccupantId,
             dto.PropertyId);
 
         var model = BuildContractModel(tenant, property, currentUserFullName, currentUserEmail, currentUserPhone, dto);

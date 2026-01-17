@@ -46,7 +46,7 @@ public class PaymentsController : ControllerBase
     {
         var command = new CreatePaymentCommand
         {
-            TenantId = dto.TenantId,
+            OccupantId = dto.OccupantId,
             PropertyId = dto.PropertyId,
             ContractId = dto.ContractId,
             PaymentType = dto.PaymentType,
@@ -65,18 +65,18 @@ public class PaymentsController : ControllerBase
             return BadRequest(new { message = result.ErrorMessage });
         }
 
-        return CreatedAtAction(nameof(GetPaymentsByTenant), new { tenantId = dto.TenantId }, result.Data);
+        return CreatedAtAction(nameof(GetPaymentsByTenant), new { OccupantId = dto.OccupantId }, result.Data);
     }
 
     /// <summary>
     /// Get all payments for a tenant
     /// </summary>
-    [HttpGet("tenant/{tenantId}")]
+    [HttpGet("tenant/{OccupantId}")]
     [ProducesResponseType(typeof(List<PaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPaymentsByTenant(string tenantId)
+    public async Task<IActionResult> GetPaymentsByTenant(string OccupantId)
     {
-        var query = new GetPaymentsByTenantQuery { TenantId = tenantId };
+        var query = new GetPaymentsByTenantQuery { OccupantId = OccupantId };
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)
@@ -113,14 +113,14 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(typeof(PaymentStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPaymentStats(
-        [FromQuery] string? tenantId = null,
+        [FromQuery] string? OccupantId = null,
         [FromQuery] string? propertyId = null,
         [FromQuery] int? month = null,
         [FromQuery] int? year = null)
     {
         var query = new GetPaymentStatsQuery
         {
-            TenantId = tenantId,
+            OccupantId = OccupantId,
             PropertyId = propertyId,
             Month = month,
             Year = year
@@ -193,13 +193,13 @@ public class PaymentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetOverduePayments(
         [FromQuery] Guid? propertyId = null,
-        [FromQuery] Guid? tenantId = null,
+        [FromQuery] Guid? OccupantId = null,
         [FromQuery] int? maxDaysLate = null)
     {
         var query = new GetOverduePaymentsQuery
         {
             PropertyId = propertyId,
-            TenantId = tenantId,
+            OccupantId = OccupantId,
             MaxDaysLate = maxDaysLate
         };
 

@@ -50,7 +50,7 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
             if (contract == null)
                 return Result.Failure<Guid>("Contract not found");
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
             var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
 
             if (tenant == null || property == null)
@@ -111,7 +111,7 @@ public class GenerateInvoicePdfCommandHandler : IRequestHandler<GenerateInvoiceP
                 FileSizeBytes = pdf.Length,
                 OrganizationId = orgId,
                 ContractId = invoice.ContractId,
-                TenantId = tenant.Id,
+                OccupantId = tenant.Id,
                 PropertyId = property.Id,
                 Description = $"Facture de loyer {invoice.Month:00}/{invoice.Year} - {invoice.Amount:N2}€"
             };

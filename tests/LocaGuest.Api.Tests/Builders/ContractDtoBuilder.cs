@@ -6,9 +6,9 @@ public class ContractDtoBuilder
 {
     private Guid _id = Guid.NewGuid();
     private Guid _propertyId = Guid.NewGuid();
-    private Guid _tenantId = Guid.NewGuid();
+    private Guid _OccupantId = Guid.NewGuid();
     private string? _propertyName = "Test Property";
-    private string? _tenantName = "John Doe";
+    private string? _OccupantName = "John Doe";
     private string _type = "Unfurnished";
     private DateTime _startDate = DateTime.UtcNow;
     private DateTime _endDate = DateTime.UtcNow.AddYears(1);
@@ -31,9 +31,9 @@ public class ContractDtoBuilder
         return this;
     }
 
-    public ContractDtoBuilder WithTenantId(Guid tenantId)
+    public ContractDtoBuilder WithOccupantId(Guid OccupantId)
     {
-        _tenantId = tenantId;
+        _OccupantId = OccupantId;
         return this;
     }
 
@@ -43,9 +43,9 @@ public class ContractDtoBuilder
         return this;
     }
 
-    public ContractDtoBuilder WithTenantName(string? tenantName)
+    public ContractDtoBuilder WithOccupantName(string? OccupantName)
     {
-        _tenantName = tenantName;
+        _OccupantName = OccupantName;
         return this;
     }
 
@@ -73,9 +73,9 @@ public class ContractDtoBuilder
         {
             Id = _id,
             PropertyId = _propertyId,
-            TenantId = _tenantId,
+            OccupantId = _OccupantId,
             PropertyName = _propertyName,
-            TenantName = _tenantName,
+            OccupantName = _OccupantName,
             Type = _type,
             StartDate = _startDate,
             EndDate = _endDate,

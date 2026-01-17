@@ -15,7 +15,7 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
     public async Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Where(d => d.AssociatedTenantId == tenantId && !d.IsArchived)
+            .Where(d => d.AssociatedOccupantId == tenantId && !d.IsArchived)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(cancellationToken);
     }

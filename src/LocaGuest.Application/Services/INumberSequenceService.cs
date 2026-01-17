@@ -10,7 +10,7 @@ public interface INumberSequenceService
     /// <summary>
     /// Generates the next sequential code for an entity type within a tenant
     /// </summary>
-    /// <param name="tenantId">Organization (Tenant) ID</param>
+    /// <param name="OccupantId">Organization (Tenant) ID</param>
     /// <param name="entityPrefix">Entity prefix (APP, L, M, CTR, PAY, INV...)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Generated code (e.g., "T0003-APP0001")</returns>
@@ -19,7 +19,7 @@ public interface INumberSequenceService
     /// <summary>
     /// Gets the last generated number for an entity type within a tenant
     /// </summary>
-    /// <param name="tenantId">Organization (Tenant) ID</param>
+    /// <param name="OccupantId">Organization (Tenant) ID</param>
     /// <param name="entityPrefix">Entity prefix</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Last number or 0 if no sequences exist</returns>
@@ -28,7 +28,7 @@ public interface INumberSequenceService
     /// <summary>
     /// Gets the tenant number for organisation (tenant) specific sequences
     /// </summary>
-    /// <param name="tenantId">Organization (Tenant) ID</param>
+    /// <param name="OccupantId">Organization (Tenant) ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Last number or 0 if no sequences exist</returns>
     Task<string> GetTenantNumberAsync(Guid organizationId,  CancellationToken cancellationToken = default);
@@ -36,7 +36,7 @@ public interface INumberSequenceService
     /// <summary>
     /// Resets a sequence to a specific number (admin/maintenance only)
     /// </summary>
-    /// <param name="tenantId">Organization (Tenant) ID</param>
+    /// <param name="OccupantId">Organization (Tenant) ID</param>
     /// <param name="entityPrefix">Entity prefix</param>
     /// <param name="newNumber">New starting number</param>
     /// <param name="cancellationToken">Cancellation token</param>

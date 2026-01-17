@@ -147,7 +147,7 @@ public class Startup
         services.AddScoped<LocaGuest.Domain.Repositories.IUnitOfWork, LocaGuest.Infrastructure.Repositories.UnitOfWork>();
         services.AddScoped<LocaGuest.Domain.Repositories.IPropertyRepository, LocaGuest.Infrastructure.Repositories.PropertyRepository>();
         services.AddScoped<LocaGuest.Domain.Repositories.IContractRepository, LocaGuest.Infrastructure.Repositories.ContractRepository>();
-        services.AddScoped<LocaGuest.Domain.Repositories.IOccupantRepository, LocaGuest.Infrastructure.Repositories.TenantRepository>();
+        services.AddScoped<LocaGuest.Domain.Repositories.IOccupantRepository, LocaGuest.Infrastructure.Repositories.OccupantRepository>();
         services.AddScoped<LocaGuest.Domain.Repositories.ISubscriptionRepository, LocaGuest.Infrastructure.Repositories.SubscriptionRepository>();
 
         // Application Services

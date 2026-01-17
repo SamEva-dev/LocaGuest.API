@@ -45,7 +45,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         builder.Property(d => d.ExpiryDate);
 
-        builder.Property(d => d.AssociatedTenantId);
+        builder.Property(d => d.AssociatedOccupantId);
 
         builder.Property(d => d.PropertyId);
 
@@ -55,7 +55,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         // Indexes
         builder.HasIndex(d => new { d.OrganizationId, d.Code }).IsUnique();
-        builder.HasIndex(d => d.AssociatedTenantId);
+        builder.HasIndex(d => d.AssociatedOccupantId);
         builder.HasIndex(d => d.PropertyId);
         builder.HasIndex(d => d.Type);
         builder.HasIndex(d => d.Category);

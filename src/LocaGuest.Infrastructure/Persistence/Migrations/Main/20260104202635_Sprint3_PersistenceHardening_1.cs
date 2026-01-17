@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -94,10 +94,10 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
                 column: "PropertyId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_contracts_occupants_RenterTenantId",
+                name: "FK_contracts_occupants_RenterOccupantId",
                 schema: "lease",
                 table: "contracts",
-                column: "RenterTenantId",
+                column: "RenterOccupantId",
                 principalSchema: "locaguest",
                 principalTable: "occupants",
                 principalColumn: "Id",
@@ -118,7 +118,7 @@ namespace LocaGuest.Infrastructure.Persistence.Migrations.Main
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_contracts_occupants_RenterTenantId",
+                name: "FK_contracts_occupants_RenterOccupantId",
                 schema: "lease",
                 table: "contracts");
 

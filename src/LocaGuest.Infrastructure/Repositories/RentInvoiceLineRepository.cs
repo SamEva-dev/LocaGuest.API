@@ -21,6 +21,6 @@ public class RentInvoiceLineRepository : Repository<RentInvoiceLine>, IRentInvoi
     public async Task<RentInvoiceLine?> GetByInvoiceTenantAsync(Guid invoiceId, Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<RentInvoiceLine>()
-            .FirstOrDefaultAsync(l => l.RentInvoiceId == invoiceId && l.RenterTenantId == tenantId, cancellationToken);
+            .FirstOrDefaultAsync(l => l.RentInvoiceId == invoiceId && l.RenterOccupantId == tenantId, cancellationToken);
     }
 }

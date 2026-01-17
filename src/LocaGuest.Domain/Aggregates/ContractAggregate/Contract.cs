@@ -16,9 +16,9 @@ public class Contract : AuditableEntity
     public Guid PropertyId { get; private set; }
     
     /// <summary>
-    /// ID du locataire (Tenant entity) - ne pas confondre avec TenantId multi-tenant hérité de AuditableEntity
+    /// ID de l'occupant (Occupant entity) - ne pas confondre avec OrganizationId multi-tenant hérité de AuditableEntity
     /// </summary>
-    public Guid RenterTenantId { get; private set; }
+    public Guid RenterOccupantId { get; private set; }
     
     public ContractType Type { get; private set; }
     public DateTime StartDate { get; private set; }
@@ -110,7 +110,7 @@ public class Contract : AuditableEntity
         {
             Id = Guid.NewGuid(),
             PropertyId = propertyId,
-            RenterTenantId = renterTenantId,
+            RenterOccupantId = renterTenantId,
             Type = type,
             StartDate = startDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) : startDate.ToUniversalTime(),
             EndDate = endDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) : endDate.ToUniversalTime(),
@@ -174,7 +174,7 @@ public class Contract : AuditableEntity
         if (deposit is < 0)
             throw new ValidationException("CONTRACT_INVALID_DEPOSIT", "Deposit cannot be negative");
         
-        RenterTenantId = renterTenantId;
+        RenterOccupantId = renterTenantId;
         PropertyId = propertyId;
         RoomId = roomId;
         Type = Enum.Parse<ContractType>(type, ignoreCase: true);
@@ -191,7 +191,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_RENEWAL", "New end date must be after current end date");
 
         EndDate = newEndDate.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(newEndDate, DateTimeKind.Utc) : newEndDate.ToUniversalTime();
-        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterTenantId, EndDate));
+        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterOccupantId, EndDate));
     }
 
     public void Terminate(DateTime terminationDate, string? reason = null)
@@ -203,7 +203,7 @@ public class Contract : AuditableEntity
             ? DateTime.SpecifyKind(terminationDate, DateTimeKind.Utc)
             : terminationDate.ToUniversalTime();
         TerminationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
-        AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterTenantId, terminationDate));
+        AddDomainEvent(new ContractTerminated(Id, PropertyId, RenterOccupantId, terminationDate));
     }
 
     public void GiveNotice(DateTime noticeDate, DateTime noticeEndDate, string reason)
@@ -247,7 +247,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft or pending contracts can be cancelled");
 
         Status = ContractStatus.Cancelled;
-        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterOccupantId));
     }
 
     public void CancelSigned()
@@ -256,7 +256,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only signed contracts can be cancelled");
 
         Status = ContractStatus.Cancelled;
-        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterOccupantId));
     }
     
     /// <summary>
@@ -269,7 +269,7 @@ public class Contract : AuditableEntity
             
         IsConflict = true;
         Status = ContractStatus.Cancelled;
-        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterTenantId));
+        AddDomainEvent(new ContractCancelled(Id, PropertyId, RenterOccupantId));
     }
 
     public void MarkAsExpiring()
@@ -291,7 +291,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only active or expiring contracts can be marked as expired");
             
         Status = ContractStatus.Expired;
-        AddDomainEvent(new ContractExpired(Id, PropertyId, RenterTenantId, EndDate));
+        AddDomainEvent(new ContractExpired(Id, PropertyId, RenterOccupantId, EndDate));
     }
     
     /// <summary>
@@ -306,7 +306,7 @@ public class Contract : AuditableEntity
             
         RenewedContractId = newContractId;
         Status = ContractStatus.Renewed;
-        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterTenantId, EndDate));
+        AddDomainEvent(new ContractRenewed(Id, PropertyId, RenterOccupantId, EndDate));
     }
     
     /// <summary>
@@ -336,7 +336,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_INVALID_STATUS", "Only draft contracts can be marked as pending");
             
         Status = ContractStatus.Pending;
-        AddDomainEvent(new ContractPending(Id, PropertyId, RenterTenantId));
+        AddDomainEvent(new ContractPending(Id, PropertyId, RenterOccupantId));
     }
     
     /// <summary>
@@ -351,7 +351,7 @@ public class Contract : AuditableEntity
 
         Status = ContractStatus.Signed;
         var effectiveSignedDate = signedDate ?? DateTime.UtcNow;
-        AddDomainEvent(new ContractSigned(Id, PropertyId, RenterTenantId, effectiveSignedDate));
+        AddDomainEvent(new ContractSigned(Id, PropertyId, RenterOccupantId, effectiveSignedDate));
     }
 
     /// <summary>
@@ -368,7 +368,7 @@ public class Contract : AuditableEntity
             throw new ValidationException("CONTRACT_NOT_STARTED", "Contract cannot be activated before start date");
 
         Status = ContractStatus.Active;
-        AddDomainEvent(new ContractActivated(Id, PropertyId, RenterTenantId));
+        AddDomainEvent(new ContractActivated(Id, PropertyId, RenterOccupantId));
     }
     
     /// <summary>

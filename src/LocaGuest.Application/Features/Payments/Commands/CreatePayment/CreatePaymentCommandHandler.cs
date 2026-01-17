@@ -41,7 +41,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             }
 
             // 2. Vérifier que le locataire existe
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.TenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure<PaymentDto>("Tenant not found");
@@ -50,7 +50,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             // 3. Vérifier qu'il n'existe pas déjà un paiement pour ce mois (loyer uniquement)
             var existingPayment = await _unitOfWork.Payments.GetByMonthYearAsync(
                 request.ContractId,
-                request.TenantId,
+                request.OccupantId,
                 request.ExpectedDate.Month,
                 request.ExpectedDate.Year,
                 cancellationToken);
@@ -85,7 +85,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 }
 
                 var depositPayment = Payment.Create(
-                    tenantId: request.TenantId,
+                    tenantId: request.OccupantId,
                     propertyId: request.PropertyId,
                     contractId: request.ContractId,
                     paymentType: paymentType,
@@ -107,7 +107,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 return Result.Success(new PaymentDto
                 {
                     Id = depositPayment.Id,
-                    TenantId = depositPayment.RenterTenantId,
+                    OccupantId = depositPayment.RenterOccupantId,
                     PropertyId = depositPayment.PropertyId,
                     ContractId = depositPayment.ContractId,
                     PaymentType = depositPayment.PaymentType.ToString(),
@@ -125,7 +125,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                     InvoiceDocumentId = depositPayment.InvoiceDocumentId,
                     CreatedAt = depositPayment.CreatedAt,
                     UpdatedAt = depositPayment.LastModifiedAt,
-                    TenantName = tenant.FullName
+                    OccupantName = tenant.FullName
                 });
             }
 
@@ -156,7 +156,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
 
                 invoice = RentInvoice.Create(
                     contractId: request.ContractId,
-                    tenantId: contract.RenterTenantId,
+                    tenantId: contract.RenterOccupantId,
                     propertyId: contract.PropertyId,
                     month: request.ExpectedDate.Month,
                     year: request.ExpectedDate.Year,
@@ -182,17 +182,17 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 if (percentParticipants.Count > 0 && percentSum > 100m)
                     return Result.Failure<PaymentDto>("Percentage shares exceed 100%");
 
-                var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
+                var lineAmounts = new List<(Guid OccupantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
 
                 foreach (var p in fixedParticipants)
-                    lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                    lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
 
                 if (percentParticipants.Count > 0)
                 {
                     foreach (var p in percentParticipants)
                     {
                         var amount = remainingForPercent * (p.ShareValue / 100m);
-                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                        lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
                     }
 
                     var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
@@ -203,7 +203,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                         if (lastIndex >= 0)
                         {
                             var last = lineAmounts[lastIndex];
-                            lineAmounts[lastIndex] = (last.tenantId, last.shareType, last.shareValue, last.amountDue + diff);
+                            lineAmounts[lastIndex] = (last.OccupantId, last.shareType, last.shareValue, last.amountDue + diff);
                         }
                     }
                 }
@@ -212,14 +212,14 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 {
                     var line = RentInvoiceLine.Create(
                         rentInvoiceId: invoice.Id,
-                        tenantId: la.tenantId,
+                        tenantId: la.OccupantId,
                         amountDue: la.amountDue,
                         shareType: la.shareType,
                         shareValue: la.shareValue);
 
                     await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
 
-                    if (la.tenantId == request.TenantId)
+                    if (la.OccupantId == request.OccupantId)
                     {
                         tenantLine = line;
                     }
@@ -230,7 +230,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             if (tenantLine == null)
             {
                 tenantLine = await _unitOfWork.RentInvoiceLines
-                    .GetByInvoiceTenantAsync(invoice.Id, request.TenantId, cancellationToken);
+                    .GetByInvoiceTenantAsync(invoice.Id, request.OccupantId, cancellationToken);
             }
 
             if (tenantLine == null)
@@ -254,17 +254,17 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                             var percentSum = percentParticipants.Sum(p => p.ShareValue);
                             if (percentParticipants.Count == 0 || percentSum <= 100m)
                             {
-                                var lineAmounts = new List<(Guid tenantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
+                                var lineAmounts = new List<(Guid OccupantId, BillingShareType shareType, decimal shareValue, decimal amountDue)>();
 
                                 foreach (var p in fixedParticipants)
-                                    lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
+                                    lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(p.ShareValue, 2, MidpointRounding.AwayFromZero)));
 
                                 if (percentParticipants.Count > 0)
                                 {
                                     foreach (var p in percentParticipants)
                                     {
                                         var amount = remainingForPercent * (p.ShareValue / 100m);
-                                        lineAmounts.Add((p.RenterTenantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
+                                        lineAmounts.Add((p.RenterOccupantId, p.ShareType, p.ShareValue, Math.Round(amount, 2, MidpointRounding.AwayFromZero)));
                                     }
 
                                     var computed = lineAmounts.Where(x => x.shareType == BillingShareType.Percentage).Sum(x => x.amountDue);
@@ -275,7 +275,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                                         if (lastIndex >= 0)
                                         {
                                             var last = lineAmounts[lastIndex];
-                                            lineAmounts[lastIndex] = (last.tenantId, last.shareType, last.shareValue, last.amountDue + diff);
+                                            lineAmounts[lastIndex] = (last.OccupantId, last.shareType, last.shareValue, last.amountDue + diff);
                                         }
                                     }
                                 }
@@ -284,19 +284,19 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
 
                                 foreach (var la in lineAmounts)
                                 {
-                                    if (existingLines.Any(l => l.RenterTenantId == la.tenantId))
+                                    if (existingLines.Any(l => l.RenterOccupantId == la.OccupantId))
                                         continue;
 
                                     var line = RentInvoiceLine.Create(
                                         rentInvoiceId: invoice.Id,
-                                        tenantId: la.tenantId,
+                                        tenantId: la.OccupantId,
                                         amountDue: la.amountDue,
                                         shareType: la.shareType,
                                         shareValue: la.shareValue);
 
                                     await _unitOfWork.RentInvoiceLines.AddAsync(line, cancellationToken);
 
-                                    if (la.tenantId == request.TenantId)
+                                    if (la.OccupantId == request.OccupantId)
                                     {
                                         tenantLine = line;
                                     }
@@ -325,7 +325,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
 
             // 6. Créer le paiement (AmountDue vient de la ligne calculée)
             var payment = Payment.Create(
-                tenantId: request.TenantId,
+                tenantId: request.OccupantId,
                 propertyId: invoice.PropertyId,
                 contractId: request.ContractId,
                 paymentType: paymentType,
@@ -355,14 +355,14 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             }
 
             _logger.LogInformation(
-                "Payment created: {PaymentId} for tenant {TenantId}, amount: {Amount}",
-                payment.Id, request.TenantId, request.AmountPaid);
+                "Payment created: {PaymentId} for tenant {OccupantId}, amount: {Amount}",
+                payment.Id, request.OccupantId, request.AmountPaid);
 
             // 8. Mapper vers DTO
             var dto = new PaymentDto
             {
                 Id = payment.Id,
-                TenantId = payment.RenterTenantId,
+                OccupantId = payment.RenterOccupantId,
                 PropertyId = payment.PropertyId,
                 ContractId = payment.ContractId,
                 PaymentType = payment.PaymentType.ToString(),
@@ -380,14 +380,14 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
                 InvoiceDocumentId = payment.InvoiceDocumentId,
                 CreatedAt = payment.CreatedAt,
                 UpdatedAt = payment.LastModifiedAt,
-                TenantName = tenant.FullName
+                OccupantName = tenant.FullName
             };
 
             return Result.Success(dto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating payment for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error creating payment for tenant {OccupantId}", request.OccupantId);
             return Result.Failure<PaymentDto>($"Error creating payment: {ex.Message}");
         }
     }

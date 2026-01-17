@@ -38,7 +38,7 @@ public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuer
 
             var totalTenants = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active)
-                .Select(c => c.RenterTenantId)
+                .Select(c => c.RenterOccupantId)
                 .Distinct()
                 .CountAsync(cancellationToken);
 

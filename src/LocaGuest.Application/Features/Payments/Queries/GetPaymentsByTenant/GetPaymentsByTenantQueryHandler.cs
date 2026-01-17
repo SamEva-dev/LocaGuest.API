@@ -23,18 +23,18 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
     {
         try
         {
-            if (!Guid.TryParse(request.TenantId, out var tenantId))
+            if (!Guid.TryParse(request.OccupantId, out var OccupantId))
             {
                 return Result.Failure<List<PaymentDto>>("Invalid tenant ID format");
             }
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure<List<PaymentDto>>("Tenant not found");
             }
 
-            var payments = await _unitOfWork.Payments.GetByTenantIdAsync(tenantId, cancellationToken);
+            var payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken);
             var paymentDtos = new List<PaymentDto>();
 
             foreach (var payment in payments)
@@ -61,7 +61,7 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
                 paymentDtos.Add(new PaymentDto
                 {
                     Id = payment.Id,
-                    TenantId = payment.RenterTenantId,
+                    OccupantId = payment.RenterOccupantId,
                     PropertyId = payment.PropertyId,
                     ContractId = payment.ContractId,
                     PaymentType = payment.PaymentType.ToString(),
@@ -79,7 +79,7 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
                     InvoiceDocumentId = payment.InvoiceDocumentId,
                     CreatedAt = payment.CreatedAt,
                     UpdatedAt = payment.LastModifiedAt,
-                    TenantName = tenant.FullName,
+                    OccupantName = tenant.FullName,
                     PaymentDueDay = paymentDueDay,
                     DueDate = dueDate,
                     DaysLate = daysLate
@@ -90,7 +90,7 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving payments for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error retrieving payments for tenant {OccupantId}", request.OccupantId);
             return Result.Failure<List<PaymentDto>>("Error retrieving payments");
         }
     }

@@ -45,14 +45,14 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
 
             // Charger les propriétés et locataires
             var propertyIds = contracts.Select(c => c.PropertyId).Distinct().ToList();
-            var tenantIds = contracts.Select(c => c.RenterTenantId).Distinct().ToList();
+            var OccupantIds = contracts.Select(c => c.RenterOccupantId).Distinct().ToList();
 
             var properties = await _readDb.Properties.AsNoTracking()
                 .Where(p => propertyIds.Contains(p.Id))
                 .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
 
             var tenants = await _readDb.Occupants.AsNoTracking()
-                .Where(t => tenantIds.Contains(t.Id))
+                .Where(t => OccupantIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.FullName, cancellationToken);
 
             var contractIds = contracts.Select(c => c.Id).ToList();
@@ -76,11 +76,11 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 Id = c.Id,
                 Code = c.Code,
                 PropertyId = c.PropertyId,
-                TenantId = c.RenterTenantId,
+                OccupantId = c.RenterOccupantId,
                 RoomId = c.RoomId,
                 IsConflict = c.IsConflict,
                 PropertyName = properties.GetValueOrDefault(c.PropertyId),
-                TenantName = tenants.GetValueOrDefault(c.RenterTenantId),
+                OccupantName = tenants.GetValueOrDefault(c.RenterOccupantId),
                 Type = c.Type.ToString(),
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
@@ -104,7 +104,7 @@ public class GetAllContractsQueryHandler : IRequestHandler<GetAllContractsQuery,
                 var searchLower = request.SearchTerm.ToLower();
                 result = result.Where(c =>
                     (c.PropertyName?.ToLower().Contains(searchLower) ?? false) ||
-                    (c.TenantName?.ToLower().Contains(searchLower) ?? false)
+                    (c.OccupantName?.ToLower().Contains(searchLower) ?? false)
                 ).ToList();
             }
 

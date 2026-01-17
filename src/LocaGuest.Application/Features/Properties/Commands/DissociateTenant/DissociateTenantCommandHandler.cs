@@ -1,7 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -39,9 +39,9 @@ public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCo
                 return Result.Failure<bool>($"Invalid property ID format: {request.PropertyId}");
             }
 
-            if (!Guid.TryParse(request.TenantId, out var tenantId))
+            if (!Guid.TryParse(request.OccupantId, out var OccupantId))
             {
-                return Result.Failure<bool>($"Invalid tenant ID format: {request.TenantId}");
+                return Result.Failure<bool>($"Invalid tenant ID format: {request.OccupantId}");
             }
 
             // Load property
@@ -53,10 +53,10 @@ public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCo
             }
 
             // Load tenant (renter)
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
             if (tenant == null)
             {
-                _logger.LogWarning("Tenant not found: {TenantId}", tenantId);
+                _logger.LogWarning("Tenant not found: {OccupantId}", OccupantId);
                 return Result.Failure<bool>("Tenant not found");
             }
 
@@ -78,8 +78,8 @@ public class DissociateTenantCommandHandler : IRequestHandler<DissociateTenantCo
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error dissociating tenant {TenantId} from property {PropertyId}",
-                request.TenantId, request.PropertyId);
+            _logger.LogError(ex, "Error dissociating tenant {OccupantId} from property {PropertyId}",
+                request.OccupantId, request.PropertyId);
             return Result.Failure<bool>($"Error dissociating tenant: {ex.Message}");
         }
     }

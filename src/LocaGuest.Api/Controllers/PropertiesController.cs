@@ -8,8 +8,8 @@ using LocaGuest.Application.Features.Properties.Queries.GetProperty;
 using LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts;
 using LocaGuest.Application.Features.Properties.Queries.GetPropertyPayments;
 using LocaGuest.Application.Features.Properties.Queries.GetFinancialSummary;
-using LocaGuest.Application.Features.Properties.Queries.GetAssociatedTenants;
-using LocaGuest.Application.Features.Tenants.Queries.GetAvailableTenants;
+using LocaGuest.Application.Features.Properties.Queries.GetAssociatedOccupants;
+using LocaGuest.Application.Features.Occupants.Queries.GetAvailableOccupants;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -135,10 +135,10 @@ public class PropertiesController : ControllerBase
         return Ok(result.Data);
     }
 
-    [HttpGet("{id}/associated-tenants")]
-    public async Task<IActionResult> GetAssociatedTenants(string id)
+    [HttpGet("{id}/associated-occupants")]
+    public async Task<IActionResult> GetAssociatedOccupants(string id)
     {
-        var query = new GetAssociatedTenantsQuery { PropertyId = id };
+        var query = new GetAssociatedOccupantsQuery { PropertyId = id };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -159,10 +159,10 @@ public class PropertiesController : ControllerBase
         return Ok(result.Data);
     }
 
-    [HttpGet("{id}/available-tenants")]
-    public async Task<IActionResult> GetAvailableTenants(string id)
+    [HttpGet("{id}/available-occupants")]
+    public async Task<IActionResult> GetAvailableOccupants(string id)
     {
-        var query = new GetAvailableTenantsQuery { PropertyId = id };
+        var query = new GetAvailableOccupantsQuery { PropertyId = id };
         var result = await _mediator.Send(query);
         
         if (!result.IsSuccess)
@@ -171,9 +171,9 @@ public class PropertiesController : ControllerBase
         return Ok(result.Data);
     }
 
-    [HttpPost("{id}/assign-tenant")]
+    [HttpPost("{id}/assign-occupant")]
     [Authorize(Policy = Permissions.PropertiesWrite)]
-    public async Task<IActionResult> AssignTenant(string id, [FromBody] CreateContractCommand command)
+    public async Task<IActionResult> AssignOccupant(string id, [FromBody] CreateContractCommand command)
     {
         if (id != command.PropertyId.ToString())
             return BadRequest(new { message = "Property ID mismatch" });
@@ -186,14 +186,14 @@ public class PropertiesController : ControllerBase
         return Ok(result.Data);
     }
 
-    [HttpDelete("{propertyId}/dissociate-tenant/{tenantId}")]
+    [HttpDelete("{propertyId}/dissociate-tenant/{OccupantId}")]
     [Authorize(Policy = Permissions.PropertiesWrite)]
-    public async Task<IActionResult> DissociateTenant(string propertyId, string tenantId)
+    public async Task<IActionResult> DissociateTenant(string propertyId, string OccupantId)
     {
         var command = new DissociateTenantCommand
         {
             PropertyId = propertyId,
-            TenantId = tenantId
+            OccupantId = OccupantId
         };
 
         var result = await _mediator.Send(command);

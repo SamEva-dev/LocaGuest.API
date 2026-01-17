@@ -4,5 +4,5 @@ namespace LocaGuest.Application.Features.Documents.Queries.ExportDocumentsZip;
 
 public record ExportDocumentsZipQuery : IRequest<byte[]>
 {
-    public required string TenantId { get; init; }
+    public required string OccupantId { get; init; }
 }

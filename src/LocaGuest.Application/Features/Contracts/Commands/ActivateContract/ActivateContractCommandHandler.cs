@@ -1,6 +1,6 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -36,7 +36,7 @@ public class ActivateContractCommandHandler : IRequestHandler<ActivateContractCo
             if (property == null)
                 return Result.Failure("Property not found");
 
-            var occupant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterTenantId, cancellationToken);
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
             if (occupant == null)
                 return Result.Failure("Tenant not found");
 

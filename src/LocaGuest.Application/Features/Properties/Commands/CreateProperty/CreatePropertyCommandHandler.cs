@@ -180,7 +180,7 @@ public class CreatePropertyCommandHandler : IRequestHandler<CreatePropertyComman
             await _unitOfWork.Properties.AddAsync(property, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
 
-            _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {TenantId}", 
+            _logger.LogInformation("Property created successfully: {PropertyId} - {PropertyName} for tenant {OccupantId}", 
                 property.Id, property.Name, _orgContext.OrganizationId);
 
             // Map to DTO with ALL fields

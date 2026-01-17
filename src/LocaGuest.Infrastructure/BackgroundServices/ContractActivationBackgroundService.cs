@@ -1,6 +1,6 @@
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -104,7 +104,7 @@ public class ContractActivationBackgroundService : BackgroundService
                 // Charger le locataire associé
                 var tenant = await context.Occupants
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(t => t.Id == contract.RenterTenantId, cancellationToken);
+                    .FirstOrDefaultAsync(t => t.Id == contract.RenterOccupantId, cancellationToken);
                 if (tenant != null)
                 {
                     tenant.SetActive();
@@ -173,14 +173,14 @@ public class ContractActivationBackgroundService : BackgroundService
                 // Charger le locataire associé
                 var tenant = await context.Occupants
                     .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(t => t.Id == contract.RenterTenantId, cancellationToken);
+                    .FirstOrDefaultAsync(t => t.Id == contract.RenterOccupantId, cancellationToken);
                 if (tenant != null)
                 {
                     // Vérifier si le locataire a d'autres contrats actifs
                     var hasOtherActiveContracts = await context.Contracts
                         .IgnoreQueryFilters()
                         .AnyAsync(c => 
-                            c.RenterTenantId == tenant.Id &&
+                            c.RenterOccupantId == tenant.Id &&
                             c.Id != contract.Id &&
                             c.Status == ContractStatus.Active,
                             cancellationToken);

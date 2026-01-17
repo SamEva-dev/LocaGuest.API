@@ -35,7 +35,7 @@ public class GenerateInventoryPdfQueryHandler : IRequestHandler<GenerateInventor
 
                 var contract = await _context.Contracts.FindAsync(new object[] { inventory.ContractId }, cancellationToken);
                 var property = contract != null ? await _context.Properties.FindAsync(new object[] { contract.PropertyId }, cancellationToken) : null;
-                var tenant = contract != null ? await _context.Occupants.FindAsync(new object[] { contract.RenterTenantId }, cancellationToken) : null;
+                var tenant = contract != null ? await _context.Occupants.FindAsync(new object[] { contract.RenterOccupantId }, cancellationToken) : null;
 
                 var pdfBytes = GenerateEntryInventoryPdf(inventory, property?.Name, tenant?.FullName);
                 return Result.Success(pdfBytes);
@@ -48,7 +48,7 @@ public class GenerateInventoryPdfQueryHandler : IRequestHandler<GenerateInventor
 
                 var contract = await _context.Contracts.FindAsync(new object[] { inventory.ContractId }, cancellationToken);
                 var property = contract != null ? await _context.Properties.FindAsync(new object[] { contract.PropertyId }, cancellationToken) : null;
-                var tenant = contract != null ? await _context.Occupants.FindAsync(new object[] { contract.RenterTenantId }, cancellationToken) : null;
+                var tenant = contract != null ? await _context.Occupants.FindAsync(new object[] { contract.RenterOccupantId }, cancellationToken) : null;
                 var entryInventory = await _context.InventoryEntries.FindAsync(new object[] { inventory.InventoryEntryId }, cancellationToken);
 
                 var pdfBytes = GenerateExitInventoryPdf(inventory, entryInventory, property?.Name, tenant?.FullName);

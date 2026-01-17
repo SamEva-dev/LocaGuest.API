@@ -9,7 +9,7 @@ namespace LocaGuest.Domain.Aggregates.PaymentAggregate;
 public class RentInvoice : AuditableEntity
 {
     public Guid ContractId { get; private set; }
-    public Guid RenterTenantId { get; private set; }
+    public Guid RenterOccupantId { get; private set; }
     public Guid PropertyId { get; private set; }
 
     public Guid? InvoiceDocumentId { get; private set; }
@@ -74,7 +74,7 @@ public class RentInvoice : AuditableEntity
         {
             Id = Guid.NewGuid(),
             ContractId = contractId,
-            RenterTenantId = tenantId,
+            RenterOccupantId = tenantId,
             PropertyId = propertyId,
             Month = month,
             Year = year,

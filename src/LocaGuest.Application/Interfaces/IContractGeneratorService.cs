@@ -1,6 +1,6 @@
 using LocaGuest.Application.DTOs.Documents;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.TenantAggregate;
+using LocaGuest.Domain.Aggregates.OccupantAggregate;
 
 namespace LocaGuest.Application.Interfaces;
 

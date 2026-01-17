@@ -27,18 +27,18 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
     {
         try
         {
-            if (!Guid.TryParse(request.TenantId, out var tenantId))
+            if (!Guid.TryParse(request.OccupantId, out var OccupantId))
             {
                 return Result.Failure<List<ContractDto>>("Invalid tenant ID format");
             }
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(tenantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
             if (tenant == null)
             {
                 return Result.Failure<List<ContractDto>>("Tenant not found");
             }
 
-            var contracts = await _unitOfWork.Contracts.GetContractsByTenantAsync(tenantId, cancellationToken);
+            var contracts = await _unitOfWork.Contracts.GetContractsByTenantAsync(OccupantId, cancellationToken);
             
             var contractDtos = new List<ContractDto>();
             
@@ -59,8 +59,8 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
                     Code = contract.Code ?? string.Empty,
                     PropertyId = contract.PropertyId,
                     PropertyName = property?.Name ?? "Bien inconnu",
-                    TenantId = contract.RenterTenantId,
-                    TenantName = tenant.FullName,
+                    OccupantId = contract.RenterOccupantId,
+                    OccupantName = tenant.FullName,
                     StartDate = contract.StartDate,
                     EndDate = effective?.EndDate ?? contract.EndDate,
                     Rent = effective?.Rent ?? contract.Rent,
@@ -83,7 +83,7 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving contracts for tenant {TenantId}", request.TenantId);
+            _logger.LogError(ex, "Error retrieving contracts for tenant {OccupantId}", request.OccupantId);
             return Result.Failure<List<ContractDto>>("Error retrieving contracts");
         }
     }

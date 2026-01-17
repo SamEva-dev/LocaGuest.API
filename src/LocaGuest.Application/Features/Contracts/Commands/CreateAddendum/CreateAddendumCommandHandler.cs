@@ -233,7 +233,7 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
                 Category = DocumentCategory.Contrats.ToString(),
                 FileSizeBytes = placeholder.Length,
                 ContractId = contract.Id,
-                TenantId = contract.RenterTenantId,
+                OccupantId = contract.RenterOccupantId,
                 PropertyId = contract.PropertyId,
                 Description = $"Avenant (draft) - {addendumType} - {request.EffectiveDate:yyyy-MM-dd}"
             };
@@ -312,16 +312,16 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
         if (!Enum.TryParse<BillingShareType>(payload.SplitType ?? string.Empty, true, out var shareType))
             return Result.Failure("Invalid splitType for occupants addendum");
 
-        if (payload.Participants.Any(p => p == null || p.TenantId == Guid.Empty))
-            return Result.Failure("Invalid tenantId in occupants addendum");
+        if (payload.Participants.Any(p => p == null || p.OccupantId == Guid.Empty))
+            return Result.Failure("Invalid OccupantId in occupants addendum");
 
         var distinct = payload.Participants
-            .GroupBy(p => p.TenantId)
+            .GroupBy(p => p.OccupantId)
             .Select(g => g.First())
             .ToList();
 
         if (distinct.Count != payload.Participants.Count)
-            return Result.Failure("Duplicate tenantId in occupants addendum");
+            return Result.Failure("Duplicate OccupantId in occupants addendum");
 
         if (distinct.Any(p => p.ShareValue < 0m))
             return Result.Failure("ShareValue cannot be negative");
@@ -360,7 +360,7 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
         {
             var created = ContractParticipant.Create(
                 contractId: addendum.ContractId,
-                tenantId: np.TenantId,
+                tenantId: np.OccupantId,
                 startDate: effectiveDate,
                 endDate: null,
                 shareType: shareType,
@@ -373,5 +373,5 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
     }
 
     private sealed record OccupantChangesDto(string? SplitType, List<OccupantParticipantDto> Participants);
-    private sealed record OccupantParticipantDto(Guid TenantId, decimal ShareValue);
+    private sealed record OccupantParticipantDto(Guid OccupantId, decimal ShareValue);
 }
