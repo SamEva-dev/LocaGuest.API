@@ -26,6 +26,14 @@ public class GetRecentActivitiesQueryHandler : IRequestHandler<GetRecentActiviti
         {
             var activities = new List<ActivityDto>();
 
+            // Satisfaction survey info (non-clickable, informational)
+            activities.Add(new ActivityDto
+            {
+                Type = "info",
+                Title = "Sondage satisfaction disponible (Notifications)",
+                Date = DateTime.UtcNow
+            });
+
             // Get recent contracts
             var recentContracts = await _readDb.Contracts.AsNoTracking()
                 .OrderByDescending(c => c.CreatedAt)

@@ -9,6 +9,7 @@ using LocaGuest.Domain.Aggregates.OrganizationAggregate;
 using LocaGuest.Domain.Aggregates.InventoryAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Entities;
+using LocaGuest.Domain.Aggregates.AnalyticsAggregate;
 using LocaGuest.Domain.Analytics;
 using LocaGuest.Domain.Common;
 using LocaGuest.Application.Common.Interfaces;
@@ -82,6 +83,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     
     // Analytics & Tracking
     public DbSet<TrackingEvent> TrackingEvents => Set<TrackingEvent>();
+    public DbSet<SatisfactionFeedback> SatisfactionFeedbacks => Set<SatisfactionFeedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

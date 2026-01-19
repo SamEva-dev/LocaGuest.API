@@ -28,6 +28,7 @@ public interface IUnitOfWork : IDisposable
     IUserPreferencesRepository UserPreferences { get; }
     INotificationSettingsRepository NotificationSettings { get; }
     IUserSessionRepository UserSessions { get; }
+    ISatisfactionFeedbackRepository SatisfactionFeedbacks { get; }
     Task<int> CommitAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync();
     bool HasActiveTransaction { get; }

@@ -34,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
     private IUserSessionRepository? _userSessions;
     private IInventoryEntryRepository? _inventoryEntries;
     private IInventoryExitRepository? _inventoryExits;
+    private ISatisfactionFeedbackRepository? _satisfactionFeedbacks;
 
     public UnitOfWork(LocaGuestDbContext context)
     {
@@ -108,6 +109,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IUserSessionRepository UserSessions => 
         _userSessions ??= new UserSessionRepository(_context);
+
+    public ISatisfactionFeedbackRepository SatisfactionFeedbacks =>
+        _satisfactionFeedbacks ??= new SatisfactionFeedbackRepository(_context);
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {

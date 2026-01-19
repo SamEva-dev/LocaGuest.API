@@ -9,9 +9,10 @@ using LocaGuest.Domain.Aggregates.OrganizationAggregate;
 using LocaGuest.Domain.Aggregates.InventoryAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Entities;
-using LocaGuest.Domain.Analytics;
+using LocaGuest.Domain.Aggregates.AnalyticsAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using LocaGuest.Domain.Analytics;
 
 namespace LocaGuest.Application.Common.Interfaces;
 
@@ -45,6 +46,7 @@ public interface ILocaGuestDbContext
 
     // Analytics & Tracking
     DbSet<TrackingEvent> TrackingEvents { get; }
+    DbSet<SatisfactionFeedback> SatisfactionFeedbacks { get; }
     
     DatabaseFacade Database { get; }
 
