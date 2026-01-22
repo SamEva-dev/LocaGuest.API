@@ -156,9 +156,10 @@ public class Startup
         services.AddScoped<LocaGuest.Application.Services.ITrackingService, LocaGuest.Infrastructure.Services.TrackingService>();
         services.AddScoped<LocaGuest.Application.Services.IEffectiveContractStateResolver, LocaGuest.Application.Services.EffectiveContractStateResolver>();
 
-        // Email Service
-        services.Configure<LocaGuest.Infrastructure.Email.EmailSettings>(Configuration.GetSection("EmailSettings"));
-        services.AddScoped<LocaGuest.Application.Common.Interfaces.IEmailService, LocaGuest.Infrastructure.Email.EmailService>();
+        // Brevo Webhook processing (fast 200, async processing)
+        services.AddSingleton<LocaGuest.Infrastructure.Webhooks.Brevo.IBrevoWebhookQueue>(
+            _ => new LocaGuest.Infrastructure.Webhooks.Brevo.BrevoWebhookQueue(capacity: 1000));
+        services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.BrevoWebhookBackgroundService>();
 
         // Application Layer (MediatR)
         services.AddApplication();

@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Linq.Expressions;
 using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence.Entities;
+using LocaGuest.Domain.Entities;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
@@ -84,6 +85,8 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     // Analytics & Tracking
     public DbSet<TrackingEvent> TrackingEvents => Set<TrackingEvent>();
     public DbSet<SatisfactionFeedback> SatisfactionFeedbacks => Set<SatisfactionFeedback>();
+
+    public DbSet<EmailDeliveryEvent> EmailDeliveryEvents => Set<EmailDeliveryEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,7 +1,6 @@
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Interfaces;
 using LocaGuest.Application.Services;
-using LocaGuest.Infrastructure.Email;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Infrastructure.Services;
 using LocaGuest.Infrastructure.Services.ContractGenerator;
@@ -13,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using LocaGuest.Infrastructure.Services.InvoicePdfGenerator;
+using LocaGuest.Emailing.Registration;
+using LocaGuest.Emailing.Workers;
 
 namespace LocaGuest.Infrastructure;
 
@@ -62,6 +63,29 @@ public static class DependencyInjection
 
             options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
+
+        // LocaGuest.Emailing (queue + worker) - uses same Postgres DB
+        services.AddLocaGuestEmailing(configuration, db =>
+        {
+            // Use DATABASE_URL environment variable, or fallback to DefaultConnection_Locaguest
+            var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+            string connectionString;
+
+            if (!string.IsNullOrEmpty(databaseUrl))
+            {
+                // Parse DATABASE_URL manually to avoid malformed sslmode parameter
+                var uri = new Uri(databaseUrl.Split('?')[0]); // Remove query params
+                var userInfo = uri.UserInfo.Split(':');
+                connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};{sslMode}";
+            }
+            else
+            {
+                connectionString = configuration.GetConnectionString("DefaultConnection_Locaguest");
+            }
+
+            db.UsePostgres(connectionString, migrationsAssembly: typeof(DependencyInjection).Assembly.FullName);
+        });
+        services.AddHostedService<EmailDispatcherWorker>();
 
         // Audit_Locaguest Database
         services.AddDbContext<AuditDbContext>(options =>
@@ -131,9 +155,6 @@ public static class DependencyInjection
         services.AddScoped<IInvoicePdfGeneratorService, InvoicePdfGeneratorService>();
         services.AddScoped<IPropertySheetGeneratorService, PropertySheetGeneratorService>();
         services.AddScoped<IOccupantSheetGeneratorService, OccupantSheetGeneratorService>();
-        
-        // Email Service
-        services.AddScoped<IEmailService, LocaGuest.Infrastructure.Email.EmailService>();
         
         // File Storage Service
         services.AddScoped<IFileStorageService, FileStorageService>();

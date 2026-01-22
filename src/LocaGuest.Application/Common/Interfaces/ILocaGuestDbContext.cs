@@ -13,6 +13,7 @@ using LocaGuest.Domain.Aggregates.AnalyticsAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using LocaGuest.Domain.Analytics;
+using LocaGuest.Domain.Entities;
 
 namespace LocaGuest.Application.Common.Interfaces;
 
@@ -47,6 +48,8 @@ public interface ILocaGuestDbContext
     // Analytics & Tracking
     DbSet<TrackingEvent> TrackingEvents { get; }
     DbSet<SatisfactionFeedback> SatisfactionFeedbacks { get; }
+
+    DbSet<EmailDeliveryEvent> EmailDeliveryEvents { get; }
     
     DatabaseFacade Database { get; }
 

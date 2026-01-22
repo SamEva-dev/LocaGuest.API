@@ -9,16 +9,13 @@ namespace LocaGuest.Application.Features.Team.Commands.AcceptInvitation;
 public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCommand, Result<AcceptInvitationResponse>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IEmailService _emailService;
     private readonly ILogger<AcceptInvitationCommandHandler> _logger;
 
     public AcceptInvitationCommandHandler(
         IUnitOfWork unitOfWork,
-        IEmailService emailService,
         ILogger<AcceptInvitationCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _emailService = emailService;
         _logger = logger;
     }
 

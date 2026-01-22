@@ -1,4 +1,5 @@
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Emailing.Abstractions;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -48,23 +49,23 @@ public class EmailNotificationBackgroundService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+        var emailing = scope.ServiceProvider.GetRequiredService<IEmailingService>();
 
         _logger.LogInformation("Checking for notifications to send...");
 
         // Check payment reminders (3 days before due date)
-        await CheckPaymentRemindersAsync(unitOfWork, emailService, cancellationToken);
+        await CheckPaymentRemindersAsync(unitOfWork, emailing, cancellationToken);
 
         // Check overdue payments
-        await CheckOverduePaymentsAsync(unitOfWork, emailService, cancellationToken);
+        await CheckOverduePaymentsAsync(unitOfWork, emailing, cancellationToken);
 
         // Check expiring contracts (30 days before)
-        await CheckExpiringContractsAsync(unitOfWork, emailService, cancellationToken);
+        await CheckExpiringContractsAsync(unitOfWork, emailing, cancellationToken);
 
         _logger.LogInformation("Notification check completed");
     }
 
-    private async Task CheckPaymentRemindersAsync(IUnitOfWork unitOfWork, IEmailService emailService, CancellationToken cancellationToken)
+    private async Task CheckPaymentRemindersAsync(IUnitOfWork unitOfWork, IEmailingService emailing, CancellationToken cancellationToken)
     {
         try
         {
@@ -90,12 +91,22 @@ public class EmailNotificationBackgroundService : BackgroundService
 
                 if (notificationSettings?.PaymentReminder == true)
                 {
-                    await emailService.SendPaymentReminderEmailAsync(
-                        tenant.Email,
-                        tenant.FullName,
-                        payment.AmountDue,
-                        payment.ExpectedDate,
-                        3);
+                    var subject = "🔔 Rappel de paiement - LocaGuest";
+                    var htmlBody = $@"<h2>Rappel de paiement 🔔</h2>
+<p>Bonjour {tenant.FullName},</p>
+<p>Un paiement arrive à échéance dans <strong>3 jour(s)</strong>.</p>
+<p><strong>Montant :</strong> {payment.AmountDue:C}</p>
+<p><strong>Date d'échéance :</strong> {payment.ExpectedDate:dd/MM/yyyy}</p>
+<p>Cordialement,<br/>L'équipe LocaGuest</p>";
+
+                    await emailing.QueueHtmlAsync(
+                        toEmail: tenant.Email,
+                        subject: subject,
+                        htmlContent: htmlBody,
+                        textContent: null,
+                        attachments: null,
+                        tags: EmailUseCaseTags.BillingPaymentReminder,
+                        cancellationToken: cancellationToken);
 
                     _logger.LogInformation("Payment reminder sent to {Email} for payment {PaymentId}",
                         tenant.Email, payment.Id);
@@ -108,7 +119,7 @@ public class EmailNotificationBackgroundService : BackgroundService
         }
     }
 
-    private async Task CheckOverduePaymentsAsync(IUnitOfWork unitOfWork, IEmailService emailService, CancellationToken cancellationToken)
+    private async Task CheckOverduePaymentsAsync(IUnitOfWork unitOfWork, IEmailingService emailing, CancellationToken cancellationToken)
     {
         try
         {
@@ -138,12 +149,22 @@ public class EmailNotificationBackgroundService : BackgroundService
                     // Only send if it's 1, 7, 14, or 30 days overdue (avoid spamming)
                     if (daysLate == 1 || daysLate == 7 || daysLate == 14 || daysLate == 30)
                     {
-                        await emailService.SendPaymentOverdueEmailAsync(
-                            tenant.Email,
-                            tenant.FullName,
-                            payment.AmountDue,
-                            daysLate,
-                            payment.ExpectedDate);
+                        var subject = "⚠️ Paiement en retard - LocaGuest";
+                        var htmlBody = $@"<h2>Paiement en retard ⚠️</h2>
+<p>Bonjour {tenant.FullName},</p>
+<p>Un paiement est en retard de <strong>{daysLate} jour(s)</strong>.</p>
+<p><strong>Montant dû :</strong> {payment.AmountDue:C}</p>
+<p><strong>Date d'échéance :</strong> {payment.ExpectedDate:dd/MM/yyyy}</p>
+<p>Cordialement,<br/>L'équipe LocaGuest</p>";
+
+                        await emailing.QueueHtmlAsync(
+                            toEmail: tenant.Email,
+                            subject: subject,
+                            htmlContent: htmlBody,
+                            textContent: null,
+                            attachments: null,
+                            tags: EmailUseCaseTags.BillingPaymentFailed,
+                            cancellationToken: cancellationToken);
 
                         _logger.LogInformation("Overdue payment notification sent to {Email} for payment {PaymentId} ({Days} days late)",
                             tenant.Email, payment.Id, daysLate);
@@ -157,7 +178,7 @@ public class EmailNotificationBackgroundService : BackgroundService
         }
     }
 
-    private async Task CheckExpiringContractsAsync(IUnitOfWork unitOfWork, IEmailService emailService, CancellationToken cancellationToken)
+    private async Task CheckExpiringContractsAsync(IUnitOfWork unitOfWork, IEmailingService emailing, CancellationToken cancellationToken)
     {
         try
         {
@@ -185,12 +206,22 @@ public class EmailNotificationBackgroundService : BackgroundService
 
                 if (notificationSettings?.ContractExpiring == true)
                 {
-                    await emailService.SendContractExpiringEmailAsync(
-                        tenant.Email,
-                        tenant.FullName,
-                        property.Address ?? "",
-                        contract.EndDate,
-                        30);
+                    var subject = "📅 Votre bail arrive à échéance - LocaGuest";
+                    var address = property.Address ?? string.Empty;
+                    var htmlBody = $@"<h2>Votre bail arrive à échéance 📅</h2>
+<p>Bonjour {tenant.FullName},</p>
+<p>Votre bail pour le logement situé au <strong>{address}</strong> arrive à échéance dans <strong>30 jour(s)</strong>.</p>
+<p><strong>Date de fin :</strong> {contract.EndDate:dd/MM/yyyy}</p>
+<p>Cordialement,<br/>L'équipe LocaGuest</p>";
+
+                    await emailing.QueueHtmlAsync(
+                        toEmail: tenant.Email,
+                        subject: subject,
+                        htmlContent: htmlBody,
+                        textContent: null,
+                        attachments: null,
+                        tags: EmailUseCaseTags.RentalContractUpdated,
+                        cancellationToken: cancellationToken);
 
                     _logger.LogInformation("Contract expiring notification sent to {Email} for contract {ContractId}",
                         tenant.Email, contract.Id);

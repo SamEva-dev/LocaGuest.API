@@ -1,6 +1,7 @@
 using LocaGuest.Application.Common;
 using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -42,6 +43,7 @@ public class GenerateInventoryPdfQueryHandler : IRequestHandler<GenerateInventor
             }
             else
             {
+                var test = await _context.InventoryExits.ToListAsync(cancellationToken);
                 var inventory = await _context.InventoryExits.FindAsync(new object[] { request.InventoryId }, cancellationToken);
                 if (inventory == null)
                     return Result.Failure<byte[]>("Inventory exit not found");

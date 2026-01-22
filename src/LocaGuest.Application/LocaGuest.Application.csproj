@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LocaGuest.Domain\LocaGuest.Domain.csproj" />
+    <ProjectReference Include="..\..\..\LocaGuest.Emailing\src\LocaGuest.Emailing\LocaGuest.Emailing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

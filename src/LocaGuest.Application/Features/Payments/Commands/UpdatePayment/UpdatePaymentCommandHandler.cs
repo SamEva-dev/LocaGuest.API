@@ -4,6 +4,7 @@ using LocaGuest.Application.DTOs.Payments;
 using LocaGuest.Application.Features.Documents.Commands.GeneratePaymentQuittance;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
+using LocaGuest.Emailing.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -13,18 +14,18 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdatePaymentCommandHandler> _logger;
-    private readonly IEmailService _emailService;
+    private readonly IEmailingService _emailing;
     private readonly IMediator _mediator;
 
     public UpdatePaymentCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<UpdatePaymentCommandHandler> logger,
-        IEmailService emailService,
+        IEmailingService emailing,
         IMediator mediator)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _emailService = emailService;
+        _emailing = emailing;
         _mediator = mediator;
     }
 
@@ -110,11 +111,22 @@ public class UpdatePaymentCommandHandler : IRequestHandler<UpdatePaymentCommand,
 
                     if (notificationSettings?.PaymentReceived == true)
                     {
-                        await _emailService.SendPaymentReceivedEmailAsync(
-                            tenant.Email,
-                            tenant.FullName,
-                            payment.AmountPaid,
-                            payment.PaymentDate.Value);
+                        var subject = "✅ Paiement reçu - LocaGuest";
+                        var htmlBody = $@"<h2>Paiement reçu ✅</h2>
+<p>Bonjour {tenant.FullName},</p>
+<p>Nous avons bien reçu votre paiement.</p>
+<p><strong>Montant :</strong> {payment.AmountPaid:C}</p>
+<p><strong>Date :</strong> {payment.PaymentDate.Value:dd/MM/yyyy}</p>
+<p>Cordialement,<br/>L'équipe LocaGuest</p>";
+
+                        await _emailing.QueueHtmlAsync(
+                            toEmail: tenant.Email,
+                            subject: subject,
+                            htmlContent: htmlBody,
+                            textContent: null,
+                            attachments: null,
+                            tags: EmailUseCaseTags.BillingReceiptSent,
+                            cancellationToken: cancellationToken);
 
                         _logger.LogInformation("Payment received email sent to {Email}", tenant.Email);
                     }

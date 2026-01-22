@@ -1,5 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Emailing.Abstractions;
 using LocaGuest.Application.Features.Inventories.Queries.GenerateInventoryPdf;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,16 +9,16 @@ namespace LocaGuest.Application.Features.Inventories.Commands.SendInventoryEmail
 public class SendInventoryEmailCommandHandler : IRequestHandler<SendInventoryEmailCommand, Result>
 {
     private readonly IMediator _mediator;
-    private readonly IEmailService _emailService;
+    private readonly IEmailingService _emailing;
     private readonly ILogger<SendInventoryEmailCommandHandler> _logger;
 
     public SendInventoryEmailCommandHandler(
         IMediator mediator,
-        IEmailService emailService,
+        IEmailingService emailing,
         ILogger<SendInventoryEmailCommandHandler> logger)
     {
         _mediator = mediator;
-        _emailService = emailService;
+        _emailing = emailing;
         _logger = logger;
     }
 
@@ -65,13 +65,24 @@ public class SendInventoryEmailCommandHandler : IRequestHandler<SendInventoryEma
                 }
             };
 
-            // Envoyer l'email
-            await _emailService.SendEmailAsync(
-                request.RecipientEmail,
-                subject,
-                body,
-                attachments,
-                cancellationToken);
+            var emailingAttachments = attachments
+                .Select(a => new LocaGuest.Emailing.Abstractions.EmailAttachment
+                {
+                    FileName = a.FileName,
+                    Content = a.Content,
+                    ContentType = a.ContentType
+                })
+                .ToList();
+
+            // Queue the email for async delivery
+            await _emailing.QueueHtmlAsync(
+                toEmail: request.RecipientEmail,
+                subject: subject,
+                htmlContent: body,
+                textContent: null,
+                attachments: emailingAttachments,
+                tags: EmailUseCaseTags.InventoryReportSent,
+                cancellationToken: cancellationToken);
 
             _logger.LogInformation("Inventory email sent to {Email} for inventory {InventoryId}", 
                 request.RecipientEmail, request.InventoryId);

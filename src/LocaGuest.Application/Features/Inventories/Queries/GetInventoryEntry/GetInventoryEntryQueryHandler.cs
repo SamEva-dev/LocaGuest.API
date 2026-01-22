@@ -17,6 +17,7 @@ public class GetInventoryEntryQueryHandler : IRequestHandler<GetInventoryEntryQu
 
     public async Task<Result<InventoryEntryDto>> Handle(GetInventoryEntryQuery request, CancellationToken cancellationToken)
     {
+        var test = await _context.InventoryEntries.ToListAsync(cancellationToken);
         var inventoryEntry = await _context.InventoryEntries
             .Include(ie => ie.Items)
             .FirstOrDefaultAsync(ie => ie.Id == request.Id, cancellationToken);

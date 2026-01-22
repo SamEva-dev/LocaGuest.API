@@ -13,20 +13,17 @@ public class InviteTeamMemberCommandHandler : IRequestHandler<InviteTeamMemberCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrganizationContext _orgContext;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IEmailService _emailService;
     private readonly ILogger<InviteTeamMemberCommandHandler> _logger;
 
     public InviteTeamMemberCommandHandler(
         IUnitOfWork unitOfWork,
         IOrganizationContext orgContext,
         ICurrentUserService currentUserService,
-        IEmailService emailService,
         ILogger<InviteTeamMemberCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _orgContext = orgContext;
         _currentUserService = currentUserService;
-        _emailService = emailService;
         _logger = logger;
     }
 
