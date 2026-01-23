@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Tests.Fixtures;
@@ -67,9 +66,9 @@ public class GetPropertiesQueryHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.Items.Should().NotBeEmpty();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.NotEmpty(result.Data!.Items);
     }
 
     [Fact]
@@ -82,6 +81,6 @@ public class GetPropertiesQueryHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 }

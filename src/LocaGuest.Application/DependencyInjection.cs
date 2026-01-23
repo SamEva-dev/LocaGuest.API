@@ -1,4 +1,5 @@
 using FluentValidation;
+using LocaGuest.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LocaGuest.Application;
@@ -19,6 +20,8 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+
+        services.AddSingleton<IRentabilityEngine, RentabilityEngine>();
 
         // AutoMapper (if needed later)
         // services.AddAutoMapper(typeof(DependencyInjection).Assembly);

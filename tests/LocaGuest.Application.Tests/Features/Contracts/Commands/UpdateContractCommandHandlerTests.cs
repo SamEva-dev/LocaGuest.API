@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.UpdateContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
@@ -94,9 +93,9 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        contract.Type.Should().Be(ContractType.Unfurnished);
-        contract.Deposit.Should().BeNull();
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ContractType.Unfurnished, contract.Type);
+        Assert.Null(contract.Deposit);
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -143,8 +142,8 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        contract.Deposit.Should().Be(2000m);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2000m, contract.Deposit);
     }
 
     [Fact]
@@ -175,7 +174,7 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("Invalid contract type");
+        Assert.True(result.IsFailure);
+        Assert.Contains("Invalid contract type", result.ErrorMessage);
     }
 }

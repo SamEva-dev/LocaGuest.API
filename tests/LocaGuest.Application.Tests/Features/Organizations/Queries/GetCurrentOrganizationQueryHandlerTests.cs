@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Organizations.Queries.GetCurrentOrganization;
 using LocaGuest.Application.Tests.Fixtures;
@@ -66,17 +65,17 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.Code.Should().Be("T0001");
-        result.Data.Name.Should().Be("Test Organization");
-        result.Data.Email.Should().Be("test@org.com");
-        result.Data.Phone.Should().Be("+1234567890");
-        result.Data.LogoUrl.Should().Be("/uploads/logos/test.png");
-        result.Data.PrimaryColor.Should().Be("#FF0000");
-        result.Data.SecondaryColor.Should().Be("#00FF00");
-        result.Data.AccentColor.Should().Be("#0000FF");
-        result.Data.Website.Should().Be("https://test.com");
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal("T0001", result.Data!.Code);
+        Assert.Equal("Test Organization", result.Data.Name);
+        Assert.Equal("test@org.com", result.Data.Email);
+        Assert.Equal("+1234567890", result.Data.Phone);
+        Assert.Equal("/uploads/logos/test.png", result.Data.LogoUrl);
+        Assert.Equal("#FF0000", result.Data.PrimaryColor);
+        Assert.Equal("#00FF00", result.Data.SecondaryColor);
+        Assert.Equal("#0000FF", result.Data.AccentColor);
+        Assert.Equal("https://test.com", result.Data.Website);
     }
 
     [Fact]
@@ -99,9 +98,9 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.Code.Should().Be("T0001");
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal("T0001", result.Data!.Code);
     }
 
     [Fact]
@@ -127,12 +126,12 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.LogoUrl.Should().BeNull();
-        result.Data.PrimaryColor.Should().BeNull();
-        result.Data.SecondaryColor.Should().BeNull();
-        result.Data.AccentColor.Should().BeNull();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Null(result.Data!.LogoUrl);
+        Assert.Null(result.Data.PrimaryColor);
+        Assert.Null(result.Data.SecondaryColor);
+        Assert.Null(result.Data.AccentColor);
     }
 
     [Fact]
@@ -152,8 +151,8 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("No organization found");
+        Assert.True(result.IsFailure);
+        Assert.Contains("No organization found", result.ErrorMessage);
     }
 
     [Fact]
@@ -168,7 +167,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("not authenticated");
+        Assert.True(result.IsFailure);
+        Assert.Contains("not authenticated", result.ErrorMessage);
     }
 }

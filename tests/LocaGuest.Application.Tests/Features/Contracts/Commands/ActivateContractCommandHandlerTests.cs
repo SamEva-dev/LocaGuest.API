@@ -1,4 +1,3 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.ActivateContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
@@ -7,6 +6,7 @@ using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Contracts.Commands;
 
@@ -47,8 +47,8 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Contract not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Contract not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -82,8 +82,8 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new ActivateContractCommand(contractId), CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Pour une colocation individuelle, RoomId est obligatoire.");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Pour une colocation individuelle, RoomId est obligatoire.", result.ErrorMessage);
     }
 
     [Fact]
@@ -118,10 +118,10 @@ public class ActivateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new ActivateContractCommand(contractId), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        tenant.Status.Should().Be(OccupantStatus.Active);
-        property.Status.Should().Be(PropertyStatus.Active);
-        property.Rooms.All(r => r.Status == PropertyRoomStatus.Occupied).Should().BeTrue();
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OccupantStatus.Active, tenant.Status);
+        Assert.Equal(PropertyStatus.Active, property.Status);
+        Assert.True(property.Rooms.All(r => r.Status == PropertyRoomStatus.Occupied));
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.DeleteContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
@@ -6,6 +5,7 @@ using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Contracts.Commands;
 
@@ -45,8 +45,8 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new DeleteContractCommand(id), CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Contract not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Contract not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new DeleteContractCommand(contractId), CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Only Draft contracts can be deleted");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Only Draft contracts can be deleted", result.ErrorMessage);
     }
 
     [Fact]
@@ -98,10 +98,10 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new DeleteContractCommand(contractId), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.DeletedPayments.Should().Be(0);
-        result.Data!.DeletedDocuments.Should().Be(0);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal(0, result.Data!.DeletedPayments);
+        Assert.Equal(0, result.Data!.DeletedDocuments);
 
         _contractRepositoryMock.Verify(x => x.Remove(contract), Times.Once);
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);

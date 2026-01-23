@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Contracts.Commands.CreateContract;
 using LocaGuest.Application.Services;
@@ -94,8 +93,8 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
         
         _unitOfWorkMock.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -120,6 +119,6 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
+        Assert.True(result.IsFailure);
     }
 }

@@ -1,4 +1,3 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.CancelContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
@@ -7,6 +6,7 @@ using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Contracts.Commands;
 
@@ -43,8 +43,8 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Contract not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Contract not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new CancelContractCommand(contractId), CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Only Signed contracts can be cancelled");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Only Signed contracts can be cancelled", result.ErrorMessage);
     }
 
     [Fact]
@@ -102,10 +102,10 @@ public class CancelContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new CancelContractCommand(contractId), CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        property.Status.Should().Be(PropertyStatus.Vacant);
-        property.Rooms.All(r => r.Status == PropertyRoomStatus.Available).Should().BeTrue();
-        tenant.Status.Should().Be(OccupantStatus.Inactive);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PropertyStatus.Vacant, property.Status);
+        Assert.True(property.Rooms.All(r => r.Status == PropertyRoomStatus.Available));
+        Assert.Equal(OccupantStatus.Inactive, tenant.Status);
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

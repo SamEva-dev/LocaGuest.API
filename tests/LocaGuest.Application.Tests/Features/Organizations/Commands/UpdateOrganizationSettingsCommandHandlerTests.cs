@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Organizations.Commands.UpdateOrganizationSettings;
 using LocaGuest.Application.Tests.Fixtures;
@@ -70,14 +69,14 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.Name.Should().Be(command.Name);
-        result.Data.Email.Should().Be(command.Email);
-        result.Data.LogoUrl.Should().Be(command.LogoUrl);
-        result.Data.PrimaryColor.Should().Be(command.PrimaryColor);
-        result.Data.SecondaryColor.Should().Be(command.SecondaryColor);
-        result.Data.AccentColor.Should().Be(command.AccentColor);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal(command.Name, result.Data!.Name);
+        Assert.Equal(command.Email, result.Data.Email);
+        Assert.Equal(command.LogoUrl, result.Data.LogoUrl);
+        Assert.Equal(command.PrimaryColor, result.Data.PrimaryColor);
+        Assert.Equal(command.SecondaryColor, result.Data.SecondaryColor);
+        Assert.Equal(command.AccentColor, result.Data.AccentColor);
 
         _unitOfWorkMock.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -115,10 +114,10 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.LogoUrl.Should().Be(command.LogoUrl);
-        result.Data.PrimaryColor.Should().Be(command.PrimaryColor);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal(command.LogoUrl, result.Data!.LogoUrl);
+        Assert.Equal(command.PrimaryColor, result.Data.PrimaryColor);
 
         _unitOfWorkMock.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -145,8 +144,8 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("not found");
+        Assert.True(result.IsFailure);
+        Assert.Contains("not found", result.ErrorMessage);
 
         _unitOfWorkMock.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -169,8 +168,8 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("not authenticated");
+        Assert.True(result.IsFailure);
+        Assert.Contains("not authenticated", result.ErrorMessage);
     }
 
     [Fact]
@@ -201,7 +200,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("Failed to save");
+        Assert.True(result.IsFailure);
+        Assert.Contains("Failed to save", result.ErrorMessage);
     }
 }

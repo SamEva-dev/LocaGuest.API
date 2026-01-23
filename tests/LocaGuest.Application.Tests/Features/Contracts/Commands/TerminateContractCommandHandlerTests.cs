@@ -1,10 +1,10 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.TerminateContract;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Contracts.Commands;
 
@@ -34,8 +34,8 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = id, TerminationDate = DateTime.UtcNow, Reason = "x" }, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Contract not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Contract not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = contractId, TerminationDate = DateTime.UtcNow, Reason = "x" }, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Only Active contracts can be terminated");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Only Active contracts can be terminated", result.ErrorMessage);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = contractId, TerminationDate = DateTime.UtcNow, Reason = "  " }, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("TERMINATION_REASON_REQUIRED");
+        Assert.True(result.IsFailure);
+        Assert.Equal("TERMINATION_REASON_REQUIRED", result.ErrorMessage);
     }
 }

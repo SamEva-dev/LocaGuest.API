@@ -28,21 +28,21 @@ public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilit
             var now = DateTime.UtcNow;
             var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var lastMonthStart = currentMonthStart.AddMonths(-1);
-            var lastMonthEnd = currentMonthStart.AddDays(-1);
+            var lastMonthEnd = currentMonthStart.AddTicks(-1);
 
             // Revenus du mois en cours (loyers des contrats actifs)
             var activeContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.Status == ContractStatus.Active)
                 .ToListAsync(cancellationToken);
 
-            var monthlyRevenue = activeContracts.Sum(c => c.Rent);
+            var monthlyRevenue = activeContracts.Sum(c => c.Rent + c.Charges);
 
             // Revenus du mois précédent
             var lastMonthContracts = await _unitOfWork.Contracts.Query()
                 .Where(c => c.StartDate <= lastMonthEnd && c.EndDate >= lastMonthStart)
                 .ToListAsync(cancellationToken);
 
-            var lastMonthRevenue = lastMonthContracts.Sum(c => c.Rent);
+            var lastMonthRevenue = lastMonthContracts.Sum(c => c.Rent + c.Charges);
 
             // Charges du mois (simulation - à adapter selon votre modèle)
             var monthlyExpenses = monthlyRevenue * 0.15m; // 15% de charges estimées

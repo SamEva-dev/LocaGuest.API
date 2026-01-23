@@ -1,4 +1,3 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Contracts.Commands.MarkContractAsSigned;
 using LocaGuest.Application.Tests.Fixtures;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
@@ -6,6 +5,7 @@ using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Contracts.Commands;
 
@@ -39,8 +39,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Contract not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Contract not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -56,8 +56,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Property not found");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Property not found", result.ErrorMessage);
     }
 
     [Fact]
@@ -87,8 +87,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Be("Pour une colocation individuelle, RoomId est obligatoire.");
+        Assert.True(result.IsFailure);
+        Assert.Equal("Pour une colocation individuelle, RoomId est obligatoire.", result.ErrorMessage);
     }
 
     [Fact]
@@ -119,10 +119,10 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 
-        result.IsSuccess.Should().BeTrue();
-        contract.Status.Should().Be(ContractStatus.Signed);
-        property.Status.Should().Be(PropertyStatus.Reserved);
-        property.Rooms.All(r => r.Status == PropertyRoomStatus.Reserved).Should().BeTrue();
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ContractStatus.Signed, contract.Status);
+        Assert.Equal(PropertyStatus.Reserved, property.Status);
+        Assert.True(property.Rooms.All(r => r.Status == PropertyRoomStatus.Reserved));
 
         _unitOfWorkMock.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

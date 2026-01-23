@@ -1,5 +1,5 @@
-using FluentAssertions;
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
+using Xunit;
 
 namespace LocaGuest.Application.Tests.Features.Properties;
 
@@ -25,7 +25,7 @@ public class CreatePropertyCommandValidatorTests
 
         var result = validator.Validate(cmd);
 
-        result.IsValid.Should().BeFalse();
+        Assert.False(result.IsValid);
     }
 
     [Fact]
@@ -50,6 +50,6 @@ public class CreatePropertyCommandValidatorTests
 
         var result = validator.Validate(cmd);
 
-        result.IsValid.Should().BeFalse();
+        Assert.False(result.IsValid);
     }
 }

@@ -19,6 +19,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
     private readonly ICurrentUserService _currentUserService;
     private readonly IOrganizationContext _orgContext;
     private readonly INumberSequenceService _numberSequenceService;
+    private readonly IRentabilityEngine _rentabilityEngine;
     private readonly ILogger<SaveRentabilityScenarioCommandHandler> _logger;
 
     public SaveRentabilityScenarioCommandHandler(
@@ -27,6 +28,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
         ICurrentUserService currentUserService,
         IOrganizationContext orgContext,
         INumberSequenceService numberSequenceService,
+        IRentabilityEngine rentabilityEngine,
         ILogger<SaveRentabilityScenarioCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
@@ -34,6 +36,7 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
         _currentUserService = currentUserService;
         _orgContext = orgContext;
         _numberSequenceService = numberSequenceService;
+        _rentabilityEngine = rentabilityEngine;
         _logger = logger;
     }
 
@@ -156,10 +159,9 @@ public class SaveRentabilityScenarioCommandHandler : IRequestHandler<SaveRentabi
                 input.Exit.HoldYears
             );
 
-            if (request.ResultsJson != null)
-            {
-                scenario.UpdateResults(request.ResultsJson);
-            }
+            // ✅ Authoritative computation: ignore client ResultsJson, always recompute server-side
+            var compute = _rentabilityEngine.Compute(request.Input);
+            scenario.UpdateResults(compute.ResultsJson);
 
             // If this is set as base, unset others
             if (request.IsBase)

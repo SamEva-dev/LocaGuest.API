@@ -1,5 +1,4 @@
 using AutoFixture;
-using FluentAssertions;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Features.Properties.Commands.CreateProperty;
 using LocaGuest.Application.Services;
@@ -66,9 +65,9 @@ public class CreatePropertyCommandHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Data.Should().NotBeNull();
-        result.Data!.Name.Should().Be(command.Name);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data);
+        Assert.Equal(command.Name, result.Data!.Name);
         
         _unitOfWorkMock.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -92,8 +91,8 @@ public class CreatePropertyCommandHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("not authenticated");
+        Assert.True(result.IsFailure);
+        Assert.Contains("not authenticated", result.ErrorMessage);
     }
 
     [Fact]
@@ -111,7 +110,7 @@ public class CreatePropertyCommandHandlerTests : BaseApplicationTestFixture
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.ErrorMessage.Should().Contain("Invalid property type");
+        Assert.True(result.IsFailure);
+        Assert.Contains("Invalid property type", result.ErrorMessage);
     }
 }
