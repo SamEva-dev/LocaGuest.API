@@ -10,13 +10,16 @@ namespace LocaGuest.Application.Features.Properties.Queries.GetProperty;
 public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<PropertyDetailReadDto>>
 {
     private readonly ILocaGuestReadDbContext _readDb;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<GetPropertyQueryHandler> _logger;
 
     public GetPropertyQueryHandler(
         ILocaGuestReadDbContext readDb,
+        IOrganizationContext orgContext,
         ILogger<GetPropertyQueryHandler> logger)
     {
         _readDb = readDb;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -29,10 +32,17 @@ public class GetPropertyQueryHandler : IRequestHandler<GetPropertyQuery, Result<
                 return Result.Failure<PropertyDetailReadDto>($"Invalid property ID format: {request.Id}");
             }
 
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
+            {
+                return Result.Failure<PropertyDetailReadDto>("User not authenticated");
+            }
+
             // ✅ Charger la propriété avec ses rooms (pour les colocations)
             var property = await _readDb.Properties.AsNoTracking()
                 .Include(p => p.Rooms)
-                .FirstOrDefaultAsync(p => p.Id == propertyId, cancellationToken);
+                .FirstOrDefaultAsync(
+                    p => p.Id == propertyId && p.OrganizationId == _orgContext.OrganizationId.Value,
+                    cancellationToken);
 
             if (property == null)
             {

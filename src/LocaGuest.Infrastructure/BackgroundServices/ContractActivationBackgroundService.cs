@@ -3,6 +3,7 @@ using LocaGuest.Domain.Aggregates.PropertyAggregate;
 using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Infrastructure.Persistence;
 using LocaGuest.Application.Common.Interfaces;
+using LocaGuest.Application.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,16 +140,30 @@ public class ContractActivationBackgroundService : BackgroundService
         var orgWriter = scope.ServiceProvider.GetRequiredService<IOrganizationContextWriter>();
         orgWriter.Set(null, isAuthenticated: true, isSystemContext: true, canBypassOrganizationFilter: true);
         var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
+        var effectiveResolver = scope.ServiceProvider.GetRequiredService<IEffectiveContractStateResolver>();
 
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
 
-        // Récupérer les contrats Active dont la date de fin est passée
-        var contractsToExpire = await context.Contracts
+        // Récupérer les contrats Active potentiellement expirés.
+        // Note: on filtre côté SQL sur une condition large puis on tranche via EndDate effective
+        // (contrat + avenants signés) en mémoire.
+        var candidates = await context.Contracts
             .IgnoreQueryFilters()
             .Where(c => 
                 c.Status == ContractStatus.Active &&
                 c.EndDate.Date < today)
             .ToListAsync(cancellationToken);
+
+        var contractsToExpire = new List<Contract>();
+        foreach (var contract in candidates)
+        {
+            var effectiveResult = await effectiveResolver.ResolveAsync(contract.Id, today, cancellationToken);
+            if (!effectiveResult.IsSuccess || effectiveResult.Data == null)
+                continue;
+
+            if (effectiveResult.Data.EndDate.Date < today)
+                contractsToExpire.Add(contract);
+        }
 
         if (!contractsToExpire.Any())
         {

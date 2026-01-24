@@ -18,6 +18,11 @@ using LocaGuest.Api.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using LocaGuest.Application.Services;
+using System.Text.Json;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
+using QuestUnit = QuestPDF.Infrastructure.Unit;
 
 namespace LocaGuest.Api.Controllers;
 
@@ -61,6 +66,11 @@ public class DocumentsController : ControllerBase
         _effectiveContractStateResolver = effectiveContractStateResolver;
     }
 
+    public sealed class GenerateAddendumRequest
+    {
+        public Guid AddendumId { get; set; }
+    }
+
     [HttpGet("property/{propertyId:guid}/sheet")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -76,6 +86,9 @@ public class DocumentsController : ControllerBase
 
             var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
             if (property == null)
+                return NotFound(new { message = "Property not found" });
+
+            if (property.OrganizationId != _orgContext.OrganizationId.Value)
                 return NotFound(new { message = "Property not found" });
 
             var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
@@ -295,6 +308,26 @@ public class DocumentsController : ControllerBase
                 return NotFound(new { message = "Property not found" });
             }
 
+            if (dto.ContractId.HasValue)
+            {
+                var effectiveResult = await _effectiveContractStateResolver.ResolveAsync(
+                    dto.ContractId.Value,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                if (effectiveResult.IsSuccess && effectiveResult.Data != null)
+                {
+                    var s = effectiveResult.Data;
+                    dto = dto with
+                    {
+                        EndDate = s.EndDate.ToString("O"),
+                        Rent = s.Rent,
+                        Charges = s.Charges,
+                        AdditionalClauses = s.CustomClauses
+                    };
+                }
+            }
+
             // Get current user info from JWT claims
             var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
             var lastName = User.FindFirst("family_name")?.Value ?? User.FindFirst("LastName")?.Value ?? "";
@@ -402,6 +435,157 @@ public class DocumentsController : ControllerBase
         }
     }
 
+    [HttpPost("generate-addendum")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GenerateAddendum(
+        [FromBody] GenerateAddendumRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            var addendum = await _unitOfWork.Addendums.GetByIdAsync(request.AddendumId, cancellationToken);
+            if (addendum == null)
+                return NotFound(new { message = "Addendum not found" });
+
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(addendum.ContractId, cancellationToken);
+            if (contract == null)
+                return NotFound(new { message = "Contract not found" });
+
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+            if (occupant == null)
+                return NotFound(new { message = "Occupant not found" });
+
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            if (property == null)
+                return NotFound(new { message = "Property not found" });
+
+            var firstName = User.FindFirst("given_name")?.Value ?? User.FindFirst("FirstName")?.Value ?? "";
+            var lastName = User.FindFirst("family_name")?.Value ?? User.FindFirst("LastName")?.Value ?? "";
+            var email = User.FindFirst("email")?.Value ?? "";
+            var currentUserFullName = $"{firstName} {lastName}".Trim();
+            if (string.IsNullOrEmpty(currentUserFullName))
+                currentUserFullName = email;
+
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var pdfBytes = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, QuestUnit.Centimetre);
+                    page.DefaultTextStyle(x => x.FontSize(11));
+
+                    page.Header().Column(col =>
+                    {
+                        col.Item().Text("AVENANT AU CONTRAT").FontSize(18).Bold();
+                        col.Item().Text($"Contrat: {contract.Code}  |  Type: {addendum.Type}").FontSize(11);
+                        col.Item().Text($"Date d'effet: {addendum.EffectiveDate:yyyy-MM-dd}").FontSize(11);
+                        col.Item().PaddingTop(5).LineHorizontal(1);
+                    });
+
+                    page.Content().Column(col =>
+                    {
+                        col.Spacing(8);
+
+                        col.Item().Text("Parties").FontSize(14).Bold();
+                        col.Item().Text($"Locataire: {occupant.FullName} ({occupant.Email})");
+                        col.Item().Text($"Bien: {property.Name} ({property.Code})");
+
+                        col.Item().PaddingTop(10).Text("Motif").FontSize(14).Bold();
+                        col.Item().Text(addendum.Reason);
+
+                        col.Item().PaddingTop(10).Text("Description").FontSize(14).Bold();
+                        col.Item().Text(addendum.Description);
+
+                        col.Item().PaddingTop(10).Text("Modifications").FontSize(14).Bold();
+                        col.Item().Column(c2 =>
+                        {
+                            c2.Spacing(4);
+                            if (addendum.NewRent.HasValue || addendum.NewCharges.HasValue)
+                                c2.Item().Text($"Financier: Loyer {addendum.OldRent:0.##}€ → {addendum.NewRent:0.##}€ ; Charges {addendum.OldCharges:0.##}€ → {addendum.NewCharges:0.##}€");
+                            if (addendum.NewEndDate.HasValue)
+                                c2.Item().Text($"Durée: Fin {addendum.OldEndDate:yyyy-MM-dd} → {addendum.NewEndDate:yyyy-MM-dd}");
+                            if (addendum.NewRoomId.HasValue)
+                                c2.Item().Text($"Chambre: {addendum.OldRoomId} → {addendum.NewRoomId}");
+                            if (!string.IsNullOrWhiteSpace(addendum.NewClauses))
+                                c2.Item().Text("Clauses: voir texte ci-dessous");
+                            if (addendum.Type == AddendumType.Occupants)
+                                c2.Item().Text("Occupants: changements enregistrés dans le système");
+                        });
+
+                        if (!string.IsNullOrWhiteSpace(addendum.NewClauses))
+                        {
+                            col.Item().PaddingTop(10).Text("Nouvelles clauses").FontSize(14).Bold();
+                            col.Item().Text(addendum.NewClauses!);
+                        }
+                    });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text($"Généré le {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC par {currentUserFullName}")
+                        .FontSize(9);
+                });
+            }).GeneratePdf();
+
+            var fileName = SanitizeFileName($"Avenant_{contract.Code}_{DateTime.UtcNow:yyyy-MM-dd}_{Guid.NewGuid():N}.pdf");
+            var documentsPath = Path.Combine(_environment.ContentRootPath, "Documents", _orgContext.OrganizationId!.Value.ToString());
+            Directory.CreateDirectory(documentsPath);
+            var filePath = Path.Combine(documentsPath, fileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes, cancellationToken);
+
+            var saveDocumentCommand = new SaveGeneratedDocumentCommand
+            {
+                FileName = fileName,
+                FilePath = filePath,
+                Type = DocumentType.Avenant.ToString(),
+                Category = DocumentCategory.Contrats.ToString(),
+                FileSizeBytes = pdfBytes.Length,
+                ContractId = contract.Id,
+                OccupantId = contract.RenterOccupantId,
+                PropertyId = contract.PropertyId,
+                Description = $"Avenant généré - {addendum.Type} - {addendum.EffectiveDate:yyyy-MM-dd}"
+            };
+
+            var saved = await _mediator.Send(saveDocumentCommand, cancellationToken);
+            if (!saved.IsSuccess || saved.Data == null)
+                return BadRequest(new { message = saved.ErrorMessage ?? "Unable to save addendum document" });
+
+            var currentDocIds = new List<Guid>();
+            if (!string.IsNullOrWhiteSpace(addendum.AttachedDocumentIds))
+            {
+                try
+                {
+                    currentDocIds = JsonSerializer.Deserialize<List<Guid>>(addendum.AttachedDocumentIds) ?? new List<Guid>();
+                }
+                catch
+                {
+                    currentDocIds = new List<Guid>();
+                }
+            }
+
+            if (!currentDocIds.Contains(saved.Data.Id))
+                currentDocIds.Insert(0, saved.Data.Id);
+
+            addendum.UpdateDocuments(currentDocIds);
+            await _unitOfWork.CommitAsync(cancellationToken);
+
+            return Ok(saved.Data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating addendum {AddendumId}", request.AddendumId);
+            return StatusCode(500, new { message = "Error generating addendum", error = ex.Message });
+        }
+    }
+
     [HttpGet("occupant/{occupantId}")]
     public async Task<IActionResult> GetOccupantDocuments(string occupantId)
     {
@@ -462,7 +646,9 @@ public class DocumentsController : ControllerBase
         IFormFile file,
         [FromForm] string type,
         [FromForm] string category,
+        [FromForm] string? contractId,
         [FromForm] string? occupantId,
+        [FromForm] string? tenantId,
         [FromForm] string? propertyId,
         [FromForm] string? description)
     {
@@ -497,7 +683,10 @@ public class DocumentsController : ControllerBase
                 Type = type,
                 Category = category,
                 FileSizeBytes = file.Length,
-                OccupantId = string.IsNullOrEmpty(occupantId) ? null : Guid.Parse(occupantId),
+                ContractId = string.IsNullOrEmpty(contractId) ? null : Guid.Parse(contractId),
+                OccupantId = !string.IsNullOrEmpty(occupantId)
+                    ? Guid.Parse(occupantId)
+                    : (string.IsNullOrEmpty(tenantId) ? null : Guid.Parse(tenantId)),
                 PropertyId = string.IsNullOrEmpty(propertyId) ? null : Guid.Parse(propertyId),
                 Description = description
             };

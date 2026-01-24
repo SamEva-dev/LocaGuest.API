@@ -67,6 +67,7 @@ public class GetPropertiesQueryHandler : IRequestHandler<GetPropertiesQuery, Res
                 Id = p.Id,
                 Code = p.Code,
                 Name = p.Name,
+                ImageUrl = (p.ImageUrls != null && p.ImageUrls.Count > 0) ? p.ImageUrls[0] : null,
                 Address = p.Address,
                 City = p.City,
                 PostalCode = p.PostalCode,

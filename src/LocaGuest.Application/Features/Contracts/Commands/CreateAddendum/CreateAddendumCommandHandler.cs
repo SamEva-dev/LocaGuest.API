@@ -212,37 +212,6 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
 
             // ✅ Attacher documents et notes
             var attachedDocuments = request.AttachedDocumentIds?.ToList() ?? new List<Guid>();
-
-            // Create a draft Avenant document so it appears like other draft contract documents
-            if (!_orgContext.IsAuthenticated || _orgContext.OrganizationId == null)
-                return Result.Failure<Guid>("User not authenticated");
-
-            var fileName = $"Avenant_{contract.Code}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
-            var filePath = Path.Combine(Environment.CurrentDirectory, "Documents", _orgContext.OrganizationId.Value.ToString(), fileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            // Placeholder PDF content (will be replaced by a real generator)
-            var placeholder = System.Text.Encoding.UTF8.GetBytes($"AVENANT DRAFT\nContract: {contract.Code}\nDate: {DateTime.UtcNow:O}");
-            await File.WriteAllBytesAsync(filePath, placeholder, cancellationToken);
-
-            var saveDoc = new SaveGeneratedDocumentCommand
-            {
-                FileName = fileName,
-                FilePath = filePath,
-                Type = DocumentType.Avenant.ToString(),
-                Category = DocumentCategory.Contrats.ToString(),
-                FileSizeBytes = placeholder.Length,
-                ContractId = contract.Id,
-                OccupantId = contract.RenterOccupantId,
-                PropertyId = contract.PropertyId,
-                Description = $"Avenant (draft) - {addendumType} - {request.EffectiveDate:yyyy-MM-dd}"
-            };
-
-            var savedDoc = await _mediator.Send(saveDoc, cancellationToken);
-            if (!savedDoc.IsSuccess || savedDoc.Data == null)
-                return Result.Failure<Guid>(savedDoc.ErrorMessage ?? "Unable to save addendum document");
-
-            attachedDocuments.Add(savedDoc.Data.Id);
             if (attachedDocuments.Any())
             {
                 addendum.AttachDocuments(attachedDocuments.Distinct().ToList());
@@ -265,7 +234,7 @@ public class CreateAddendumCommandHandler : IRequestHandler<CreateAddendumComman
 
             if (!request.RequireSignature
                 && addendum.Type == AddendumType.Occupants
-                && addendum.EffectiveDate <= DateTime.UtcNow)
+                )
             {
                 var applyResult = await ApplyOccupantsChangesIfAnyAsync(addendum, cancellationToken);
                 if (!applyResult.IsSuccess)

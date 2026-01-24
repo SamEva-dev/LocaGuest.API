@@ -386,7 +386,8 @@ public class Contract : AuditableEntity
         // Pour tous les types de contrats (Furnished ou Unfurnished)
         // Documents REQUIS pour valider l'occupation du logement
         _requiredDocuments.Add(new RequiredDocument(DocumentType.Bail, isRequired: true));
-        _requiredDocuments.Add(new RequiredDocument(DocumentType.EtatDesLieuxEntree, isRequired: true));
+        _requiredDocuments.Add(new RequiredDocument(DocumentType.EtatDesLieuxEntree, isRequired: false));
+        _requiredDocuments.Add(new RequiredDocument(DocumentType.EtatDesLieuxSortie, isRequired: false));
         
         // Document OPTIONNEL mais recommandé
         _requiredDocuments.Add(new RequiredDocument(DocumentType.Assurance, isRequired: false));

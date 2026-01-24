@@ -13,15 +13,18 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IOrganizationContext _orgContext;
     private readonly ILogger<UpdatePropertyCommandHandler> _logger;
 
     public UpdatePropertyCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
+        IOrganizationContext orgContext,
         ILogger<UpdatePropertyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _orgContext = orgContext;
         _logger = logger;
     }
 
@@ -36,10 +39,21 @@ public class UpdatePropertyCommandHandler : IRequestHandler<UpdatePropertyComman
                 return Result.Failure<PropertyDetailDto>("User not authenticated");
             }
 
+            if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
+            {
+                _logger.LogWarning("Unauthorized property update attempt (missing organization context)");
+                return Result.Failure<PropertyDetailDto>("User not authenticated");
+            }
+
             // Get existing property
             var property = await _unitOfWork.Properties.GetByIdAsync(request.Id, cancellationToken);
             
             if (property == null)
+            {
+                return Result.Failure<PropertyDetailDto>($"Property with ID {request.Id} not found");
+            }
+
+            if (property.OrganizationId != _orgContext.OrganizationId.Value)
             {
                 return Result.Failure<PropertyDetailDto>($"Property with ID {request.Id} not found");
             }

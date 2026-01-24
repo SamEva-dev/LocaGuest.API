@@ -3,6 +3,7 @@ using LocaGuest.Application.Features.Properties.Commands.DeleteProperty;
 using LocaGuest.Application.Features.Properties.Commands.UpdateProperty;
 using LocaGuest.Application.Features.Properties.Commands.UpdatePropertyStatus;
 using LocaGuest.Application.Features.Properties.Commands.DissociateTenant;
+using LocaGuest.Application.Features.Properties.Commands.SetCoverImage;
 using LocaGuest.Application.Features.Properties.Queries.GetProperties;
 using LocaGuest.Application.Features.Properties.Queries.GetProperty;
 using LocaGuest.Application.Features.Properties.Queries.GetPropertyContracts;
@@ -43,6 +44,28 @@ public class PropertiesController : ControllerBase
             return BadRequest(new { message = result.ErrorMessage });
 
         return Ok(result.Data);
+    }
+
+    [HttpPost("{propertyId}/images/{imageId}/set-cover")]
+    [Authorize(Policy = Permissions.PropertiesWrite)]
+    public async Task<IActionResult> SetCoverImage(string propertyId, string imageId)
+    {
+        if (!Guid.TryParse(propertyId, out var propertyGuid))
+            return BadRequest(new { message = "Invalid property ID format" });
+
+        if (!Guid.TryParse(imageId, out var imageGuid))
+            return BadRequest(new { message = "Invalid image ID format" });
+
+        var result = await _mediator.Send(new SetCoverImageCommand
+        {
+            PropertyId = propertyGuid,
+            ImageId = imageGuid
+        });
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(new { success = true });
     }
 
     [HttpPost]

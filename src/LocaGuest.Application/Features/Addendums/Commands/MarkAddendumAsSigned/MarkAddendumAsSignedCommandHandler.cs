@@ -73,7 +73,7 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
                 }
             }
 
-            if (addendum.Type == AddendumType.Occupants && addendum.EffectiveDate <= DateTime.UtcNow)
+            if (addendum.Type == AddendumType.Occupants)
             {
                 var applyResult = await ApplyOccupantsChangesIfAnyAsync(addendum, cancellationToken);
                 if (!applyResult.IsSuccess)
