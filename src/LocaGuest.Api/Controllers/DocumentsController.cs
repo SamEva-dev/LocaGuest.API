@@ -72,6 +72,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("property/{propertyId:guid}/sheet")]
+    [Authorize(Policy = Permissions.PropertiesRead)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -107,6 +108,9 @@ public class DocumentsController : ControllerBase
                 cancellationToken);
 
             var fileName = SanitizeFileName($"Fiche_Bien_{property.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             return File(pdfBytes, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -135,6 +139,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("occupant/{occupantId:guid}/sheet")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -172,6 +177,9 @@ public class DocumentsController : ControllerBase
                 cancellationToken);
 
             var fileName = SanitizeFileName($"Fiche_Occupant_{occupant.Code}_{DateTime.UtcNow:yyyy-MM-dd}.pdf");
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             return File(pdfBytes, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -587,6 +595,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("occupant/{occupantId}")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> GetOccupantDocuments(string occupantId)
     {
         var query = new GetOccupantDocumentsQuery { OccupantId = occupantId };
@@ -599,6 +608,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("property/{propertyId}")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> GetPropertyDocuments(string propertyId)
     {
         try
@@ -641,6 +651,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadDocument(
         IFormFile file,
@@ -705,6 +716,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("download/{documentId}")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> DownloadDocument(string documentId)
     {
         try
@@ -719,6 +731,9 @@ public class DocumentsController : ControllerBase
             var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
             var contentType = document.FileName.EndsWith(".pdf") ? "application/pdf" : "application/octet-stream";
 
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             return File(fileBytes, contentType, document.FileName);
         }
         catch (Exception ex)
@@ -729,6 +744,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("view/{documentId}")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> ViewDocument(string documentId)
     {
         try
@@ -753,6 +769,9 @@ public class DocumentsController : ControllerBase
                 _ => "application/octet-stream"
             };
 
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{document.FileName}\"";
             return File(fileBytes, contentType);
         }
@@ -764,6 +783,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpDelete("{documentId}/dissociate")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     public async Task<IActionResult> DissociateDocument(string documentId)
     {
         try
@@ -787,6 +807,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("occupant/{occupantId}/export-zip")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> ExportDocumentsZip(string occupantId)
     {
         try
@@ -798,6 +819,9 @@ public class DocumentsController : ControllerBase
                 return NotFound(new { message = "No documents found for this occupant" });
 
             var fileName = $"Documents_Locataire_{DateTime.UtcNow:yyyy-MM-dd}.zip";
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             return File(zipBytes, "application/zip", fileName);
         }
         catch (Exception ex)
@@ -808,6 +832,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("generate-quittance")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     public async Task<IActionResult> GenerateQuittance([FromBody] GenerateQuittanceCommand command)
     {
         try
@@ -818,6 +843,9 @@ public class DocumentsController : ControllerBase
                 return BadRequest(new { message = result.ErrorMessage });
 
             var fileName = $"Quittance_{command.Month.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+            Response.Headers["Cache-Control"] = "no-store";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             return File(result.Data!, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -832,6 +860,7 @@ public class DocumentsController : ControllerBase
     /// PUT /api/documents/{id}/mark-signed
     /// </summary>
     [HttpPut("{id:guid}/mark-signed")]
+    [Authorize(Policy = Permissions.DocumentsWrite)]
     public async Task<IActionResult> MarkDocumentAsSigned(
         Guid id, 
         [FromBody] MarkDocumentAsSignedRequest? request = null,
@@ -868,6 +897,7 @@ public class DocumentsController : ControllerBase
     /// GET /api/documents/contract/{contractId}/status
     /// </summary>
     [HttpGet("contract/{contractId:guid}/status")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
     public async Task<IActionResult> GetContractDocumentStatus(
         Guid contractId, 
         CancellationToken cancellationToken = default)

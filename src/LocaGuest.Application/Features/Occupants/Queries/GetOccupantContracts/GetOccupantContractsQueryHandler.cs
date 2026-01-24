@@ -33,19 +33,33 @@ public class GetOccupantContractsQueryHandler : IRequestHandler<GetOccupantContr
                 .OrderByDescending(c => c.StartDate)
                 .ToListAsync(cancellationToken);
 
+            var propertyCache = new Dictionary<Guid, (string Name, string Code)>();
+
             var contractDtos = contracts.Select(c => new ContractListDto
             {
                 Id = c.Id,
+                ContractCode = c.Code,
                 PropertyId = c.PropertyId,
-                PropertyName = string.Empty,
+                PropertyName = propertyCache.TryGetValue(c.PropertyId, out var p)
+                    ? p.Name
+                    : (propertyCache[c.PropertyId] = (
+                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken).GetAwaiter().GetResult()?.Name ?? string.Empty,
+                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken).GetAwaiter().GetResult()?.Code ?? string.Empty
+                    )).Name,
+                PropertyCode = propertyCache.TryGetValue(c.PropertyId, out var p2)
+                    ? p2.Code
+                    : propertyCache[c.PropertyId].Code,
                 OccupantId = c.RenterOccupantId,
-                OccupantName = string.Empty,
+                OccupantName = occupant.FullName,
                 Type = c.Type.ToString(),
                 StartDate = c.StartDate,
                 EndDate = c.EndDate,
                 Rent = c.Rent,
+                Charges = c.Charges,
                 Deposit = c.Deposit ?? 0,
-                Status = c.Status.ToString()
+                Status = c.Status.ToString(),
+                RoomId = c.RoomId,
+                IsConflict = c.IsConflict
             }).ToList();
 
             _logger.LogInformation("Retrieved {Count} contracts for occupant {OccupantId}", contractDtos.Count, request.OccupantId);

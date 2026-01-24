@@ -5,6 +5,10 @@ public static class Permissions
     public const string PropertiesRead = "properties.read";
     public const string PropertiesWrite = "properties.write";
 
+    public const string TenantsRead = "tenants.read";
+    public const string TenantsWrite = "tenants.write";
+    public const string TenantsDelete = "tenants.delete";
+
     public const string RoomsRead = "rooms.read";
     public const string RoomsWrite = "rooms.write";
 

@@ -214,6 +214,13 @@ public class Startup
             options.AddPolicy(Permissions.PropertiesWrite, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.PropertiesWrite)));
 
+            options.AddPolicy(Permissions.TenantsRead, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TenantsRead)));
+            options.AddPolicy(Permissions.TenantsWrite, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TenantsWrite)));
+            options.AddPolicy(Permissions.TenantsDelete, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TenantsDelete)));
+
             options.AddPolicy(Permissions.RoomsRead, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.RoomsRead)));
             options.AddPolicy(Permissions.RoomsWrite, policy =>

@@ -72,6 +72,7 @@ public class PaymentsController : ControllerBase
     /// Get all payments for a tenant
     /// </summary>
     [HttpGet("tenant/{OccupantId}")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<PaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentsByTenant(string OccupantId)
@@ -91,6 +92,7 @@ public class PaymentsController : ControllerBase
     /// Get all payments for a property
     /// </summary>
     [HttpGet("property/{propertyId}")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<PaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentsByProperty(string propertyId)
@@ -110,6 +112,7 @@ public class PaymentsController : ControllerBase
     /// Get payment statistics
     /// </summary>
     [HttpGet("stats")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     [ProducesResponseType(typeof(PaymentStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPaymentStats(
@@ -189,6 +192,7 @@ public class PaymentsController : ControllerBase
     /// Get all overdue payments
     /// </summary>
     [HttpGet("overdue")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     [ProducesResponseType(typeof(List<PaymentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetOverduePayments(
@@ -217,6 +221,7 @@ public class PaymentsController : ControllerBase
     /// Get payments dashboard with KPIs
     /// </summary>
     [HttpGet("dashboard")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     [ProducesResponseType(typeof(PaymentsDashboardDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPaymentsDashboard(
@@ -243,6 +248,7 @@ public class PaymentsController : ControllerBase
     /// Get (or generate) the quittance PDF for a payment
     /// </summary>
     [HttpGet("{paymentId:guid}/quittance")]
+    [Authorize(Policy = Permissions.PaymentsRead)]
     public async Task<IActionResult> GetPaymentQuittance(Guid paymentId, CancellationToken cancellationToken)
     {
         try

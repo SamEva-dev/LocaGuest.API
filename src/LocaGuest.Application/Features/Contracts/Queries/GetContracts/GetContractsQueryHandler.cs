@@ -39,16 +39,21 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
                 dtos.Add(new ContractListDto
                 {
                     Id = contract.Id,
+                    ContractCode = contract.Code,
                     PropertyId = contract.PropertyId,
                     PropertyName = property?.Name ?? "Unknown",
+                    PropertyCode = property?.Code ?? string.Empty,
                     OccupantId = contract.RenterOccupantId,
                     OccupantName = tenant?.FullName ?? "Unknown",
                     Type = contract.Type.ToString(),
                     StartDate = contract.StartDate,
                     EndDate = contract.EndDate,
                     Rent = contract.Rent,
+                    Charges = contract.Charges,
                     Deposit = contract.Deposit ?? 0,
-                    Status = contract.Status.ToString()
+                    Status = contract.Status.ToString(),
+                    RoomId = contract.RoomId,
+                    IsConflict = contract.IsConflict
                 });
             }
 

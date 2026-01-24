@@ -5,6 +5,7 @@ using LocaGuest.Application.Features.Occupants.Queries.GetOccupants;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupant;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupantContracts;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupantPaymentStats;
+using LocaGuest.Application.Features.Payments.Queries.GetPaymentsByTenant;
 using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,7 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
     public async Task<IActionResult> GetOccupants([FromQuery] GetOccupantsQuery query)
     {
         var result = await _mediator.Send(query);
@@ -40,6 +42,7 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsWrite)]
     public async Task<IActionResult> CreateOccupant([FromBody] CreateOccupantCommand command)
     {
         var result = await _mediator.Send(command);
@@ -51,6 +54,7 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
     public async Task<IActionResult> GetOccupant(string id)
     {
         var query = new GetOccupantQuery { Id = id };
@@ -67,14 +71,25 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet("{id}/payments")]
-    public IActionResult GetOccupantPayments(string id)
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
+    public async Task<IActionResult> GetOccupantPayments(string id, CancellationToken cancellationToken)
     {
-        // TODO: Implement GetOccupantPaymentsQuery
-        // For now, return empty list
-        return Ok(new object[0]);
+        var query = new GetPaymentsByTenantQuery { OccupantId = id };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                return NotFound(new { message = result.ErrorMessage });
+
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpGet("{id}/contracts")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
     public async Task<IActionResult> GetOccupantContracts(string id)
     {
         if (!Guid.TryParse(id, out var occupantGuid))
@@ -94,6 +109,7 @@ public class OccupantsController : ControllerBase
     }
 
     [HttpGet("{id}/payment-stats")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
     public async Task<IActionResult> GetPaymentStats(string id)
     {
         if (!Guid.TryParse(id, out var occupantGuid))
@@ -117,6 +133,7 @@ public class OccupantsController : ControllerBase
     /// DELETE /api/occupants/{id}
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsDelete)]
     public async Task<IActionResult> DeleteOccupant(string id)
     {
         if (!Guid.TryParse(id, out var occupantGuid))
@@ -145,6 +162,7 @@ public class OccupantsController : ControllerBase
     public record ChangeStatusRequest(string Status);
 
     [HttpPost("{id}/change-status")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsWrite)]
     public async Task<IActionResult> ChangeStatus(string id, [FromBody] ChangeStatusRequest request)
     {
         if (!Guid.TryParse(id, out var occupantGuid))
