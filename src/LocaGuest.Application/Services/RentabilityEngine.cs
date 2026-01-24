@@ -84,6 +84,8 @@ public sealed class RentabilityEngine : IRentabilityEngine
 
         var cashflows = new List<decimal>(holdYears + 1) { Money(-ownFunds) };
 
+        var cumulativeCashflow = Money(0);
+
         for (var y = 1; y <= holdYears; y++)
         {
             var indexFactor = Pow(1 + indexationRate / 100m, y - 1);
@@ -126,6 +128,8 @@ public sealed class RentabilityEngine : IRentabilityEngine
 
             var cashflowAfterTax = Money(cashflowBeforeTax - taxAmount);
 
+            cumulativeCashflow = Money(cumulativeCashflow + cashflowAfterTax);
+
             var propertyValue = Money(purchasePrice * Pow(1 + appreciation / 100m, y));
 
             yearly.Add(new RentabilityYearlyResultDto
@@ -159,6 +163,8 @@ public sealed class RentabilityEngine : IRentabilityEngine
                 CashflowBeforeTax = cashflowBeforeTax,
                 CashflowAfterTax = cashflowAfterTax,
 
+                CumulativeCashflow = cumulativeCashflow,
+
                 PropertyValue = propertyValue,
             });
 
@@ -185,8 +191,15 @@ public sealed class RentabilityEngine : IRentabilityEngine
             ? Round(((year1.NetRevenue - year1.TotalCharges - year1.LoanInsurance) / totalInvestment) * 100m, 2)
             : 0;
 
+        var cashOnCash = ownFunds > 0
+            ? Round((year1.CashflowAfterTax / ownFunds) * 100m, 2)
+            : 0;
+
         var debtService1 = Money(year1.LoanPayment + year1.LoanInsurance);
-        var dscr = debtService1 > 0 ? Round(year1.Noi / debtService1, 2) : decimal.MaxValue;
+        var dscr = debtService1 > 0 ? Round(year1.Noi / debtService1, 2) : 0;
+
+        var capRate = grossYield;
+        var ltv = purchasePrice > 0 ? Round((loanAmount / purchasePrice) * 100m, 2) : 0;
 
         var paybackYears = ComputePaybackYears(ownFunds, yearly.Select(x => x.CashflowAfterTax).ToArray());
 
@@ -199,6 +212,12 @@ public sealed class RentabilityEngine : IRentabilityEngine
             ? Round((((cashflows.Sum() + ownFunds) / ownFunds) * 100m) - 100m, 2)
             : 0;
 
+        var breakEvenRent = Money((year1.TotalCharges + year1.LoanPayment + year1.LoanInsurance + year1.Tax) / 12m);
+
+        var exitPrice = salePrice;
+        var netCapitalGain = Money((salePrice - sellingCosts - capitalGainsTax) - purchasePrice);
+        var finalEquity = Money((salePrice - sellingCosts - capitalGainsTax) - debtToRepay);
+
         var kpis = new RentabilityKpisDto
         {
             TotalInvestment = totalInvestment,
@@ -206,11 +225,19 @@ public sealed class RentabilityEngine : IRentabilityEngine
             GrossYield = grossYield,
             NetYield = netYield,
             NetNetYield = netNetYield,
+            CashOnCash = cashOnCash,
+            CapRate = capRate,
+            Ltv = ltv,
             Dscr = dscr,
+            BreakEvenRent = breakEvenRent,
             PaybackYears = paybackYears,
             Irr = irrPct,
             Npv = npv,
             TotalReturn = totalReturn,
+            ExitPrice = exitPrice,
+            CapitalGain = capitalGain,
+            NetCapitalGain = netCapitalGain,
+            FinalEquity = finalEquity,
         };
 
         var result = new RentabilityResultDto

@@ -4,6 +4,7 @@ using LocaGuest.Application.Features.Occupants.Commands.DeleteOccupant;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupants;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupant;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupantContracts;
+using LocaGuest.Application.Features.Occupants.Queries.GetOccupantDashboard;
 using LocaGuest.Application.Features.Occupants.Queries.GetOccupantPaymentStats;
 using LocaGuest.Application.Features.Payments.Queries.GetPaymentsByTenant;
 using LocaGuest.Domain.Aggregates.OccupantAggregate;
@@ -37,6 +38,32 @@ public class OccupantsController : ControllerBase
         
         if (!result.IsSuccess)
             return BadRequest(new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("/api/Tenants/{id}/dashboard")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
+    public Task<IActionResult> GetTenantDashboardAlias(string id, CancellationToken cancellationToken)
+        => GetOccupantDashboard(id, cancellationToken);
+
+    [HttpGet("{id}/dashboard")]
+    [Authorize(Policy = LocaGuest.Api.Authorization.Permissions.TenantsRead)]
+    public async Task<IActionResult> GetOccupantDashboard(string id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(id, out var occupantGuid))
+            return BadRequest(new { message = "Invalid occupant ID format" });
+
+        var query = new GetOccupantDashboardQuery(occupantGuid);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                return NotFound(new { message = result.ErrorMessage });
+
+            return BadRequest(new { message = result.ErrorMessage });
+        }
 
         return Ok(result.Data);
     }

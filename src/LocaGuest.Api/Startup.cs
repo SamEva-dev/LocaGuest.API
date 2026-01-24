@@ -246,6 +246,36 @@ public class Startup
             options.AddPolicy(Permissions.DocumentsWrite, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.DocumentsWrite)));
 
+            options.AddPolicy(Permissions.DocumentsUpload, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").RequireAssertion(ctx =>
+                {
+                    var permissions = ctx.User.FindAll("permissions").Concat(ctx.User.FindAll("permission"))
+                        .SelectMany(c => (c.Value ?? string.Empty).Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(p => p.Trim());
+                    var set = new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);
+                    return set.Contains(Permissions.DocumentsUpload) || set.Contains(Permissions.DocumentsWrite);
+                }));
+
+            options.AddPolicy(Permissions.DocumentsGenerate, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").RequireAssertion(ctx =>
+                {
+                    var permissions = ctx.User.FindAll("permissions").Concat(ctx.User.FindAll("permission"))
+                        .SelectMany(c => (c.Value ?? string.Empty).Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(p => p.Trim());
+                    var set = new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);
+                    return set.Contains(Permissions.DocumentsGenerate) || set.Contains(Permissions.DocumentsWrite);
+                }));
+
+            options.AddPolicy(Permissions.DocumentsDelete, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim("organization_id").RequireAssertion(ctx =>
+                {
+                    var permissions = ctx.User.FindAll("permissions").Concat(ctx.User.FindAll("permission"))
+                        .SelectMany(c => (c.Value ?? string.Empty).Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(p => p.Trim());
+                    var set = new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);
+                    return set.Contains(Permissions.DocumentsDelete) || set.Contains(Permissions.DocumentsWrite);
+                }));
+
             options.AddPolicy(Permissions.TeamRead, policy =>
                 policy.RequireAuthenticatedUser().RequireClaim("organization_id").AddRequirements(new PermissionRequirement(Permissions.TeamRead)));
             options.AddPolicy(Permissions.TeamManage, policy =>

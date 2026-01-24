@@ -23,6 +23,9 @@ public static class Permissions
 
     public const string DocumentsRead = "documents.read";
     public const string DocumentsWrite = "documents.write";
+    public const string DocumentsUpload = "documents.upload";
+    public const string DocumentsGenerate = "documents.generate";
+    public const string DocumentsDelete = "documents.delete";
 
     public const string TeamRead = "team.read";
     public const string TeamManage = "team.manage";

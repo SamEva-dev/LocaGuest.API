@@ -66,6 +66,16 @@ public class DocumentsController : ControllerBase
         _effectiveContractStateResolver = effectiveContractStateResolver;
     }
 
+    [HttpGet("tenant/{tenantId:guid}/sheet")]
+    [Authorize(Policy = Permissions.DocumentsGenerate)]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public Task<IActionResult> GenerateTenantSheet(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+        => GenerateOccupantSheet(tenantId, cancellationToken);
+
     public sealed class GenerateAddendumRequest
     {
         public Guid AddendumId { get; set; }
@@ -139,7 +149,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpGet("occupant/{occupantId:guid}/sheet")]
-    [Authorize(Policy = Permissions.DocumentsRead)]
+    [Authorize(Policy = Permissions.DocumentsGenerate)]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -200,6 +210,11 @@ public class DocumentsController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [HttpGet("tenant/{tenantId}")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
+    public Task<IActionResult> GetTenantDocuments(string tenantId)
+        => GetOccupantDocuments(tenantId);
 
     [HttpGet("all")]
     public async Task<IActionResult> GetAllDocuments()
@@ -616,7 +631,10 @@ public class DocumentsController : ControllerBase
             if (!_orgContext.IsAuthenticated || !_orgContext.OrganizationId.HasValue)
                 return Unauthorized(new { message = "User not authenticated" });
 
-            var documents = await _unitOfWork.Documents.GetByPropertyIdAsync(Guid.Parse(propertyId));
+            if (!Guid.TryParse(propertyId, out var propertyGuid))
+                return BadRequest(new { message = "Invalid property ID format" });
+
+            var documents = await _unitOfWork.Documents.GetByPropertyIdAsync(propertyGuid);
 
             // Group by category
             var groupedDocs = documents
@@ -651,7 +669,7 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    [Authorize(Policy = Permissions.DocumentsWrite)]
+    [Authorize(Policy = Permissions.DocumentsUpload)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadDocument(
         IFormFile file,
@@ -687,6 +705,36 @@ public class DocumentsController : ControllerBase
             _logger.LogInformation("File uploaded: {FilePath}, Size={Size}KB", filePath, file.Length / 1024);
 
             // Save metadata to database
+            Guid? contractGuid = null;
+            if (!string.IsNullOrWhiteSpace(contractId))
+            {
+                if (!Guid.TryParse(contractId, out var parsed))
+                    return BadRequest(new { message = "Invalid contract ID format" });
+                contractGuid = parsed;
+            }
+
+            Guid? occupantGuid = null;
+            if (!string.IsNullOrWhiteSpace(occupantId))
+            {
+                if (!Guid.TryParse(occupantId, out var parsed))
+                    return BadRequest(new { message = "Invalid occupant ID format" });
+                occupantGuid = parsed;
+            }
+            else if (!string.IsNullOrWhiteSpace(tenantId))
+            {
+                if (!Guid.TryParse(tenantId, out var parsed))
+                    return BadRequest(new { message = "Invalid tenant ID format" });
+                occupantGuid = parsed;
+            }
+
+            Guid? propertyGuid = null;
+            if (!string.IsNullOrWhiteSpace(propertyId))
+            {
+                if (!Guid.TryParse(propertyId, out var parsed))
+                    return BadRequest(new { message = "Invalid property ID format" });
+                propertyGuid = parsed;
+            }
+
             var saveCommand = new SaveGeneratedDocumentCommand
             {
                 FileName = fileName,
@@ -694,11 +742,9 @@ public class DocumentsController : ControllerBase
                 Type = type,
                 Category = category,
                 FileSizeBytes = file.Length,
-                ContractId = string.IsNullOrEmpty(contractId) ? null : Guid.Parse(contractId),
-                OccupantId = !string.IsNullOrEmpty(occupantId)
-                    ? Guid.Parse(occupantId)
-                    : (string.IsNullOrEmpty(tenantId) ? null : Guid.Parse(tenantId)),
-                PropertyId = string.IsNullOrEmpty(propertyId) ? null : Guid.Parse(propertyId),
+                ContractId = contractGuid,
+                OccupantId = occupantGuid,
+                PropertyId = propertyGuid,
                 Description = description
             };
 
@@ -721,20 +767,22 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            var document = await _unitOfWork.Documents.GetByIdAsync(Guid.Parse(documentId));
+            if (!Guid.TryParse(documentId, out var documentGuid))
+                return BadRequest(new { message = "Invalid document ID format" });
+
+            var document = await _unitOfWork.Documents.GetByIdAsync(documentGuid);
             if (document == null)
                 return NotFound(new { message = "Document not found" });
 
             if (!System.IO.File.Exists(document.FilePath))
                 return NotFound(new { message = "File not found on disk" });
 
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
             var contentType = document.FileName.EndsWith(".pdf") ? "application/pdf" : "application/octet-stream";
 
             Response.Headers["Cache-Control"] = "no-store";
             Response.Headers["Pragma"] = "no-cache";
             Response.Headers["Expires"] = "0";
-            return File(fileBytes, contentType, document.FileName);
+            return PhysicalFile(document.FilePath, contentType, document.FileName, enableRangeProcessing: true);
         }
         catch (Exception ex)
         {
@@ -749,14 +797,15 @@ public class DocumentsController : ControllerBase
     {
         try
         {
-            var document = await _unitOfWork.Documents.GetByIdAsync(Guid.Parse(documentId));
+            if (!Guid.TryParse(documentId, out var documentGuid))
+                return BadRequest(new { message = "Invalid document ID format" });
+
+            var document = await _unitOfWork.Documents.GetByIdAsync(documentGuid);
             if (document == null)
                 return NotFound(new { message = "Document not found" });
 
             if (!System.IO.File.Exists(document.FilePath))
                 return NotFound(new { message = "File not found on disk" });
-
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(document.FilePath);
 
             var extension = Path.GetExtension(document.FileName).ToLowerInvariant();
             var contentType = extension switch
@@ -773,7 +822,7 @@ public class DocumentsController : ControllerBase
             Response.Headers["Pragma"] = "no-cache";
             Response.Headers["Expires"] = "0";
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{document.FileName}\"";
-            return File(fileBytes, contentType);
+            return PhysicalFile(document.FilePath, contentType, enableRangeProcessing: true);
         }
         catch (Exception ex)
         {
@@ -783,12 +832,15 @@ public class DocumentsController : ControllerBase
     }
 
     [HttpDelete("{documentId}/dissociate")]
-    [Authorize(Policy = Permissions.DocumentsWrite)]
+    [Authorize(Policy = Permissions.DocumentsDelete)]
     public async Task<IActionResult> DissociateDocument(string documentId)
     {
         try
         {
-            var document = await _unitOfWork.Documents.GetByIdAsync(Guid.Parse(documentId));
+            if (!Guid.TryParse(documentId, out var documentGuid))
+                return BadRequest(new { message = "Invalid document ID format" });
+
+            var document = await _unitOfWork.Documents.GetByIdAsync(documentGuid);
             if (document == null)
                 return NotFound(new { message = "Document not found" });
 
@@ -830,6 +882,11 @@ public class DocumentsController : ControllerBase
             return StatusCode(500, new { message = "Error exporting documents", error = ex.Message });
         }
     }
+
+    [HttpGet("tenant/{tenantId}/export-zip")]
+    [Authorize(Policy = Permissions.DocumentsRead)]
+    public Task<IActionResult> ExportTenantDocumentsZip(string tenantId)
+        => ExportDocumentsZip(tenantId);
 
     [HttpPost("generate-quittance")]
     [Authorize(Policy = Permissions.DocumentsWrite)]

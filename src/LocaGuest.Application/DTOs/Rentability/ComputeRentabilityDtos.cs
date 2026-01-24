@@ -63,6 +63,8 @@ public sealed record RentabilityYearlyResultDto
     public decimal CashflowBeforeTax { get; init; }
     public decimal CashflowAfterTax { get; init; }
 
+    public decimal CumulativeCashflow { get; init; }
+
     public decimal PropertyValue { get; init; }
 }
 
@@ -75,10 +77,21 @@ public sealed record RentabilityKpisDto
     public decimal NetYield { get; init; }
     public decimal NetNetYield { get; init; }
 
+    public decimal CashOnCash { get; init; }
+
+    public decimal CapRate { get; init; }
+    public decimal Ltv { get; init; }
+
     public decimal Dscr { get; init; }
+    public decimal BreakEvenRent { get; init; }
     public decimal PaybackYears { get; init; }
 
     public decimal Irr { get; init; }
     public decimal Npv { get; init; }
     public decimal TotalReturn { get; init; }
+
+    public decimal ExitPrice { get; init; }
+    public decimal CapitalGain { get; init; }
+    public decimal NetCapitalGain { get; init; }
+    public decimal FinalEquity { get; init; }
 }
