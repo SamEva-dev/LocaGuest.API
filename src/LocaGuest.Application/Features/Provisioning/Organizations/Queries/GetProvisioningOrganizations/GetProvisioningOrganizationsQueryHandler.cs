@@ -27,16 +27,21 @@ public sealed class GetProvisioningOrganizationsQueryHandler : IRequestHandler<G
         {
             var organizations = await _db.Organizations
                 .AsNoTracking()
-                .OrderBy(x => x.Number)
+                .OrderBy(x => EF.Property<string?>(x, "Name") ?? string.Empty)
+                .ThenBy(x => x.Id)
                 .Select(x => new ProvisioningOrganizationDto
                 {
                     Id = x.Id,
-                    Number = x.Number,
-                    Code = x.Code,
-                    Name = x.Name,
-                    Email = x.Email,
-                    Phone = x.Phone,
-                    Status = x.Status.ToString()
+                    Number = EF.Property<int?>(x, "Number") ?? 0,
+                    Code = EF.Property<string?>(x, "Code") ?? string.Empty,
+                    Name = EF.Property<string?>(x, "Name") ?? string.Empty,
+                    Email = EF.Property<string?>(x, "Email") ?? string.Empty,
+                    Phone = EF.Property<string?>(x, "Phone"),
+                    Status = (EF.Property<int?>(x, "Status") ?? 0) == 0
+                        ? "Active"
+                        : (EF.Property<int?>(x, "Status") ?? 0) == 1
+                            ? "Suspended"
+                            : "Inactive"
                 })
                 .ToListAsync(cancellationToken);
 

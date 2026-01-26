@@ -5,6 +5,8 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Features.Dashboard.Queries.GetDashboardSummary;
 using LocaGuest.Application.Features.Dashboard.Queries.GetDeadlines;
 using LocaGuest.Application.Features.Dashboard.Queries.GetRecentActivities;
+using LocaGuest.Application.Features.Dashboard.Queries.GetOccupancyChart;
+using LocaGuest.Application.Features.Dashboard.Queries.GetRevenueChart;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -217,6 +219,56 @@ public class DashboardControllerTests : BaseTestFixture
         okResult!.Value.Should().NotBeNull();
         // Note: GetDeadlines peut retourner null dans l'implémentation actuelle
         // On vérifie juste que la méthode retourne OK
+    }
+
+    #endregion
+
+    #region Charts Tests
+
+    [Fact]
+    public async Task GetOccupancyChart_WithMonthYear_ReturnsOk()
+    {
+        // Arrange
+        var dto = new OccupancyChartDto
+        {
+            DailyData = new List<DailyOccupancy>
+            {
+                new() { Day = 1, Label = "J1", OccupiedUnits = 1, TotalUnits = 2, OccupancyRate = 50m }
+            }
+        };
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetOccupancyChartQuery>(), default))
+            .ReturnsAsync(Result.Success(dto));
+
+        // Act
+        var result = await _controller.GetOccupancyChart(1, 2025);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetRevenueChart_WithMonthYear_ReturnsOk()
+    {
+        // Arrange
+        var dto = new RevenueChartDto
+        {
+            DailyData = new List<DailyRevenue>
+            {
+                new() { Day = 1, Label = "J1", ExpectedRevenue = 100m, ActualRevenue = 50m, CollectionRate = 50m }
+            }
+        };
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetRevenueChartQuery>(), default))
+            .ReturnsAsync(Result.Success(dto));
+
+        // Act
+        var result = await _controller.GetRevenueChart(1, 2025);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
     }
 
     #endregion

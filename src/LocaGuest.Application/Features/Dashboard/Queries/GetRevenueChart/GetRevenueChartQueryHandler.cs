@@ -2,25 +2,24 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 
 namespace LocaGuest.Application.Features.Dashboard.Queries.GetRevenueChart;
 
 public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery, Result<RevenueChartDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetRevenueChartQueryHandler> _logger;
 
     public GetRevenueChartQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ICurrentUserService currentUserService,
         ILogger<GetRevenueChartQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -32,51 +31,54 @@ public class GetRevenueChartQueryHandler : IRequestHandler<GetRevenueChartQuery,
             if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<RevenueChartDto>("User not authenticated");
 
-            var monthlyData = new List<MonthlyRevenue>();
-            var payments = await _unitOfWork.Payments.GetAllAsync(cancellationToken);
+            var startDateUtc = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDateUtcExclusive = startDateUtc.AddMonths(1);
 
-            for (int month = 1; month <= 12; month++)
+            var expectedByDay = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.ExpectedDate >= startDateUtc && p.ExpectedDate < endDateUtcExclusive)
+                .GroupBy(p => p.ExpectedDate.Date)
+                .Select(g => new { Day = g.Key.Day, Amount = g.Sum(x => x.AmountDue) })
+                .ToDictionaryAsync(x => x.Day, x => x.Amount, cancellationToken);
+
+            var actualByDay = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.PaymentDate.HasValue
+                            && p.PaymentDate.Value >= startDateUtc
+                            && p.PaymentDate.Value < endDateUtcExclusive
+                            && (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate))
+                .GroupBy(p => p.PaymentDate!.Value.Date)
+                .Select(g => new { Day = g.Key.Day, Amount = g.Sum(x => x.AmountPaid) })
+                .ToDictionaryAsync(x => x.Day, x => x.Amount, cancellationToken);
+
+            var daysInMonth = DateTime.DaysInMonth(request.Year, request.Month);
+            var dailyData = new List<DailyRevenue>(capacity: daysInMonth);
+
+            for (var day = 1; day <= daysInMonth; day++)
             {
-                var firstDayOfMonth = new DateTime(request.Year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-                var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                expectedByDay.TryGetValue(day, out var expected);
+                actualByDay.TryGetValue(day, out var actual);
 
-                // Paiements attendus pour ce mois (ExpectedDate dans ce mois)
-                var expectedPayments = payments
-                    .Where(p => p.ExpectedDate.Year == request.Year && p.ExpectedDate.Month == month)
-                    .ToList();
+                var collectionRate = expected > 0 ? (actual / expected * 100m) : 0m;
 
-                var expectedRevenue = expectedPayments.Sum(p => p.AmountDue);
-
-                // Revenus réellement perçus (PaymentDate dans ce mois et status Paid)
-                var paidPayments = expectedPayments
-                    .Where(p => p.Status == PaymentStatus.Paid && p.PaymentDate.HasValue)
-                    .ToList();
-
-                var actualRevenue = paidPayments.Sum(p => p.AmountPaid);
-
-                var collectionRate = expectedRevenue > 0 ? (actualRevenue / expectedRevenue * 100) : 0;
-
-                monthlyData.Add(new MonthlyRevenue
+                dailyData.Add(new DailyRevenue
                 {
-                    Month = month,
-                    MonthName = firstDayOfMonth.ToString("MMMM", CultureInfo.GetCultureInfo("fr-FR")),
-                    ExpectedRevenue = expectedRevenue,
-                    ActualRevenue = actualRevenue,
+                    Day = day,
+                    Label = $"J{day}",
+                    ExpectedRevenue = expected,
+                    ActualRevenue = actual,
                     CollectionRate = Math.Round(collectionRate, 1)
                 });
             }
 
-            _logger.LogInformation("Retrieved revenue chart for year {Year}", request.Year);
+            _logger.LogInformation("Retrieved revenue chart for {Month}/{Year}", request.Month, request.Year);
 
-            return Result.Success(new RevenueChartDto
-            {
-                MonthlyData = monthlyData
-            });
+            return Result.Success(new RevenueChartDto { DailyData = dailyData });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving revenue chart for year {Year}", request.Year);
-            return Result.Failure<RevenueChartDto>($"Error retrieving revenue chart: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving revenue chart for {Month}/{Year}", request.Month, request.Year);
+            return Result.Failure<RevenueChartDto>("Error retrieving revenue chart");
         }
     }
 }

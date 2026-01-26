@@ -29,58 +29,55 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
             // Determine period to filter
             var targetMonth = request.Month ?? DateTime.UtcNow.Month;
             var targetYear = request.Year ?? DateTime.UtcNow.Year;
-            var startDate = new DateTime(targetYear, targetMonth, 1, 0, 0, 0, DateTimeKind.Utc);
-            var endDate = startDate.AddMonths(1).AddDays(-1);
+            var startDateUtc = new DateTime(targetYear, targetMonth, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDateUtcExclusive = startDateUtc.AddMonths(1);
 
-            // Count total properties (all statuses)
-            var propertiesCount = await _readDb.Properties.AsNoTracking()
-                .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
+            // Total properties (portfolio size)
+            var propertiesCount = await _readDb.Properties
+                .AsNoTracking()
                 .CountAsync(cancellationToken);
 
-            // Count active contracts during the period
-            var activeContracts = await _readDb.Contracts.AsNoTracking()
-                .Where(c => c.Status == ContractStatus.Active &&
-                           c.StartDate <= endDate &&
-                           c.EndDate >= startDate)
-                .ToListAsync(cancellationToken);
+            // Contracts overlapping the month (used for occupancy + active tenants)
+            var overlappingContractsQuery = _readDb.Contracts
+                .AsNoTracking()
+                .Where(c => (c.Status == ContractStatus.Active || c.Status == ContractStatus.Signed)
+                            && c.StartDate < endDateUtcExclusive
+                            && c.EndDate >= startDateUtc);
 
-            var tenantsCount = await _readDb.Occupants.AsNoTracking()
-                .Where(c => c.CreatedAt <= endDate && c.CreatedAt >= startDate)
+            var activeTenants = await overlappingContractsQuery
+                .Select(c => c.RenterOccupantId)
+                .Distinct()
                 .CountAsync(cancellationToken);
 
-            // Calculate monthly revenue (sum of rent from active contracts in period)
-            var monthlyRevenue = activeContracts.Sum(c => c.Rent);
-
-            // Calculate occupancy rate for the period
-            var totalProperties = propertiesCount;
-            var occupiedProperties = activeContracts
+            var occupiedProperties = await overlappingContractsQuery
                 .Select(c => c.PropertyId)
                 .Distinct()
-                .Count();
+                .CountAsync(cancellationToken);
 
-            var occupancyRate = totalProperties > 0 
-                ? (decimal)occupiedProperties / totalProperties 
+            // Note: occupancyRate is intentionally 0..1 (frontend formats it as %)
+            var occupancyRate = propertiesCount > 0
+                ? (decimal)occupiedProperties / propertiesCount
                 : 0m;
+
+            // Monthly revenue: expected amount due for the selected period
+            var monthlyRevenue = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Month == targetMonth && p.Year == targetYear)
+                .SumAsync(p => (decimal?)p.AmountDue, cancellationToken) ?? 0m;
 
             // Calculate payment statistics
             // 1. Locataires uniques avec contrats actifs
-            var totalActiveTenants = activeContracts
-                .Select(c => c.RenterOccupantId)
-                .Distinct()
-                .Count();
+            var totalActiveTenants = activeTenants;
 
             // 2. Paiements pour la période (payés ou payés en retard)
-            var periodPayments = await _readDb.Payments.AsNoTracking()
-                .Where(p => p.Month == targetMonth && 
-                           p.Year == targetYear &&
-                           (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate))
-                .ToListAsync(cancellationToken);
-
-            // 3. Locataires ayant payé (uniques)
-            var paidTenantsCount = periodPayments
+            var paidTenantsCount = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Month == targetMonth
+                            && p.Year == targetYear
+                            && (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate))
                 .Select(p => p.RenterOccupantId)
                 .Distinct()
-                .Count();
+                .CountAsync(cancellationToken);
 
             // 4. Taux de paiement
             var paymentRate = totalActiveTenants > 0 
@@ -88,32 +85,40 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
                 : 0m;
 
             // 5. Paiements en retard pour la période
-            var latePayments = await _readDb.Payments.AsNoTracking()
-                .Where(p => p.Month == targetMonth && 
-                           p.Year == targetYear &&
-                           (p.Status == PaymentStatus.Late || p.Status == PaymentStatus.Partial))
-                .ToListAsync(cancellationToken);
+            var latePaymentsCount = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Month == targetMonth
+                            && p.Year == targetYear
+                            && (p.Status == PaymentStatus.Late || p.Status == PaymentStatus.Partial))
+                .CountAsync(cancellationToken);
 
-            // 6. Locataires avec paiements en retard (uniques)
-            var latePaymentsCount = latePayments
+            // Locataires avec paiements en retard (uniques)
+            var lateTenantsCount = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Month == targetMonth
+                            && p.Year == targetYear
+                            && (p.Status == PaymentStatus.Late || p.Status == PaymentStatus.Partial))
                 .Select(p => p.RenterOccupantId)
                 .Distinct()
-                .Count();
+                .CountAsync(cancellationToken);
 
             // 7. Taux de retard
             var latePaymentRate = totalActiveTenants > 0 
-                ? (decimal)latePaymentsCount / totalActiveTenants 
+                ? (decimal)lateTenantsCount / totalActiveTenants 
                 : 0m;
 
             var summary = new DashboardSummaryDto
             {
                 PropertiesCount = propertiesCount,
-                ActiveTenants = tenantsCount,
+                OccupiedPropertiesCount = occupiedProperties,
+                ActiveTenants = activeTenants,
                 OccupancyRate = occupancyRate,
                 MonthlyRevenue = monthlyRevenue,
                 PaidTenantsCount = paidTenantsCount,
                 CollectionRate = paymentRate,
                 LatePaymentsCount = latePaymentsCount,
+                LateTenantsCount = lateTenantsCount,
+                LateTenantsRate = latePaymentRate,
                 OverdueCount = latePaymentRate
             };
 

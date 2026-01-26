@@ -2,24 +2,24 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LocaGuest.Application.Features.Payments.Queries.GetPaymentsDashboard;
 
 public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashboardQuery, Result<PaymentsDashboardDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetPaymentsDashboardQueryHandler> _logger;
 
     public GetPaymentsDashboardQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ICurrentUserService currentUserService,
         ILogger<GetPaymentsDashboardQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -36,47 +36,95 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
             var month = request.Month ?? DateTime.UtcNow.Month;
             var year = request.Year ?? DateTime.UtcNow.Year;
 
-            // Get all payments
-            var allPayments = await _unitOfWork.Payments.GetAllAsync(cancellationToken);
-            
-            // Filter for the specified month/year
-            var periodPayments = allPayments
-                .Where(p => p.Month == month && p.Year == year)
-                .ToList();
+            var todayUtcDate = DateTime.UtcNow.Date;
 
-            // Get tenants and properties for names
-            var tenants = await _unitOfWork.Occupants.GetAllAsync(cancellationToken);
-            var properties = await _unitOfWork.Properties.GetAllAsync(cancellationToken);
+            var periodPaymentsQuery = _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Month == month && p.Year == year);
 
-            var tenantDict = tenants.ToDictionary(t => t.Id, t => t.FullName);
-            var propertyDict = properties.ToDictionary(p => p.Id, p => p.Name);
+            var periodPayments = await periodPaymentsQuery
+                .Select(p => new
+                {
+                    p.Id,
+                    p.RenterOccupantId,
+                    p.PropertyId,
+                    p.AmountDue,
+                    p.AmountPaid,
+                    p.ExpectedDate,
+                    p.Status
+                })
+                .ToListAsync(cancellationToken);
 
-            // Calculate KPIs
             var totalRevenue = periodPayments.Sum(p => p.AmountPaid);
             var totalExpected = periodPayments.Sum(p => p.AmountDue);
-            
+
             var overduePayments = periodPayments
-                .Where(p => p.Status == PaymentStatus.Late || 
-                           (p.Status == PaymentStatus.Partial && p.ExpectedDate < DateTime.UtcNow))
+                .Where(p => p.Status == PaymentStatus.Late
+                            || (p.Status == PaymentStatus.Partial && p.ExpectedDate.Date < todayUtcDate))
+                .Select(p => new
+                {
+                    p.Id,
+                    p.RenterOccupantId,
+                    p.PropertyId,
+                    p.AmountDue,
+                    p.AmountPaid,
+                    p.ExpectedDate,
+                    RemainingAmount = p.AmountDue - p.AmountPaid
+                })
                 .ToList();
-            
-            var totalOverdue = overduePayments.Sum(p => p.GetRemainingAmount());
+
+            var totalOverdue = overduePayments.Sum(p => p.RemainingAmount);
             var overdueCount = overduePayments.Count;
 
-            var paidCount = periodPayments.Count(p => p.IsPaid());
+            var paidCount = periodPayments.Count(p => p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PaidLate);
             var pendingCount = periodPayments.Count(p => p.Status == PaymentStatus.Pending);
 
-            var collectionRate = totalExpected > 0 
-                ? Math.Round((totalRevenue / totalExpected) * 100, 2) 
-                : 0;
+            var collectionRate = totalExpected > 0
+                ? Math.Round((totalRevenue / totalExpected) * 100m, 2)
+                : 0m;
 
-            // Get upcoming payments (next 7 days)
-            var upcomingPayments = allPayments
-                .Where(p => p.Status == PaymentStatus.Pending && 
-                           p.ExpectedDate >= DateTime.UtcNow.Date &&
-                           p.ExpectedDate <= DateTime.UtcNow.Date.AddDays(7))
+            var upcomingPaymentsRaw = await _readDb.Payments
+                .AsNoTracking()
+                .Where(p => p.Status == PaymentStatus.Pending
+                            && p.ExpectedDate.Date >= todayUtcDate
+                            && p.ExpectedDate.Date <= todayUtcDate.AddDays(7))
                 .OrderBy(p => p.ExpectedDate)
                 .Take(10)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.RenterOccupantId,
+                    p.PropertyId,
+                    p.AmountDue,
+                    p.ExpectedDate
+                })
+                .ToListAsync(cancellationToken);
+
+            var occupantIds = periodPayments.Select(p => p.RenterOccupantId)
+                .Concat(upcomingPaymentsRaw.Select(p => p.RenterOccupantId))
+                .Concat(overduePayments.Select(p => p.RenterOccupantId))
+                .Distinct()
+                .ToList();
+
+            var propertyIds = periodPayments.Select(p => p.PropertyId)
+                .Concat(upcomingPaymentsRaw.Select(p => p.PropertyId))
+                .Concat(overduePayments.Select(p => p.PropertyId))
+                .Distinct()
+                .ToList();
+
+            var tenantDict = await _readDb.Occupants
+                .AsNoTracking()
+                .Where(o => occupantIds.Contains(o.Id))
+                .Select(o => new { o.Id, o.FullName })
+                .ToDictionaryAsync(x => x.Id, x => x.FullName, cancellationToken);
+
+            var propertyDict = await _readDb.Properties
+                .AsNoTracking()
+                .Where(p => propertyIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.Name })
+                .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+
+            var upcomingPayments = upcomingPaymentsRaw
                 .Select(p => new UpcomingPaymentDto
                 {
                     Id = p.Id,
@@ -86,13 +134,12 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
                     PropertyName = propertyDict.GetValueOrDefault(p.PropertyId, "Unknown"),
                     AmountDue = p.AmountDue,
                     ExpectedDate = p.ExpectedDate,
-                    DaysUntilDue = (int)(p.ExpectedDate.Date - DateTime.UtcNow.Date).TotalDays
+                    DaysUntilDue = (int)(p.ExpectedDate.Date - todayUtcDate).TotalDays
                 })
                 .ToList();
 
-            // Get top 5 overdue payments
             var topOverduePayments = overduePayments
-                .OrderByDescending(p => p.GetRemainingAmount())
+                .OrderByDescending(p => p.RemainingAmount)
                 .ThenBy(p => p.ExpectedDate)
                 .Take(5)
                 .Select(p => new OverduePaymentSummaryDto
@@ -104,9 +151,9 @@ public class GetPaymentsDashboardQueryHandler : IRequestHandler<GetPaymentsDashb
                     PropertyName = propertyDict.GetValueOrDefault(p.PropertyId, "Unknown"),
                     AmountDue = p.AmountDue,
                     AmountPaid = p.AmountPaid,
-                    RemainingAmount = p.GetRemainingAmount(),
+                    RemainingAmount = p.RemainingAmount,
                     ExpectedDate = p.ExpectedDate,
-                    DaysLate = (int)(DateTime.UtcNow.Date - p.ExpectedDate.Date).TotalDays
+                    DaysLate = (int)(todayUtcDate - p.ExpectedDate.Date).TotalDays
                 })
                 .ToList();
 

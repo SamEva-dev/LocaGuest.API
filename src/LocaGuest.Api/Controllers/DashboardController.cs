@@ -71,12 +71,12 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("charts/occupancy")]
-    public async Task<IActionResult> GetOccupancyChart([FromQuery] int year)
+    public async Task<IActionResult> GetOccupancyChart([FromQuery] int? month, [FromQuery] int? year)
     {
-        if (year == 0)
-            year = DateTime.UtcNow.Year;
+        var targetMonth = month ?? DateTime.UtcNow.Month;
+        var targetYear = year ?? DateTime.UtcNow.Year;
 
-        var query = new GetOccupancyChartQuery(year);
+        var query = new GetOccupancyChartQuery(targetMonth, targetYear);
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)
@@ -88,12 +88,12 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("charts/revenue")]
-    public async Task<IActionResult> GetRevenueChart([FromQuery] int year)
+    public async Task<IActionResult> GetRevenueChart([FromQuery] int? month, [FromQuery] int? year)
     {
-        if (year == 0)
-            year = DateTime.UtcNow.Year;
+        var targetMonth = month ?? DateTime.UtcNow.Month;
+        var targetYear = year ?? DateTime.UtcNow.Year;
 
-        var query = new GetRevenueChartQuery(year);
+        var query = new GetRevenueChartQuery(targetMonth, targetYear);
         var result = await _mediator.Send(query);
 
         if (!result.IsSuccess)

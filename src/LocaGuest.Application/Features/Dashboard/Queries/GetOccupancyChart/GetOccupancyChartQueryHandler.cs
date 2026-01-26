@@ -2,25 +2,24 @@ using LocaGuest.Application.Common;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
-using LocaGuest.Domain.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 
 namespace LocaGuest.Application.Features.Dashboard.Queries.GetOccupancyChart;
 
 public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQuery, Result<OccupancyChartDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocaGuestReadDbContext _readDb;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<GetOccupancyChartQueryHandler> _logger;
 
     public GetOccupancyChartQueryHandler(
-        IUnitOfWork unitOfWork,
+        ILocaGuestReadDbContext readDb,
         ICurrentUserService currentUserService,
         ILogger<GetOccupancyChartQueryHandler> logger)
     {
-        _unitOfWork = unitOfWork;
+        _readDb = readDb;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -32,66 +31,65 @@ public class GetOccupancyChartQueryHandler : IRequestHandler<GetOccupancyChartQu
             if (!_currentUserService.IsAuthenticated)
                 return Result.Failure<OccupancyChartDto>("User not authenticated");
 
-            var monthlyData = new List<MonthlyOccupancy>();
-            var properties = await _unitOfWork.Properties.GetAllAsync(cancellationToken);
-            var totalUnits = properties.Count();
+            var startDateUtc = new DateTime(request.Year, request.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDateUtcExclusive = startDateUtc.AddMonths(1);
 
-            if (totalUnits == 0)
-            {
-                // Retourner des données vides si aucune propriété
-                for (int month = 1; month <= 12; month++)
+            var totalUnits = await _readDb.Properties
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+
+            var dailyData = new List<DailyOccupancy>();
+
+            // Fetch only contracts that overlap the selected month.
+            var contracts = await _readDb.Contracts
+                .AsNoTracking()
+                .Where(c => (c.Status == ContractStatus.Active || c.Status == ContractStatus.Signed)
+                            && c.StartDate < endDateUtcExclusive
+                            && c.EndDate >= startDateUtc)
+                .Select(c => new
                 {
-                    monthlyData.Add(new MonthlyOccupancy
-                    {
-                        Month = month,
-                        MonthName = new DateTime(request.Year, month, 1).ToString("MMMM", CultureInfo.GetCultureInfo("fr-FR")),
-                        OccupiedUnits = 0,
-                        TotalUnits = 0,
-                        OccupancyRate = 0
-                    });
-                }
-            }
-            else
+                    c.PropertyId,
+                    c.StartDate,
+                    c.EndDate
+                })
+                .ToListAsync(cancellationToken);
+
+            var daysInMonth = DateTime.DaysInMonth(request.Year, request.Month);
+
+            for (var day = 1; day <= daysInMonth; day++)
             {
-                var contracts = await _unitOfWork.Contracts.GetAllAsync(cancellationToken);
+                var date = new DateTime(request.Year, request.Month, day, 0, 0, 0, DateTimeKind.Utc);
 
-                for (int month = 1; month <= 12; month++)
-                {
-                    var firstDayOfMonth = new DateTime(request.Year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-                    var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-
-                    // Compter les contrats actifs pendant ce mois
-                    var activeContractsInMonth = contracts
-                        .Where(c =>
-                            (c.Status == ContractStatus.Active || c.Status == ContractStatus.Signed) &&
-                            c.StartDate <= lastDayOfMonth &&
-                            c.EndDate >= firstDayOfMonth)
+                var occupiedUnits = totalUnits == 0
+                    ? 0
+                    : contracts
+                        .Where(c => c.StartDate <= date && c.EndDate >= date)
+                        .Select(c => c.PropertyId)
+                        .Distinct()
                         .Count();
 
-                    var occupancyRate = totalUnits > 0 ? (decimal)activeContractsInMonth / totalUnits * 100 : 0;
+                var occupancyRate = totalUnits > 0
+                    ? (decimal)occupiedUnits / totalUnits * 100m
+                    : 0m;
 
-                    monthlyData.Add(new MonthlyOccupancy
-                    {
-                        Month = month,
-                        MonthName = firstDayOfMonth.ToString("MMMM", CultureInfo.GetCultureInfo("fr-FR")),
-                        OccupiedUnits = activeContractsInMonth,
-                        TotalUnits = totalUnits,
-                        OccupancyRate = Math.Round(occupancyRate, 1)
-                    });
-                }
+                dailyData.Add(new DailyOccupancy
+                {
+                    Day = day,
+                    Label = $"J{day}",
+                    OccupiedUnits = occupiedUnits,
+                    TotalUnits = totalUnits,
+                    OccupancyRate = Math.Round(occupancyRate, 1)
+                });
             }
 
-            _logger.LogInformation("Retrieved occupancy chart for year {Year}", request.Year);
+            _logger.LogInformation("Retrieved occupancy chart for {Month}/{Year}", request.Month, request.Year);
 
-            return Result.Success(new OccupancyChartDto
-            {
-                MonthlyData = monthlyData
-            });
+            return Result.Success(new OccupancyChartDto { DailyData = dailyData });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving occupancy chart for year {Year}", request.Year);
-            return Result.Failure<OccupancyChartDto>($"Error retrieving occupancy chart: {ex.Message}");
+            _logger.LogError(ex, "Error retrieving occupancy chart for {Month}/{Year}", request.Month, request.Year);
+            return Result.Failure<OccupancyChartDto>("Error retrieving occupancy chart");
         }
     }
 }
