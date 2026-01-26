@@ -836,7 +836,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             ||
             (_orgContext != null
              && _orgContext.OrganizationId.HasValue
-             && EF.Property<Guid>(e, "OrganizationId") == _orgContext.OrganizationId.Value));
+             && EF.Property<Guid>(e, "OrganizationId") == _orgContext.OrganizationId.GetValueOrDefault()));
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
