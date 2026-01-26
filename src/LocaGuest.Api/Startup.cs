@@ -503,6 +503,7 @@ public class Startup
             {
                 var context = scope.ServiceProvider.GetRequiredService<LocaGuestDbContext>();
                 var auditContext = scope.ServiceProvider.GetRequiredService<LocaGuest.Infrastructure.Persistence.AuditDbContext>();
+                var emailingDb = scope.ServiceProvider.GetRequiredService<LocaGuest.Emailing.Persistence.EmailingDbContext>();
 
                 Log.Information("Applying LocaGuest database migrations...");
                 context.Database.Migrate();
@@ -510,6 +511,10 @@ public class Startup
 
                 Log.Information("Applying Audit_Locaguest database migrations...");
                 auditContext.Database.Migrate();
+
+                Log.Information("Applying Emailing database migrations...");
+                emailingDb.Database.Migrate();
+                Log.Information("Emailing database migrations applied successfully");
 
                 var seedPlansConfigured = Configuration.GetValue<bool?>("Billing:SeedPlans");
                 var seedPlans = seedPlansConfigured ?? (env.IsDevelopment() || env.EnvironmentName == "Testing");
