@@ -27,7 +27,7 @@ public class GetOccupancyTrendQueryHandler : IRequestHandler<GetOccupancyTrendQu
         {
             var result = new List<OccupancyDataPointDto>();
             var now = DateTime.UtcNow;
-            var totalProperties = await _unitOfWork.Properties.Query().CountAsync(cancellationToken);
+            var totalProperties = await _unitOfWork.Properties.Query(asNoTracking: true).CountAsync(cancellationToken);
 
             if (totalProperties == 0)
             {
@@ -51,7 +51,7 @@ public class GetOccupancyTrendQueryHandler : IRequestHandler<GetOccupancyTrendQu
                 var dayEnd = dayStart.AddDays(1);
 
                 // Compter les contrats actifs ce jour-là
-                var activeContractsCount = await _unitOfWork.Contracts.Query()
+                var activeContractsCount = await _unitOfWork.Contracts.Query(asNoTracking: true)
                     .Where(c => c.Status == ContractStatus.Active &&
                                 c.StartDate <= dayEnd && 
                                 c.EndDate >= dayStart)

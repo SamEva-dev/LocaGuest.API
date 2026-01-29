@@ -27,7 +27,7 @@ public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuer
             var now = DateTime.UtcNow;
             var threeMonthsFromNow = now.AddMonths(3);
 
-            var activeContracts = await _unitOfWork.Contracts.Query()
+            var activeContracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.Status == ContractStatus.Active)
                 .ToListAsync(cancellationToken);
 
@@ -36,7 +36,7 @@ public class GetContractStatsQueryHandler : IRequestHandler<GetContractStatsQuer
 
             var monthlyRevenue = activeContracts.Sum(c => c.Rent);
 
-            var totalTenants = await _unitOfWork.Contracts.Query()
+            var totalTenants = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.Status == ContractStatus.Active)
                 .Select(c => c.RenterOccupantId)
                 .Distinct()

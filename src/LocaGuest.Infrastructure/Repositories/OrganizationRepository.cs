@@ -18,10 +18,13 @@ public class OrganizationRepository : IOrganizationRepository
         _context = context;
     }
 
-    public async Task<Organization?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Organization?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Organizations
-            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        IQueryable<Organization> query = _context.Organizations;
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
     public async Task<Organization?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
@@ -30,16 +33,18 @@ public class OrganizationRepository : IOrganizationRepository
             .FirstOrDefaultAsync(o => o.Email == email, cancellationToken);
     }
 
-    public async Task<List<Organization>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Organization>> GetAllAsync(CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Organizations
-            .OrderBy(o => o.Number)
-            .ToListAsync(cancellationToken);
+        IQueryable<Organization> query = _context.Organizations;
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.OrderBy(o => o.Number).ToListAsync(cancellationToken);
     }
 
-    public IQueryable<Organization> Query()
+    public IQueryable<Organization> Query(bool asNoTracking = false)
     {
-        return _context.Organizations.AsQueryable();
+        return asNoTracking ? _context.Organizations.AsNoTracking().AsQueryable() : _context.Organizations.AsQueryable();
     }
 
     public void Add(Organization organization)

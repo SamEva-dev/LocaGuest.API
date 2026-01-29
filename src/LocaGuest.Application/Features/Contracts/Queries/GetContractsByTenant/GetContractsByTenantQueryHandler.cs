@@ -32,7 +32,7 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
                 return Result.Failure<List<ContractDto>>("Invalid tenant ID format");
             }
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             if (tenant == null)
             {
                 return Result.Failure<List<ContractDto>>("Tenant not found");
@@ -44,7 +44,7 @@ public class GetContractsByTenantQueryHandler : IRequestHandler<GetContractsByTe
             
             foreach (var contract in contracts)
             {
-                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
 
                 var effectiveResult = await _effectiveContractStateResolver.ResolveAsync(
                     contract.Id,

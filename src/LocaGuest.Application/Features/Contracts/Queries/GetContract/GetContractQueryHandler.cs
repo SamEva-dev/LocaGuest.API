@@ -23,12 +23,12 @@ public class GetContractQueryHandler : IRequestHandler<GetContractQuery, Result<
     {
         try
         {
-            var contract = await _unitOfWork.Contracts.GetByIdAsync(request.ContractId, cancellationToken);
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(request.ContractId, cancellationToken, asNoTracking: true);
             if (contract == null)
                 return Result.Failure<ContractDto>("Contract not found");
 
-            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken, asNoTracking: true);
 
             var dto = new ContractDto
             {

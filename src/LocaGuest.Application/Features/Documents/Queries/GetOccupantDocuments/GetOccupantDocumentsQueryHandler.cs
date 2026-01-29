@@ -24,10 +24,10 @@ public class GetOccupantDocumentsQueryHandler : IRequestHandler<GetOccupantDocum
         try
         {
             var occupantId = Guid.Parse(request.OccupantId);
-            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(occupantId, cancellationToken);
+            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(occupantId, cancellationToken, asNoTracking: true);
 
             // Load occupant name
-            var occupant = await _unitOfWork.Occupants.GetByIdAsync(occupantId, cancellationToken);
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(occupantId, cancellationToken, asNoTracking: true);
             
             var documentDtos = documents.Select(d => new DocumentDto
             {

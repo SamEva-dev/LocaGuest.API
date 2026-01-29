@@ -26,7 +26,7 @@ public class GetOccupantsQueryHandler : IRequestHandler<GetOccupantsQuery, Resul
     {
         try
         {
-            var query = _unitOfWork.Occupants.Query();
+            var query = _unitOfWork.Occupants.Query(asNoTracking: true);
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(request.Search))

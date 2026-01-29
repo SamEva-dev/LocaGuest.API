@@ -28,13 +28,13 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
                 return Result.Failure<List<PaymentDto>>("Invalid property ID format");
             }
 
-            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken);
+            var property = await _unitOfWork.Properties.GetByIdAsync(propertyId, cancellationToken, asNoTracking: true);
             if (property == null)
             {
                 return Result.Failure<List<PaymentDto>>("Property not found");
             }
 
-            var payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken);
+            var payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken, asNoTracking: true);
 
             // Enrichir avec les noms de locataires
             var OccupantIds = payments.Select(p => p.RenterOccupantId).Distinct();
@@ -42,7 +42,7 @@ public class GetPaymentsByPropertyQueryHandler : IRequestHandler<GetPaymentsByPr
             
             foreach (var OccupantId in OccupantIds)
             {
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken, asNoTracking: true);
                 if (tenant != null)
                 {
                     tenants[OccupantId] = tenant.FullName;

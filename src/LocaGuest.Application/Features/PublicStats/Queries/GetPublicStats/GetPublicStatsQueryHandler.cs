@@ -24,27 +24,23 @@ public class GetPublicStatsQueryHandler : IRequestHandler<GetPublicStatsQuery, R
     {
         try
         {
-            var averageRating = await _unitOfWork.SatisfactionFeedbacks.Query()
+            var averageRating = await _unitOfWork.SatisfactionFeedbacks.Query(asNoTracking: true)
                 .IgnoreQueryFilters()
-                .AsNoTracking()
                 .Select(x => (double?)x.Rating)
                 .AverageAsync(cancellationToken);
 
-            var propertiesCount = await _unitOfWork.Properties.Query()
+            var propertiesCount = await _unitOfWork.Properties.Query(asNoTracking: true)
                 .IgnoreQueryFilters()
-                .AsNoTracking()
                 .CountAsync(cancellationToken);
 
             // Count all occupants/tenants as users
-            var occupantsCount = await _unitOfWork.Occupants.Query()
+            var occupantsCount = await _unitOfWork.Occupants.Query(asNoTracking: true)
                 .IgnoreQueryFilters()
-                .AsNoTracking()
                 .CountAsync(cancellationToken);
 
             // Public endpoint: must work without tenant context
-            var organizationsCount = await _unitOfWork.Organizations.Query()
+            var organizationsCount = await _unitOfWork.Organizations.Query(asNoTracking: true)
                 .IgnoreQueryFilters()
-                .AsNoTracking()
                 .CountAsync(cancellationToken);
 
             var avg = averageRating ?? 4.8; // fallback if no votes yet

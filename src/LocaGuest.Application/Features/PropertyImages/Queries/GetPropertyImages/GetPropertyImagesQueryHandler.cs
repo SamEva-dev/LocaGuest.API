@@ -26,7 +26,7 @@ public class GetPropertyImagesQueryHandler : IRequestHandler<GetPropertyImagesQu
     public async Task<Result<List<PropertyImageDto>>> Handle(GetPropertyImagesQuery request, CancellationToken cancellationToken)
     {
         // Vérifier que la propriété existe et appartient au tenant
-        var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken);
+        var property = await _unitOfWork.Properties.GetByIdAsync(request.PropertyId, cancellationToken, asNoTracking: true);
         if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure<List<PropertyImageDto>>("Propriété non trouvée");
@@ -35,7 +35,8 @@ public class GetPropertyImagesQueryHandler : IRequestHandler<GetPropertyImagesQu
         // Récupérer toutes les images de la propriété
         var images = await _unitOfWork.PropertyImages.FindAsync(
             i => i.PropertyId == request.PropertyId, 
-            cancellationToken);
+            cancellationToken,
+            asNoTracking: true);
 
         var imageDtos = images.Select(img => new PropertyImageDto
         {

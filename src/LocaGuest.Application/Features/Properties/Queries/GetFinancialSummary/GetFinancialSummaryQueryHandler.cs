@@ -28,13 +28,13 @@ public class GetFinancialSummaryQueryHandler : IRequestHandler<GetFinancialSumma
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var contracts = await _unitOfWork.Contracts.Query()
+            var contracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.PropertyId == propertyId)
                 .ToListAsync(cancellationToken);
 
             var activeContracts = contracts.Count(c => c.Status == ContractStatus.Active);
 
-            var allPayments = await _unitOfWork.Payments.Query()
+            var allPayments = await _unitOfWork.Payments.Query(asNoTracking: true)
                 .Where(p => p.PropertyId == propertyId)
                 .ToListAsync(cancellationToken);
 

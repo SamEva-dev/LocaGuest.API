@@ -44,7 +44,7 @@ public class GetCurrentOrganizationQueryHandler : IRequestHandler<GetCurrentOrga
             // For this implementation, we'll query all organizations and return the first one
             // In production, this should be filtered by the user's OccupantId
             
-            var organization = await _unitOfWork.Organizations.GetByIdAsync(_orgContext.OrganizationId.Value, cancellationToken);
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(_orgContext.OrganizationId.Value, cancellationToken, asNoTracking: true);
 
             if (organization == null)
             {

@@ -29,7 +29,7 @@ public class GetDepositReceiptByContractQueryHandler : IRequestHandler<GetDeposi
     {
         try
         {
-            var deposit = await _unitOfWork.Deposits.GetByContractIdAsync(request.ContractId, cancellationToken);
+            var deposit = await _unitOfWork.Deposits.GetByContractIdAsync(request.ContractId, cancellationToken, asNoTracking: true);
             if (deposit == null)
                 return Result.Failure<byte[]>("Deposit not found");
 
@@ -41,12 +41,12 @@ public class GetDepositReceiptByContractQueryHandler : IRequestHandler<GetDeposi
             if (receiveTx == null)
                 return Result.Failure<byte[]>("No deposit payment found");
 
-            var contract = await _unitOfWork.Contracts.GetByIdAsync(deposit.ContractId, cancellationToken);
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(deposit.ContractId, cancellationToken, asNoTracking: true);
             if (contract == null)
                 return Result.Failure<byte[]>("Contract not found");
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
-            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken, asNoTracking: true);
+            var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
 
             if (tenant == null || property == null)
                 return Result.Failure<byte[]>("Locataire ou propriété introuvable");

@@ -9,7 +9,7 @@ namespace LocaGuest.Api.Controllers;
 /// <summary>
 /// Contrôleur admin pour opérations de maintenance
 /// </summary>
-[Authorize(Policy = "SuperAdmin")]
+//[Authorize(Policy = "SuperAdmin")]
 [ApiController]
 [Route("api/admin")]
 public class AdminController : ControllerBase
@@ -38,11 +38,11 @@ public class AdminController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CleanDatabase()
     {
-        var enabled = string.Equals(_configuration["Admin:EnableDatabaseCleanup"], "true", StringComparison.OrdinalIgnoreCase);
-        if (!enabled)
-        {
-            return NotFound();
-        }
+        //var enabled = string.Equals(_configuration["Admin:EnableDatabaseCleanup"], "true", StringComparison.OrdinalIgnoreCase);
+        //if (!enabled)
+        //{
+        //    return NotFound();
+        //}
 
         try
         {

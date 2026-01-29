@@ -24,7 +24,7 @@ public class GetOrganizationByIdQueryHandler : IRequestHandler<GetOrganizationBy
     {
         try
         {
-            var organization = await _unitOfWork.Organizations.GetByIdAsync(request.OrganizationId, cancellationToken);
+            var organization = await _unitOfWork.Organizations.GetByIdAsync(request.OrganizationId, cancellationToken, asNoTracking: true);
 
             if (organization == null)
             {

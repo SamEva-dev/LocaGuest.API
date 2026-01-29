@@ -28,19 +28,19 @@ public class GetPaymentsByTenantQueryHandler : IRequestHandler<GetPaymentsByTena
                 return Result.Failure<List<PaymentDto>>("Invalid tenant ID format");
             }
 
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             if (tenant == null)
             {
                 return Result.Failure<List<PaymentDto>>("Tenant not found");
             }
 
-            var payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken);
+            var payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             var paymentDtos = new List<PaymentDto>();
 
             foreach (var payment in payments)
             {
                 // Récupérer le contrat pour avoir PaymentDueDay
-                var contract = await _unitOfWork.Contracts.GetByIdAsync(payment.ContractId, cancellationToken);
+                var contract = await _unitOfWork.Contracts.GetByIdAsync(payment.ContractId, cancellationToken, asNoTracking: true);
                 var paymentDueDay = contract?.PaymentDueDay ?? 5;
 
                 // Calculer la date limite réelle de paiement

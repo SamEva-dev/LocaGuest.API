@@ -24,10 +24,10 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
         try
         {
             var OccupantId = Guid.Parse(request.OccupantId);
-            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken);
+            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken, asNoTracking: true);
 
             // Load tenant and property names
-            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken);
+            var tenant = await _unitOfWork.Occupants.GetByIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             
             var documentDtos = documents.Select(d => new DocumentDto
             {

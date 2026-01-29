@@ -30,13 +30,13 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var paymentCountsByContract = await _unitOfWork.Payments.Query()
+            var paymentCountsByContract = await _unitOfWork.Payments.Query(asNoTracking: true)
                 .Where(p => p.PropertyId == propertyId)
                 .GroupBy(p => p.ContractId)
                 .Select(g => new { ContractId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.ContractId, x => x.Count, cancellationToken);
 
-            var contracts = await _unitOfWork.Contracts.Query()
+            var contracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.PropertyId == propertyId)
                 .OrderByDescending(c => c.StartDate)
                 .Select(c => new ContractDto
@@ -57,7 +57,7 @@ public class GetPropertyContractsQueryHandler : IRequestHandler<GetPropertyContr
 
             // Charger les noms des locataires
             var OccupantIds = contracts.Select(c => c.OccupantId).Distinct().ToList();
-            var tenants = await _unitOfWork.Occupants.Query()
+            var tenants = await _unitOfWork.Occupants.Query(asNoTracking: true)
                 .Where(t => OccupantIds.Contains(t.Id))
                 .Select(t => new { t.Id, t.FullName })
                 .ToListAsync(cancellationToken);

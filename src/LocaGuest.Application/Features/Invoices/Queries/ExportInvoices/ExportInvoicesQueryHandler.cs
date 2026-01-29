@@ -26,7 +26,7 @@ public class ExportInvoicesQueryHandler : IRequestHandler<ExportInvoicesQuery, R
         try
         {
             // Build query
-            var query = _unitOfWork.RentInvoices.Query();
+            var query = _unitOfWork.RentInvoices.Query(asNoTracking: true);
 
             if (request.OccupantId.HasValue)
                 query = query.Where(i => i.RenterOccupantId == request.OccupantId.Value);

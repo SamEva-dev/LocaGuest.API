@@ -38,7 +38,7 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
 
             // 1. Prochaines échéances de loyer (paiements attendus)
             var activeContracts = await _unitOfWork.Contracts
-                .GetAllAsync(cancellationToken);
+                .GetAllAsync(cancellationToken, asNoTracking: true);
 
             var contractsList = activeContracts
                 .Where(c => c.Status == ContractStatus.Active)
@@ -46,8 +46,8 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
 
             foreach (var contract in contractsList)
             {
-                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken, asNoTracking: true);
 
                 if (property == null || tenant == null)
                     continue;
@@ -83,8 +83,8 @@ public class GetDeadlinesQueryHandler : IRequestHandler<GetDeadlinesQuery, Resul
 
             foreach (var contract in expiringContracts)
             {
-                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken, asNoTracking: true);
 
                 if (property == null || tenant == null)
                     continue;

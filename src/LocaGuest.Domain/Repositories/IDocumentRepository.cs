@@ -4,7 +4,7 @@ namespace LocaGuest.Domain.Repositories;
 
 public interface IDocumentRepository : IRepository<Document>
 {
-    Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default, bool asNoTracking = false);
+    Task<IEnumerable<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default, bool asNoTracking = false);
+    Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default, bool asNoTracking = false);
 }

@@ -25,13 +25,13 @@ public class GetPropertyPerformanceQueryHandler : IRequestHandler<GetPropertyPer
     {
         try
         {
-            var properties = await _unitOfWork.Properties.Query().ToListAsync(cancellationToken);
+            var properties = await _unitOfWork.Properties.Query(asNoTracking: true).ToListAsync(cancellationToken);
             var result = new List<PropertyPerformanceDto>();
 
             foreach (var property in properties)
             {
                 // Contrats actifs pour cette propriété
-                var activeContracts = await _unitOfWork.Contracts.Query()
+                var activeContracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                     .Where(c => c.PropertyId == property.Id && 
                                c.Status == ContractStatus.Active &&
                                c.EndDate >= DateTime.UtcNow &&

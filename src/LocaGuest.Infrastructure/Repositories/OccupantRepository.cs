@@ -11,16 +11,21 @@ public class OccupantRepository : Repository<Occupant>, IOccupantRepository
     {
     }
 
-    public async Task<Occupant?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Occupant?> GetByEmailAsync(string email, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet
-            .FirstOrDefaultAsync(t => t.Email == email, cancellationToken);
+        IQueryable<Occupant> query = _dbSet;
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(t => t.Email == email, cancellationToken);
     }
 
-    public async Task<IEnumerable<Occupant>> GetActiveOccupantsAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Occupant>> GetActiveOccupantsAsync(CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet
-            .Where(t => t.Status == OccupantStatus.Active)
-            .ToListAsync(cancellationToken);
+        IQueryable<Occupant> query = _dbSet.Where(t => t.Status == OccupantStatus.Active);
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
     }
 }

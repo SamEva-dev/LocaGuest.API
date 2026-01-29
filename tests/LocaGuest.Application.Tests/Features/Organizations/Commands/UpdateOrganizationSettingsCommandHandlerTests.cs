@@ -45,7 +45,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
             "test@org.com");
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(organization);
 
         _unitOfWorkMock
@@ -94,7 +94,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
             "test@org.com");
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(organization);
 
         _unitOfWorkMock
@@ -131,7 +131,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
         var organizationId = Guid.NewGuid();
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync((Organization?)null);
 
         var command = new UpdateOrganizationSettingsCommand
@@ -183,7 +183,7 @@ public class UpdateOrganizationSettingsCommandHandlerTests : BaseApplicationTest
             "test@org.com");
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(organization);
 
         _unitOfWorkMock

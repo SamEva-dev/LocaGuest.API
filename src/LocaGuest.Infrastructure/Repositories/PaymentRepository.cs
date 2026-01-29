@@ -11,47 +11,66 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
     {
     }
 
-    public async Task<List<Payment>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<List<Payment>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Payment>()
+        IQueryable<Payment> query = _context.Set<Payment>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query
             .Where(p => p.RenterOccupantId == tenantId)
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Payment>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
+    public async Task<List<Payment>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Payment>()
+        IQueryable<Payment> query = _context.Set<Payment>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query
             .Where(p => p.PropertyId == propertyId)
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Payment>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+    public async Task<List<Payment>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Payment>()
+        IQueryable<Payment> query = _context.Set<Payment>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query
             .Where(p => p.ContractId == contractId)
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Payment?> GetByMonthYearAsync(Guid contractId, Guid tenantId, int month, int year, CancellationToken cancellationToken = default)
+    public async Task<Payment?> GetByMonthYearAsync(Guid contractId, Guid tenantId, int month, int year, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Payment>()
-            .FirstOrDefaultAsync(p => 
-                p.ContractId == contractId && 
-                p.RenterOccupantId == tenantId &&
-                p.Month == month && 
-                p.Year == year,
-                cancellationToken);
+        IQueryable<Payment> query = _context.Set<Payment>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(p =>
+            p.ContractId == contractId &&
+            p.RenterOccupantId == tenantId &&
+            p.Month == month &&
+            p.Year == year,
+            cancellationToken);
     }
 
-    public async Task<List<Payment>> GetLatePaymentsAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Payment>> GetLatePaymentsAsync(CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Payment>()
+        IQueryable<Payment> query = _context.Set<Payment>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query
             .Where(p => p.Status == PaymentStatus.Late || p.Status == PaymentStatus.PaidLate)
             .OrderByDescending(p => p.ExpectedDate)
             .ToListAsync(cancellationToken);

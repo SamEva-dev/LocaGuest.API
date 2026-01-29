@@ -25,7 +25,7 @@ public class GetContractTerminationEligibilityQueryHandler : IRequestHandler<Get
     {
         try
         {
-            var contract = await _unitOfWork.Contracts.GetByIdAsync(request.ContractId, cancellationToken);
+            var contract = await _unitOfWork.Contracts.GetByIdAsync(request.ContractId, cancellationToken, asNoTracking: true);
             if (contract == null)
                 return Result.Failure<ContractTerminationEligibilityDto>("Contract not found");
 
@@ -38,7 +38,7 @@ public class GetContractTerminationEligibilityQueryHandler : IRequestHandler<Get
                 });
             }
 
-            var inventories = await _unitOfWork.InventoryEntries.Query()
+            var inventories = await _unitOfWork.InventoryEntries.Query(asNoTracking: true)
                 .Where(i => i.ContractId == contract.Id)
                 .Select(i => new { EntryId = (Guid?)i.Id, i.IsFinalized })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -46,7 +46,7 @@ public class GetContractTerminationEligibilityQueryHandler : IRequestHandler<Get
             var hasEntry = inventories != null;
             var entryId = inventories?.EntryId;
 
-            var exit = await _unitOfWork.InventoryExits.Query()
+            var exit = await _unitOfWork.InventoryExits.Query(asNoTracking: true)
                 .Where(i => i.ContractId == contract.Id)
                 .Select(i => new { ExitId = (Guid?)i.Id })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -54,7 +54,7 @@ public class GetContractTerminationEligibilityQueryHandler : IRequestHandler<Get
             var hasExit = exit != null;
             var exitId = exit?.ExitId;
 
-            var payments = await _unitOfWork.Payments.GetByContractIdAsync(contract.Id, cancellationToken);
+            var payments = await _unitOfWork.Payments.GetByContractIdAsync(contract.Id, cancellationToken, asNoTracking: true);
 
             var now = DateTime.UtcNow.Date;
             var overduePayments = payments.Where(p =>

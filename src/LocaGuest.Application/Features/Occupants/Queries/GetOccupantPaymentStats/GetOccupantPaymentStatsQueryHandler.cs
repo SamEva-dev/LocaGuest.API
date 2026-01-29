@@ -24,11 +24,11 @@ public class GetOccupantPaymentStatsQueryHandler : IRequestHandler<GetOccupantPa
     {
         try
         {
-            var occupant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken);
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken, asNoTracking: true);
             if (occupant == null)
                 return Result.Failure<OccupantPaymentStatsDto>($"Occupant with ID {request.OccupantId} not found");
 
-            var allPayments = await _unitOfWork.Payments.Query()
+            var allPayments = await _unitOfWork.Payments.Query(asNoTracking: true)
                 .Where(p => p.RenterOccupantId == request.OccupantId)
                 .ToListAsync(cancellationToken);
 

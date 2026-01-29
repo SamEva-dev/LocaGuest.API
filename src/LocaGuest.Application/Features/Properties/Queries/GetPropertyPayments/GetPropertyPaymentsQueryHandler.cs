@@ -26,7 +26,7 @@ public class GetPropertyPaymentsQueryHandler : IRequestHandler<GetPropertyPaymen
         {
             var propertyId = Guid.Parse(request.PropertyId);
 
-            var payments = await _unitOfWork.Payments.Query()
+            var payments = await _unitOfWork.Payments.Query(asNoTracking: true)
                 .Where(p => p.PropertyId == propertyId)
                 .OrderByDescending(p => p.PaymentDate)
                 .Select(p => new PaymentDto

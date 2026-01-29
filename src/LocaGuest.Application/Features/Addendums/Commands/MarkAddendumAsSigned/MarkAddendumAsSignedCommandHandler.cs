@@ -1,12 +1,13 @@
-using System.Text.Json;
 using LocaGuest.Application.Common;
+using LocaGuest.Application.Services;
 using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.DocumentAggregate;
 using LocaGuest.Domain.Aggregates.PaymentAggregate;
 using LocaGuest.Domain.Repositories;
-using LocaGuest.Application.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.Contracts;
+using System.Text.Json;
 
 namespace LocaGuest.Application.Features.Addendums.Commands.MarkAddendumAsSigned;
 
@@ -70,6 +71,7 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
                 if (doc.Status == DocumentStatus.Draft)
                 {
                     doc.MarkAsSigned(signedDate, request.SignedBy);
+                    _unitOfWork.Documents.Update(doc);
                 }
             }
 
@@ -80,6 +82,7 @@ public class MarkAddendumAsSignedCommandHandler : IRequestHandler<MarkAddendumAs
                     return Result.Failure<Guid>(applyResult.ErrorMessage ?? "Unable to apply occupants changes");
             }
 
+            _unitOfWork.Addendums.Update(addendum);
             await _unitOfWork.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Addendum {AddendumId} marked as signed", addendum.Id);

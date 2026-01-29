@@ -41,7 +41,7 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
     public async Task Handle_WhenContractNotFound_ReturnsFailure()
     {
         var id = Guid.NewGuid();
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync((Contract?)null);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>(), false)).ReturnsAsync((Contract?)null);
 
         var result = await _handler.Handle(new DeleteContractCommand(id), CancellationToken.None);
 
@@ -59,7 +59,7 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
         var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
         contract.MarkAsSigned();
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
 
         var result = await _handler.Handle(new DeleteContractCommand(contractId), CancellationToken.None);
 
@@ -90,11 +90,11 @@ public class DeleteContractCommandHandlerTests : BaseApplicationTestFixture
         property.AddRoom("R1", 400m);
         property.AddRoom("R2", 400m);
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
-        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync(property);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
+        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(property);
 
-        _paymentRepositoryMock.Setup(x => x.GetByContractIdAsync(contract.Id, It.IsAny<CancellationToken>())).ReturnsAsync(new List<LocaGuest.Domain.Aggregates.PaymentAggregate.Payment>());
-        _documentRepositoryMock.Setup(x => x.GetByContractIdAsync(contract.Id, It.IsAny<CancellationToken>())).ReturnsAsync(Array.Empty<LocaGuest.Domain.Aggregates.DocumentAggregate.Document>());
+        _paymentRepositoryMock.Setup(x => x.GetByContractIdAsync(contract.Id, It.IsAny<CancellationToken>(), false)).ReturnsAsync(new List<LocaGuest.Domain.Aggregates.PaymentAggregate.Payment>());
+        _documentRepositoryMock.Setup(x => x.GetByContractIdAsync(contract.Id, It.IsAny<CancellationToken>(), false)).ReturnsAsync(Array.Empty<LocaGuest.Domain.Aggregates.DocumentAggregate.Document>());
 
         var result = await _handler.Handle(new DeleteContractCommand(contractId), CancellationToken.None);
 

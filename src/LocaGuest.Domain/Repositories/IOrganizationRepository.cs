@@ -7,10 +7,10 @@ namespace LocaGuest.Domain.Repositories;
 /// </summary>
 public interface IOrganizationRepository
 {
-    Task<Organization?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Organization?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default, bool asNoTracking = false);
     Task<Organization?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-    Task<List<Organization>> GetAllAsync(CancellationToken cancellationToken = default);
-    IQueryable<Organization> Query();
+    Task<List<Organization>> GetAllAsync(CancellationToken cancellationToken = default, bool asNoTracking = false);
+    IQueryable<Organization> Query(bool asNoTracking = false);
     void Add(Organization organization);
     void Update(Organization organization);
     void Delete(Organization organization);

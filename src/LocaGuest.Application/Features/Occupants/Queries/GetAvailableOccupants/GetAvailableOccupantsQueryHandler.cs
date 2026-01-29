@@ -38,7 +38,7 @@ public class GetAvailableOccupantsQueryHandler : IRequestHandler<GetAvailableOcc
                 return Result.Failure<List<OccupantDto>>($"Invalid property ID format: {request.PropertyId}");
             }
 
-            var propertyExists = await _unitOfWork.Properties.Query()
+            var propertyExists = await _unitOfWork.Properties.Query(asNoTracking: true)
                 .AnyAsync(
                     p => p.Id == propertyId && p.OrganizationId == _orgContext.OrganizationId.Value,
                     cancellationToken);
@@ -49,7 +49,7 @@ public class GetAvailableOccupantsQueryHandler : IRequestHandler<GetAvailableOcc
             }
 
             // ✅ Récupérer UNIQUEMENT les occupants qui ne sont associés à AUCUN bien
-            var availableOccupants = await _unitOfWork.Occupants.Query()
+            var availableOccupants = await _unitOfWork.Occupants.Query(asNoTracking: true)
                 .Where(t => t.OrganizationId == _orgContext.OrganizationId.Value && t.PropertyId == null)
                 .Select(t => new OccupantDto
                 {

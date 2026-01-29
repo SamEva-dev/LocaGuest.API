@@ -28,7 +28,7 @@ public class GetAddendumsQueryHandler : IRequestHandler<GetAddendumsQuery, Resul
             var page = request.Page < 1 ? 1 : request.Page;
             var pageSize = request.PageSize is < 1 ? 50 : request.PageSize;
 
-            var query = _unitOfWork.Addendums.Query().AsNoTracking();
+            var query = _unitOfWork.Addendums.Query(asNoTracking: true);
 
             if (request.ContractId.HasValue)
                 query = query.Where(x => x.ContractId == request.ContractId);

@@ -30,7 +30,7 @@ public class GetOccupantQueryHandler : IRequestHandler<GetOccupantQuery, Result<
                 return Result.Failure<OccupantDetailDto>($"Invalid occupant ID format: {request.Id}");
             }
 
-            var occupant = await _unitOfWork.Occupants.GetByIdAsync(occupantId, cancellationToken);
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(occupantId, cancellationToken, asNoTracking: true);
 
             if (occupant == null)
             {
@@ -68,7 +68,7 @@ public class GetOccupantQueryHandler : IRequestHandler<GetOccupantQuery, Result<
                 Notes = occupant.Notes
             };
 
-            var hasIdentityDocument = await _unitOfWork.Documents.Query()
+            var hasIdentityDocument = await _unitOfWork.Documents.Query(asNoTracking: true)
                 .AnyAsync(d => !d.IsArchived
                                && d.AssociatedOccupantId == occupantId
                                && d.Type == DocumentType.PieceIdentite,

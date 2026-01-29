@@ -24,11 +24,11 @@ public class GetOccupantContractsQueryHandler : IRequestHandler<GetOccupantContr
     {
         try
         {
-            var occupant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken);
+            var occupant = await _unitOfWork.Occupants.GetByIdAsync(request.OccupantId, cancellationToken, asNoTracking: true);
             if (occupant == null)
                 return Result.Failure<List<ContractListDto>>($"Occupant with ID {request.OccupantId} not found");
 
-            var contracts = await _unitOfWork.Contracts.Query()
+            var contracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.RenterOccupantId == request.OccupantId)
                 .OrderByDescending(c => c.StartDate)
                 .ToListAsync(cancellationToken);
@@ -43,8 +43,8 @@ public class GetOccupantContractsQueryHandler : IRequestHandler<GetOccupantContr
                 PropertyName = propertyCache.TryGetValue(c.PropertyId, out var p)
                     ? p.Name
                     : (propertyCache[c.PropertyId] = (
-                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken).GetAwaiter().GetResult()?.Name ?? string.Empty,
-                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken).GetAwaiter().GetResult()?.Code ?? string.Empty
+                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken, asNoTracking: true).GetAwaiter().GetResult()?.Name ?? string.Empty,
+                        _unitOfWork.Properties.GetByIdAsync(c.PropertyId, cancellationToken, asNoTracking: true).GetAwaiter().GetResult()?.Code ?? string.Empty
                     )).Name,
                 PropertyCode = propertyCache.TryGetValue(c.PropertyId, out var p2)
                     ? p2.Code

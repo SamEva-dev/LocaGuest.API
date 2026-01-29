@@ -29,7 +29,7 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageF
     public async Task<Result<ImageFileResult>> Handle(GetImageQuery request, CancellationToken cancellationToken)
     {
         // Récupérer l'image depuis la DB
-        var images = await _unitOfWork.PropertyImages.FindAsync(i => i.Id == request.ImageId, cancellationToken);
+        var images = await _unitOfWork.PropertyImages.FindAsync(i => i.Id == request.ImageId, cancellationToken, asNoTracking: true);
         var image = images.FirstOrDefault();
 
         if (image == null)
@@ -38,7 +38,7 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageF
         }
 
         // Vérifier que l'image appartient à une propriété du tenant
-        var property = await _unitOfWork.Properties.GetByIdAsync(image.PropertyId, cancellationToken);
+        var property = await _unitOfWork.Properties.GetByIdAsync(image.PropertyId, cancellationToken, asNoTracking: true);
         if (property == null || !_orgContext.OrganizationId.HasValue || property.OrganizationId != _orgContext.OrganizationId.Value)
         {
             return Result.Failure<ImageFileResult>("Accès non autorisé");

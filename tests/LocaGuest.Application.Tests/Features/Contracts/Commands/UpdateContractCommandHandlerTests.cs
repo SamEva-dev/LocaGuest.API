@@ -53,15 +53,15 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             deposit: null);
 
         _contractRepositoryMock
-            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(contract);
 
         _propertyRepositoryMock
-            .Setup(x => x.GetByIdAsync(propertyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(propertyId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.PropertyAggregate.Property>());
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.OccupantAggregate.Occupant>());
 
         _unitOfWorkMock
@@ -118,15 +118,15 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             deposit: 2000m);
 
         _contractRepositoryMock
-            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(contract);
 
         _propertyRepositoryMock
-            .Setup(x => x.GetByIdAsync(propertyId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(propertyId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.PropertyAggregate.Property>());
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(OccupantId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(Fixture.Create<LocaGuest.Domain.Aggregates.OccupantAggregate.Occupant>());
 
         _unitOfWorkMock
@@ -162,7 +162,7 @@ public class UpdateContractCommandHandlerTests : BaseApplicationTestFixture
             1000m);
 
         _contractRepositoryMock
-            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(contract);
 
         var command = new UpdateContractCommand

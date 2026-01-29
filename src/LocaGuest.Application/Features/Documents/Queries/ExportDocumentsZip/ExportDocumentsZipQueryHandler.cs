@@ -24,7 +24,7 @@ public class ExportDocumentsZipQueryHandler : IRequestHandler<ExportDocumentsZip
         try
         {
             var OccupantId = Guid.Parse(request.OccupantId);
-            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken);
+            var documents = await _unitOfWork.Documents.GetByTenantIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             var documentsList = documents.ToList();
 
             using var memoryStream = new MemoryStream();

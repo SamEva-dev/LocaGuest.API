@@ -25,7 +25,7 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
         try
         {
             var spec = new ContractsSpec(request.Status, request.Page, request.PageSize);
-            var contracts = await _unitOfWork.Contracts.FindAsync(spec.Criteria, cancellationToken);
+            var contracts = await _unitOfWork.Contracts.FindAsync(spec.Criteria, cancellationToken, asNoTracking: true);
             var total = await _unitOfWork.Contracts.CountAsync(spec.Criteria, cancellationToken);
 
             var dtos = new List<ContractListDto>();
@@ -33,8 +33,8 @@ public class GetContractsQueryHandler : IRequestHandler<GetContractsQuery, Resul
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize))
             {
-                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken);
-                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken);
+                var property = await _unitOfWork.Properties.GetByIdAsync(contract.PropertyId, cancellationToken, asNoTracking: true);
+                var tenant = await _unitOfWork.Occupants.GetByIdAsync(contract.RenterOccupantId, cancellationToken, asNoTracking: true);
 
                 dtos.Add(new ContractListDto
                 {

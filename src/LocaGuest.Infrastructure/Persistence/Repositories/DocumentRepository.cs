@@ -12,29 +12,45 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
     {
     }
 
-    public async Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Document>> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet
+        IQueryable<Document> query = _dbSet
             .Where(d => d.AssociatedOccupantId == tenantId && !d.IsArchived)
-            .OrderByDescending(d => d.CreatedAt)
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(d => d.CreatedAt);
+
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Document>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet
+        IQueryable<Document> query = _dbSet
             .Where(d => d.PropertyId == propertyId && !d.IsArchived)
-            .OrderByDescending(d => d.CreatedAt)
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(d => d.CreatedAt);
+
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Document>> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<ContractDocumentLink>()
-            .AsNoTracking()
+        IQueryable<ContractDocumentLink> links = _context.Set<ContractDocumentLink>().AsQueryable();
+        IQueryable<Document> docs = _dbSet.AsQueryable();
+
+        if (asNoTracking)
+        {
+            links = links.AsNoTracking();
+            docs = docs.AsNoTracking();
+        }
+
+        return await links
             .Where(link => link.ContractId == contractId)
             .Join(
-                _dbSet.AsNoTracking(),
+                docs,
                 link => link.DocumentId,
                 doc => doc.Id,
                 (_, doc) => doc)

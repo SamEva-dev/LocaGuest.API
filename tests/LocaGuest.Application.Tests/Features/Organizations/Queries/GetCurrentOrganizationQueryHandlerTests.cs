@@ -56,7 +56,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
             "https://test.com");
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(organization);
 
         var query = new GetCurrentOrganizationQuery();
@@ -89,7 +89,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         var organization2 = Organization.Create(0002, "Organization 2", "org2@test.com");
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(organization1);
 
         var query = new GetCurrentOrganizationQuery();
@@ -117,7 +117,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         // Don't set branding
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(organization);
 
         var query = new GetCurrentOrganizationQuery();
@@ -142,7 +142,7 @@ public class GetCurrentOrganizationQueryHandlerTests : BaseApplicationTestFixtur
         _orgContextMock.Setup(x => x.OrganizationId).Returns(organizationId);
 
         _organizationRepositoryMock
-            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(organizationId, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync((Organization?)null);
 
         var query = new GetCurrentOrganizationQuery();

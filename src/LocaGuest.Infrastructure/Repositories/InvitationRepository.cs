@@ -11,10 +11,13 @@ public sealed class InvitationRepository : Repository<Invitation>, IInvitationRe
     {
     }
 
-    public async Task<Invitation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Invitation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Invitation>()
-            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        IQueryable<Invitation> query = _context.Set<Invitation>();
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
     }
 
     public async Task<Invitation?> GetPendingByOrganizationAndEmailAsync(Guid organizationId, string email, CancellationToken cancellationToken = default)

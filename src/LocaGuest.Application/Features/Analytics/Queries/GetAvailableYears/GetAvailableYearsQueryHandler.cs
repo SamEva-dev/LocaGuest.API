@@ -23,7 +23,7 @@ public class GetAvailableYearsQueryHandler : IRequestHandler<GetAvailableYearsQu
     {
         try
         {
-            var contracts = await _unitOfWork.Contracts.Query().ToListAsync(cancellationToken);
+            var contracts = await _unitOfWork.Contracts.Query(asNoTracking: true).ToListAsync(cancellationToken);
             
             if (!contracts.Any())
             {

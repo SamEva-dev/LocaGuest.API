@@ -1,7 +1,5 @@
 using LocaGuest.Application.Common;
-using LocaGuest.Domain.Aggregates.ContractAggregate;
 using LocaGuest.Domain.Aggregates.PropertyAggregate;
-using LocaGuest.Domain.Aggregates.OccupantAggregate;
 using LocaGuest.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -38,6 +36,7 @@ public class MarkContractAsSignedCommandHandler : IRequestHandler<MarkContractAs
             contract.MarkAsSigned(request.SignedDate ?? DateTime.UtcNow);
             //contract.Activate();
 
+            
             // ✅ Pour colocation: réserver la/les chambres (Signed => Reserved)
             if (property.UsageType == PropertyUsageType.ColocationIndividual || property.UsageType == PropertyUsageType.Colocation)
             {
@@ -53,8 +52,6 @@ public class MarkContractAsSignedCommandHandler : IRequestHandler<MarkContractAs
                 // Colocation solidaire: 1 contrat => toutes les chambres réservées
                 property.ReserveAllRooms(contract.Id);
             }
-
-            // TODO: Update property, tenant status and cancel other drafts via domain events
 
             await _unitOfWork.CommitAsync(cancellationToken);
 

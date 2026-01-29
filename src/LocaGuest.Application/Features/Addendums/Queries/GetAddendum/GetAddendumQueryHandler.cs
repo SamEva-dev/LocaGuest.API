@@ -23,7 +23,7 @@ public class GetAddendumQueryHandler : IRequestHandler<GetAddendumQuery, Result<
     {
         try
         {
-            var entity = await _unitOfWork.Addendums.GetByIdAsync(request.Id, cancellationToken);
+            var entity = await _unitOfWork.Addendums.GetByIdAsync(request.Id, cancellationToken, asNoTracking: true);
             if (entity == null)
                 return Result.Failure<AddendumDto>("Addendum not found");
 

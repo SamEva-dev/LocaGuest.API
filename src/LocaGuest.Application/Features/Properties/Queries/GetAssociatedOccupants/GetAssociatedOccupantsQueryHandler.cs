@@ -28,7 +28,7 @@ public class GetAssociatedOccupantsQueryHandler : IRequestHandler<GetAssociatedO
             var propertyId = Guid.Parse(request.PropertyId);
 
             // Get occupants that are currently associated to this property
-            var occupants = await _unitOfWork.Occupants.Query()
+            var occupants = await _unitOfWork.Occupants.Query(asNoTracking: true)
                 .Where(t => t.PropertyId == propertyId)
                 .OrderBy(t => t.FullName)
                 .Select(t => new OccupantDto
@@ -50,7 +50,7 @@ public class GetAssociatedOccupantsQueryHandler : IRequestHandler<GetAssociatedO
 
             var occupantIds = occupants.Select(t => t.Id).Distinct().ToList();
 
-            var identityDocOccupantIds = await _unitOfWork.Documents.Query()
+            var identityDocOccupantIds = await _unitOfWork.Documents.Query(asNoTracking: true)
                 .Where(d => !d.IsArchived
                             && d.AssociatedOccupantId != null
                             && occupantIds.Contains(d.AssociatedOccupantId.Value)

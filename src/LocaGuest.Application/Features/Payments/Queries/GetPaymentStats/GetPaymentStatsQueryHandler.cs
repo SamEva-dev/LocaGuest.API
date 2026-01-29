@@ -33,7 +33,7 @@ public class GetPaymentStatsQueryHandler : IRequestHandler<GetPaymentStatsQuery,
                 {
                     return Result.Failure<PaymentStatsDto>("Invalid tenant ID format");
                 }
-                payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken);
+                payments = await _unitOfWork.Payments.GetByTenantIdAsync(OccupantId, cancellationToken, asNoTracking: true);
             }
             else if (!string.IsNullOrEmpty(request.PropertyId))
             {
@@ -41,7 +41,7 @@ public class GetPaymentStatsQueryHandler : IRequestHandler<GetPaymentStatsQuery,
                 {
                     return Result.Failure<PaymentStatsDto>("Invalid property ID format");
                 }
-                payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken);
+                payments = await _unitOfWork.Payments.GetByPropertyIdAsync(propertyId, cancellationToken, asNoTracking: true);
             }
             else
             {

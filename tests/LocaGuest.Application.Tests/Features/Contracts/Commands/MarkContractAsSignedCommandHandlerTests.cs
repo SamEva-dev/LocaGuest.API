@@ -35,7 +35,7 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
     public async Task Handle_WhenContractNotFound_ReturnsFailure()
     {
         var command = new MarkContractAsSignedCommand { ContractId = Guid.NewGuid() };
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(command.ContractId, It.IsAny<CancellationToken>())).ReturnsAsync((Contract?)null);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(command.ContractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync((Contract?)null);
 
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -51,8 +51,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
         var OccupantId = Guid.NewGuid();
 
         var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
-        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync((Property?)null);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
+        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>(), false)).ReturnsAsync((Property?)null);
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 
@@ -82,8 +82,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
         property.SetOrganizationId(Guid.NewGuid());
         property.AddRoom("R1", 400m);
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
-        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync(property);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
+        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(property);
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 
@@ -114,8 +114,8 @@ public class MarkContractAsSignedCommandHandlerTests : BaseApplicationTestFixtur
         property.AddRoom("R1", 400m);
         property.AddRoom("R2", 400m);
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
-        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>())).ReturnsAsync(property);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
+        _propertyRepositoryMock.Setup(x => x.GetByIdWithRoomsAsync(propertyId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(property);
 
         var result = await _handler.Handle(new MarkContractAsSignedCommand { ContractId = contractId }, CancellationToken.None);
 

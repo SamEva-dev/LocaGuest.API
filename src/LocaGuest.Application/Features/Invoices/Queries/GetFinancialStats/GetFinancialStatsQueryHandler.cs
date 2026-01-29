@@ -24,7 +24,7 @@ public class GetFinancialStatsQueryHandler : IRequestHandler<GetFinancialStatsQu
     {
         try
         {
-            var query = _unitOfWork.RentInvoices.Query();
+            var query = _unitOfWork.RentInvoices.Query(asNoTracking: true);
 
             // Filter by year if specified
             if (request.Year.HasValue)

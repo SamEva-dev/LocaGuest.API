@@ -39,7 +39,7 @@ public class GetRevenueEvolutionQueryHandler : IRequestHandler<GetRevenueEvoluti
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
                 // Contrats actifs ce mois-là
-                var monthContracts = await _unitOfWork.Contracts.Query()
+                var monthContracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                     .Where(c => c.StartDate <= monthEnd && c.EndDate >= monthStart)
                     .ToListAsync(cancellationToken);
 

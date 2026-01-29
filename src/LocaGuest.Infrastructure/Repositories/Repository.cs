@@ -19,26 +19,40 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
-    public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, cancellationToken);
+        IQueryable<T> query = _dbSet;
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, cancellationToken);
     }
 
-    public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet.ToListAsync(cancellationToken);
+        IQueryable<T> query = _dbSet;
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
+        IQueryable<T> query = _dbSet.Where(predicate);
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+    public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
+        IQueryable<T> query = _dbSet.Where(predicate);
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default)
@@ -48,9 +62,9 @@ public class Repository<T> : IRepository<T> where T : class
             : await _dbSet.CountAsync(predicate, cancellationToken);
     }
 
-    public virtual IQueryable<T> Query()
+    public virtual IQueryable<T> Query(bool asNoTracking = false)
     {
-        return _dbSet.AsNoTracking().AsQueryable();
+        return asNoTracking ? _dbSet.AsNoTracking().AsQueryable() : _dbSet.AsQueryable();
     }
 
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)

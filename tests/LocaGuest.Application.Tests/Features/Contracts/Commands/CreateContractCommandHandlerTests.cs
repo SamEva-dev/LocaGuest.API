@@ -78,11 +78,11 @@ public class CreateContractCommandHandlerTests : BaseApplicationTestFixture
         };
 
         _propertyRepositoryMock
-            .Setup(x => x.GetByIdWithRoomsAsync(property.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdWithRoomsAsync(property.Id, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(property);
 
         _tenantRepositoryMock
-            .Setup(x => x.GetByIdAsync(tenant.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(tenant.Id, It.IsAny<CancellationToken>(), false))
             .ReturnsAsync(tenant);
 
         _unitOfWorkMock

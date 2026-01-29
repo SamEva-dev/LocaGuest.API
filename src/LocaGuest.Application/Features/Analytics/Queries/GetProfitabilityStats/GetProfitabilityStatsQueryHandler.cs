@@ -31,14 +31,14 @@ public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilit
             var lastMonthEnd = currentMonthStart.AddTicks(-1);
 
             // Revenus du mois en cours (loyers des contrats actifs)
-            var activeContracts = await _unitOfWork.Contracts.Query()
+            var activeContracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.Status == ContractStatus.Active)
                 .ToListAsync(cancellationToken);
 
             var monthlyRevenue = activeContracts.Sum(c => c.Rent + c.Charges);
 
             // Revenus du mois précédent
-            var lastMonthContracts = await _unitOfWork.Contracts.Query()
+            var lastMonthContracts = await _unitOfWork.Contracts.Query(asNoTracking: true)
                 .Where(c => c.StartDate <= lastMonthEnd && c.EndDate >= lastMonthStart)
                 .ToListAsync(cancellationToken);
 
@@ -66,7 +66,7 @@ public class GetProfitabilityStatsQueryHandler : IRequestHandler<GetProfitabilit
 
             // Taux de rentabilité (ROI annuel estimé)
             // Estimation: valeur du bien = loyer annuel x 20
-            var properties = await _unitOfWork.Properties.Query().ToListAsync(cancellationToken);
+            var properties = await _unitOfWork.Properties.Query(asNoTracking: true).ToListAsync(cancellationToken);
             var totalPropertyValue = properties.Sum(p => p.Rent * 12 * 20);
 
             var profitabilityRate = totalPropertyValue > 0 

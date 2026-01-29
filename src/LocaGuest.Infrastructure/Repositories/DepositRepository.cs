@@ -11,10 +11,12 @@ public class DepositRepository : Repository<Deposit>, IDepositRepository
     {
     }
 
-    public async Task<Deposit?> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+    public async Task<Deposit?> GetByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default, bool asNoTracking = false)
     {
-        return await _context.Set<Deposit>()
-            .Include(d => d.Transactions)
-            .FirstOrDefaultAsync(d => d.ContractId == contractId, cancellationToken);
+        IQueryable<Deposit> query = _context.Set<Deposit>().Include(d => d.Transactions);
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(d => d.ContractId == contractId, cancellationToken);
     }
 }

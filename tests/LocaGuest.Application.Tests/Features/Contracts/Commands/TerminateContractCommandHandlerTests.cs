@@ -30,7 +30,7 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
     public async Task Handle_WhenContractNotFound_ReturnsFailure()
     {
         var id = Guid.NewGuid();
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync((Contract?)null);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>(), false)).ReturnsAsync((Contract?)null);
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = id, TerminationDate = DateTime.UtcNow, Reason = "x" }, CancellationToken.None);
 
@@ -48,7 +48,7 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
         var contract = Contract.Create(propertyId, OccupantId, ContractType.Unfurnished, DateTime.UtcNow, DateTime.UtcNow.AddMonths(12), 1000m);
         // Draft
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = contractId, TerminationDate = DateTime.UtcNow, Reason = "x" }, CancellationToken.None);
 
@@ -67,7 +67,7 @@ public class TerminateContractCommandHandlerTests : BaseApplicationTestFixture
         contract.MarkAsSigned();
         contract.Activate();
 
-        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
+        _contractRepositoryMock.Setup(x => x.GetByIdAsync(contractId, It.IsAny<CancellationToken>(), false)).ReturnsAsync(contract);
 
         var result = await _handler.Handle(new TerminateContractCommand { ContractId = contractId, TerminationDate = DateTime.UtcNow, Reason = "  " }, CancellationToken.None);
 
