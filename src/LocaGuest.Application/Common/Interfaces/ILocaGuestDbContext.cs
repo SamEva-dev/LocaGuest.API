@@ -13,7 +13,6 @@ using LocaGuest.Domain.Aggregates.AnalyticsAggregate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using LocaGuest.Domain.Analytics;
-using LocaGuest.Domain.Entities;
 
 namespace LocaGuest.Application.Common.Interfaces;
 
@@ -44,6 +43,9 @@ public interface ILocaGuestDbContext
     // Multi-Tenant System
     DbSet<Organization> Organizations { get; }
     DbSet<OrganizationSequence> OrganizationSequences { get; }
+    DbSet<TeamMember> TeamMembers { get; }
+    DbSet<UserProfile> UserProfiles { get; }
+    DbSet<UserSession> UserSessions { get; }
 
     // Analytics & Tracking
     DbSet<TrackingEvent> TrackingEvents { get; }

@@ -44,6 +44,22 @@ public class UserSession : Entity
         LastActivityAt = DateTime.UtcNow;
     }
 
+    public void UpdateClientInfo(
+        string deviceName,
+        string browser,
+        string ipAddress,
+        string location)
+    {
+        if (!string.IsNullOrWhiteSpace(deviceName))
+            DeviceName = deviceName;
+        if (!string.IsNullOrWhiteSpace(browser))
+            Browser = browser;
+        if (!string.IsNullOrWhiteSpace(ipAddress))
+            IpAddress = ipAddress;
+        if (!string.IsNullOrWhiteSpace(location))
+            Location = location;
+    }
+
     public void Revoke()
     {
         IsActive = false;

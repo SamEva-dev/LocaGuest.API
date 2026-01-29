@@ -4,6 +4,7 @@ using LocaGuest.Application.Features.Provisioning.Organizations.Commands.Provisi
 using LocaGuest.Application.Features.Provisioning.Organizations.Commands.UpdateProvisioningOrganization;
 using LocaGuest.Application.Features.Provisioning.Organizations.Queries.GetProvisioningOrganizationById;
 using LocaGuest.Application.Features.Provisioning.Organizations.Queries.GetProvisioningOrganizations;
+using LocaGuest.Application.Features.Provisioning.Organizations.Queries.GetProvisioningOrganizationSessions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,17 @@ public sealed class ProvisioningOrganizationsController : ControllerBase
                 OwnerEmail: request.OwnerEmail,
                 IdempotencyKey: Request.Headers["Idempotency-Key"].ToString()),
             ct);
+
+        if (result.IsFailure)
+            return BadRequest(new { error = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    [HttpGet("{id:guid}/sessions")]
+    public async Task<ActionResult<List<ProvisioningOrganizationSessionDto>>> GetSessions(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetProvisioningOrganizationSessionsQuery(id), ct);
 
         if (result.IsFailure)
             return BadRequest(new { error = result.ErrorMessage });

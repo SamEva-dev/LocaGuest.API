@@ -3,6 +3,8 @@ using LocaGuest.Api.Services;
 using LocaGuest.Application;
 using LocaGuest.Application.Common.Interfaces;
 using LocaGuest.Application.Services;
+using LocaGuest.Domain.Analytics;
+using System.Diagnostics;
 using LocaGuest.Infrastructure;
 using LocaGuest.Infrastructure.Persistence.Seeders;
 using LocaGuest.Infrastructure.Persistence;
@@ -557,6 +559,9 @@ public class Startup
         app.UseAuthorization();
 
         app.UseRateLimiter();
+
+        // Session tracking middleware (after authentication)
+        app.UseSessionTracking();
 
         // Tracking middleware (after authentication)
         app.UseTracking();
