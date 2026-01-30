@@ -36,6 +36,7 @@ public class NumberSequenceService : INumberSequenceService
 
         // Get tenant code
         var organization = await _context.Organizations
+            .IgnoreQueryFilters()
             .Where(o => o.Id == organizationId)
             .Select(o => new { o.Code })
             .FirstOrDefaultAsync(cancellationToken);
@@ -52,6 +53,7 @@ public class NumberSequenceService : INumberSequenceService
         {
             // Lock the sequence row for this tenant+prefix (SELECT FOR UPDATE in SQL)
             var sequence = await _context.OrganizationSequences
+                .IgnoreQueryFilters()
                 .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -118,6 +120,7 @@ public class NumberSequenceService : INumberSequenceService
         CancellationToken cancellationToken = default)
     {
         var sequence = await _context.OrganizationSequences
+            .IgnoreQueryFilters()
             .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -127,6 +130,7 @@ public class NumberSequenceService : INumberSequenceService
     public async Task<string> GetTenantNumberAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         var organisation = await _context.Organizations
+            .IgnoreQueryFilters()
             .Where(o => o.Id == tenantId)
             .AsNoTracking()
             .Select(o => new { o.Code })
@@ -145,6 +149,7 @@ public class NumberSequenceService : INumberSequenceService
             throw new ArgumentException("New number cannot be negative", nameof(newNumber));
 
         var sequence = await _context.OrganizationSequences
+            .IgnoreQueryFilters()
             .Where(s => s.OrganizationId == organizationId && s.EntityPrefix == entityPrefix)
             .FirstOrDefaultAsync(cancellationToken);
 

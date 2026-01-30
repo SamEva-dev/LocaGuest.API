@@ -30,6 +30,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using MediatR;
 
 namespace LocaGuest.Api;
 
@@ -166,6 +167,9 @@ public class Startup
         // Application Layer (MediatR)
         services.AddApplication();
 
+        // API Layer (MediatR) - register request handlers defined in this assembly
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Startup).Assembly));
+
         // Background Services
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.EmailNotificationBackgroundService>();
         services.AddHostedService<LocaGuest.Infrastructure.BackgroundServices.InvoiceGenerationBackgroundService>();
@@ -176,6 +180,8 @@ public class Startup
 
         // JWT Authentication with AuthGate (RSA via JWKS)
         ConfigureJwtAuthentication(services);
+
+        services.AddSingleton<ITenantOnboardingTokenService, TenantOnboardingTokenService>();
 
         services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 

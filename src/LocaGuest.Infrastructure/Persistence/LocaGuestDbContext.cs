@@ -20,7 +20,6 @@ using System.Reflection;
 using System.Linq.Expressions;
 using LocaGuest.Application.Services;
 using LocaGuest.Infrastructure.Persistence.Entities;
-using LocaGuest.Domain.Entities;
 
 namespace LocaGuest.Infrastructure.Persistence;
 
@@ -48,6 +47,7 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<InvitationToken> InvitationTokens => Set<InvitationToken>();
     public DbSet<Invitation> Invitations => Set<Invitation>();
+    public DbSet<TenantOnboardingInvitation> TenantOnboardingInvitations => Set<TenantOnboardingInvitation>();
 
     public DbSet<IdempotencyRequestEntity> IdempotencyRequests => Set<IdempotencyRequestEntity>();
 
@@ -238,6 +238,26 @@ public class LocaGuestDbContext : DbContext, ILocaGuestDbContext, ILocaGuestRead
             entity.HasIndex(i => i.ExpiresAtUtc);
 
             entity.Ignore(i => i.DomainEvents);
+        });
+
+        modelBuilder.Entity<TenantOnboardingInvitation>(entity =>
+        {
+            entity.ToTable("tenant_onboarding_invitations", schema: "org");
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.OrganizationId).IsRequired();
+            entity.Property(x => x.Email).IsRequired().HasMaxLength(200);
+            entity.Property(x => x.PropertyId);
+            entity.Property(x => x.ExpiresAtUtc).IsRequired();
+            entity.Property(x => x.UsedAtUtc);
+            entity.Property(x => x.OccupantId);
+            entity.Property(x => x.TokenHash).IsRequired().HasMaxLength(64);
+
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => new { x.OrganizationId, x.Email });
+            entity.HasIndex(x => x.ExpiresAtUtc);
+
+            entity.Ignore(x => x.DomainEvents);
         });
 
         modelBuilder.Entity<IdempotencyRequestEntity>(b =>
