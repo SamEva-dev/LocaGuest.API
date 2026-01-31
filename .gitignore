@@ -414,4 +414,5 @@ FodyWeavers.xsd
 *.db-wal
 *.png
 *.md
-/VPS/*
+
+src/LocaGuest.Api/appsettings.Development.json

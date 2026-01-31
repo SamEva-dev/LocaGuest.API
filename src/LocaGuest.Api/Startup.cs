@@ -497,14 +497,13 @@ public class Startup
             await next();
         });
 
-        if (env.IsDevelopment() || env.EnvironmentName == "Testing")
+        if (env.IsDevelopment() || env.IsStaging())
         {
             app.UseDeveloperExceptionPage();
         }
 
         // Apply migrations in Development, Staging, PreProduction and Production
-        if (env.IsDevelopment() || env.IsStaging() || env.IsProduction() || env.IsEnvironment("PreProduction"))
-        {
+        
             using var scope = app.ApplicationServices.CreateScope();
 
             try
@@ -536,16 +535,13 @@ public class Startup
                 Log.Error(ex, "An error occurred while applying migrations");
                 throw;
             }
-        }
 
         // Middleware
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseObservabilityEnrichment();
         app.UseMiddleware<IdempotencyMiddleware>();
-        if (!env.IsDevelopment() && env.IsStaging())
-        {
+        
             app.UseMiddleware<ExceptionHandlingMiddleware>();
-        }
 
         app.UseSerilogRequestLogging();
 
